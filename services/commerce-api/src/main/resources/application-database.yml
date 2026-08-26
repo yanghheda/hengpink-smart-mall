@@ -18,6 +18,9 @@ spring:
       url: ${REDIS_URL}
 
 management:
+  health:
+    redis:
+      enabled: true
   endpoint:
     health:
       group:

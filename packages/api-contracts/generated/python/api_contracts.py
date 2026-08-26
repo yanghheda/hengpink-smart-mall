@@ -1,6 +1,6 @@
 """Generated from packages/api-contracts/openapi.yaml. DO NOT EDIT."""
 
-# Contract source digest: 77cffd2806c3d08f9539bcc4d77f223f3879925720347d9bc28ff45b9fc4b001
+# 契约源摘要：ba69490c24b134415b96a1cc9d99d6eb317b2eb6b1ec5153217c8ca71b46405e
 from typing import Literal, NotRequired, TypedDict
 
 
@@ -40,4 +40,65 @@ class HealthData(TypedDict):
 class HealthResponse(TypedDict):
     requestId: str
     data: HealthData
+    meta: ResponseMeta
+
+
+class ProductSummary(TypedDict):
+    productId: str
+    categoryId: str
+    categoryName: str
+    brand: str
+    model: str
+    displayName: str
+    subtitle: NotRequired[str]
+    datasetVersion: str
+    simulated: bool
+    skuCount: int
+
+
+class ProductPage(TypedDict):
+    items: list[ProductSummary]
+    page: int
+    size: int
+    totalElements: int
+    totalPages: int
+
+
+class ProductPageResponse(TypedDict):
+    requestId: str
+    data: ProductPage
+    meta: ResponseMeta
+
+
+class SkuDetail(TypedDict):
+    skuId: str
+    skuCode: str
+    displayName: str
+    attributes: dict[str, object]
+    stockStatus: str
+    stockQuantity: int
+    warrantyMonths: int
+
+
+class ProductDetail(TypedDict):
+    productId: str
+    categoryId: str
+    categoryName: str
+    brand: str
+    model: str
+    displayName: str
+    subtitle: NotRequired[str]
+    canonicalSpecs: dict[str, object]
+    sellingPoints: list[str]
+    limitations: list[str]
+    warrantySummary: NotRequired[str]
+    datasetVersion: str
+    simulated: bool
+    skus: list[SkuDetail]
+    selectedSku: NotRequired[SkuDetail]
+
+
+class ProductDetailResponse(TypedDict):
+    requestId: str
+    data: ProductDetail
     meta: ResponseMeta

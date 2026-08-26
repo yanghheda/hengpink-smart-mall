@@ -14,13 +14,17 @@ import {
 
 const contractPath = "packages/api-contracts/openapi.yaml";
 
-test("OpenAPI 3.1 defines only the public health slice and shared envelopes", async () => {
+test("OpenAPI 3.1 defines health and the P04-S01 catalog slice", async () => {
   const source = await readFile(contractPath, "utf8");
   const contract = parse(source);
 
   assert.doesNotThrow(() => validateContract(contract));
   assert.match(contract.openapi, /^3\.1\./);
-  assert.deepEqual(Object.keys(contract.paths), ["/api/v1/health"]);
+  assert.deepEqual(Object.keys(contract.paths), [
+    "/api/v1/health",
+    "/api/v1/products",
+    "/api/v1/products/{productId}",
+  ]);
 
   const schemas = contract.components.schemas;
   for (const name of [
@@ -31,6 +35,9 @@ test("OpenAPI 3.1 defines only the public health slice and shared envelopes", as
     "ResponseMeta",
     "HealthData",
     "HealthResponse",
+    "ProductSummary",
+    "ProductPageResponse",
+    "ProductDetailResponse",
   ]) {
     assert.ok(schemas[name], `missing components.schemas.${name}`);
   }
@@ -46,6 +53,19 @@ test("OpenAPI 3.1 defines only the public health slice and shared envelopes", as
       "application/json"
     ].schema.$ref,
     "#/components/schemas/HealthResponse",
+  );
+
+  assert.equal(
+    contract.paths["/api/v1/products"].get.responses["200"].content[
+      "application/json"
+    ].schema.$ref,
+    "#/components/schemas/ProductPageResponse",
+  );
+  assert.equal(
+    contract.paths["/api/v1/products/{productId}"].get.responses["404"].content[
+      "application/json"
+    ].schema.$ref,
+    "#/components/schemas/ErrorEnvelope",
   );
 });
 

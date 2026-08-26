@@ -10,6 +10,9 @@ spring:
       - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
 
 management:
+  health:
+    redis:
+      enabled: false
   endpoints:
     web:
       exposure:
@@ -27,8 +30,3 @@ hengpick:
     environment: ${APP_ENV:local}
     agent-url: ${COMMERCE_INTERNAL_AGENT_URL:http://localhost:8000}
     dataset-version: ${COMMERCE_DATASET_VERSION:commerce-demo-2026.08.0}
-
-logging:
-  structured:
-    format:
-      console: logstash

@@ -4,8 +4,7 @@ info:
   title: HengPick Smart Mall Public API
   version: 0.1.0
   description: >-
-    P01-S02 contract skeleton. This contract intentionally contains only the
-    public health slice and the shared success/error envelopes.
+    Public contract for health and the P04-S01 catalog list/detail slice.
 paths:
   /api/v1/health:
     get:
@@ -21,6 +20,56 @@ paths:
                 $ref: "#/components/schemas/HealthResponse"
         "500":
           description: The public API cannot report a valid liveness state.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+  /api/v1/products:
+    get:
+      operationId: listProducts
+      summary: 分页读取演示商品
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, minimum: 0, default: 0 }
+        - name: size
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+      responses:
+        "200":
+          description: 商品分页
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductPageResponse"
+        "400":
+          description: 分页参数非法
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+  /api/v1/products/{productId}:
+    get:
+      operationId: getProductDetail
+      summary: 读取商品及其 SKU 详情
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: skuId
+          in: query
+          required: false
+          schema: { type: string }
+      responses:
+        "200":
+          description: 商品详情
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductDetailResponse"
+        "404":
+          description: 商品不存在或指定 SKU 不属于该商品
           content:
             application/json:
               schema:
@@ -116,3 +165,80 @@ components:
           properties:
             data:
               $ref: "#/components/schemas/HealthData"
+    ProductSummary:
+      type: object
+      additionalProperties: false
+      required: [productId, categoryId, categoryName, brand, model, displayName, datasetVersion, simulated, skuCount]
+      properties:
+        productId: { type: string }
+        categoryId: { type: string }
+        categoryName: { type: string }
+        brand: { type: string }
+        model: { type: string }
+        displayName: { type: string }
+        subtitle: { type: string }
+        datasetVersion: { type: string }
+        simulated: { type: boolean }
+        skuCount: { type: integer }
+    ProductPage:
+      type: object
+      additionalProperties: false
+      required: [items, page, size, totalElements, totalPages]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/ProductSummary" }
+        page: { type: integer }
+        size: { type: integer }
+        totalElements: { type: integer }
+        totalPages: { type: integer }
+    ProductPageResponse:
+      allOf:
+        - $ref: "#/components/schemas/SuccessEnvelope"
+        - type: object
+          properties:
+            data: { $ref: "#/components/schemas/ProductPage" }
+    SkuDetail:
+      type: object
+      additionalProperties: false
+      required: [skuId, skuCode, displayName, attributes, stockStatus, stockQuantity, warrantyMonths]
+      properties:
+        skuId: { type: string }
+        skuCode: { type: string }
+        displayName: { type: string }
+        attributes: { type: object }
+        stockStatus: { type: string }
+        stockQuantity: { type: integer }
+        warrantyMonths: { type: integer }
+    ProductDetail:
+      type: object
+      additionalProperties: false
+      required: [productId, categoryId, categoryName, brand, model, displayName, canonicalSpecs, sellingPoints, limitations, datasetVersion, simulated, skus]
+      properties:
+        productId: { type: string }
+        categoryId: { type: string }
+        categoryName: { type: string }
+        brand: { type: string }
+        model: { type: string }
+        displayName: { type: string }
+        subtitle: { type: string }
+        canonicalSpecs: { type: object }
+        sellingPoints:
+          type: array
+          items: { type: string }
+        limitations:
+          type: array
+          items: { type: string }
+        warrantySummary: { type: string }
+        datasetVersion: { type: string }
+        simulated: { type: boolean }
+        skus:
+          type: array
+          items: { $ref: "#/components/schemas/SkuDetail" }
+        selectedSku: { $ref: "#/components/schemas/SkuDetail" }
+    ProductDetailResponse:
+      allOf:
+        - $ref: "#/components/schemas/SuccessEnvelope"
+        - type: object
+          properties:
+            data: { $ref: "#/components/schemas/ProductDetail" }

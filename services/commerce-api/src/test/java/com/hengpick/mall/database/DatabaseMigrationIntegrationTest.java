@@ -34,7 +34,7 @@ class DatabaseMigrationIntegrationTest {
                 .dataSource(mysql.getJdbcUrl(), mysql.getUsername(), mysql.getPassword())
                 .locations("classpath:db/migration")
                 .load();
-        assertEquals(1, flyway.migrate().migrationsExecuted);
+        assertEquals(2, flyway.migrate().migrationsExecuted);
     }
 
     @Test
@@ -54,10 +54,10 @@ class DatabaseMigrationIntegrationTest {
                         SELECT COUNT(*)
                         FROM information_schema.tables
                         WHERE table_schema = DATABASE()
-                          AND table_name IN ('users', 'auth_sessions', 'categories', 'products', 'skus')
+                          AND table_name IN ('users', 'auth_sessions', 'categories', 'products', 'skus', 'shops', 'offers', 'reviews')
                         """)) {
             assertTrue(result.next());
-            assertEquals(5, result.getInt(1));
+            assertEquals(8, result.getInt(1));
         }
     }
 

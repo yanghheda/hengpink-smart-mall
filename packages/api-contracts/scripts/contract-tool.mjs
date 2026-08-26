@@ -29,6 +29,9 @@ const requiredSchemas = [
   "ResponseMeta",
   "HealthData",
   "HealthResponse",
+  "ProductSummary",
+  "ProductPageResponse",
+  "ProductDetailResponse",
 ];
 
 function referenceName(reference) {
@@ -110,8 +113,8 @@ function sourceDigest(document) {
 
 function generateTypescript(document) {
   const lines = [
-    "// Generated from packages/api-contracts/openapi.yaml. DO NOT EDIT.",
-    `// Contract source digest: ${sourceDigest(document)}`,
+    "// 由 packages/api-contracts/openapi.yaml 生成，请勿手工修改。",
+    `// 契约源摘要：${sourceDigest(document)}`,
     "",
   ];
   for (const [name, schema] of Object.entries(document.components.schemas)) {
@@ -132,7 +135,7 @@ function generatePython(document) {
   const lines = [
     '"""Generated from packages/api-contracts/openapi.yaml. DO NOT EDIT."""',
     "",
-    `# Contract source digest: ${sourceDigest(document)}`,
+    `# 契约源摘要：${sourceDigest(document)}`,
     "from typing import Literal, NotRequired, TypedDict",
     "",
     "",
@@ -165,8 +168,13 @@ export function validateContract(document) {
     throw new Error("OpenAPI info.title and info.version are required");
   }
   const paths = Object.keys(document.paths ?? {});
-  if (paths.length !== 1 || paths[0] !== "/api/v1/health") {
-    throw new Error("P01-S02 may define only /api/v1/health");
+  const expectedPaths = [
+    "/api/v1/health",
+    "/api/v1/products",
+    "/api/v1/products/{productId}",
+  ];
+  if (JSON.stringify(paths) !== JSON.stringify(expectedPaths)) {
+    throw new Error(`Public paths must be: ${expectedPaths.join(", ")}`);
   }
   const operation = document.paths["/api/v1/health"]?.get;
   if (!operation?.operationId) {

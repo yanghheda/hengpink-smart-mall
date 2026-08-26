@@ -49,6 +49,14 @@ export MYSQL_PASSWORD='<migration-password>'
 make db-migrate
 ```
 
+导入经校验的固定模拟数据时执行：
+
+```bash
+make db-seed
+```
+
+该命令先运行 Flyway，再按 `Category → Product → SKU → Shop → Offer → Review` 顺序在一个事务内幂等导入；任何步骤失败都会回滚本次导入。
+
 首批迁移只创建 Identity 和 Catalog 基表；金额/报价、业务数据和 API 仍未实现。MySQL 以 UTC `DATETIME(3)` 存时间、`CHAR(26)` 存 ULID；后续业务金额使用 `DECIMAL(12,2)` 和 Java `BigDecimal`。
 
 服务需要连接数据库时，显式启用 `database` profile 并提供同一组 `MYSQL_*` 变量和 `REDIS_URL`；任一变量缺失即启动失败。默认 profile 保持 P01 的独立启动行为。
