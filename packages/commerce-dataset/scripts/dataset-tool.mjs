@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
 
 const fixturePath = fileURLToPath(
@@ -14,6 +15,98 @@ export async function loadCuratedDataset() {
 
 export async function loadPhoneSchema() {
   return JSON.parse(await readFile(phoneSchemaPath, "utf8"));
+}
+
+function stableHash(value) {
+  return createHash("sha256").update(JSON.stringify(value)).digest("hex");
+}
+
+export function createDatasetReport(dataset, options = {}) {
+  return {
+    dataset_version: dataset.dataset_version,
+    seed: options.seed ?? null,
+    counts: Object.fromEntries(
+      ["categories", "products", "skus", "shops", "offers", "reviews"].map(
+        (name) => [name, dataset[name].length],
+      ),
+    ),
+    content_hash: stableHash(dataset),
+    anomalies: options.anomalies ?? [],
+  };
+}
+
+export async function generateDataset({
+  seed,
+  version,
+  generatedProducts = 0,
+}) {
+  const base = await loadCuratedDataset();
+  const dataset = structuredClone(base);
+  dataset.dataset_version = version;
+  dataset.updated_at = "2026-08-26T00:00:00Z";
+  for (const name of [
+    "categories",
+    "products",
+    "skus",
+    "shops",
+    "offers",
+    "reviews",
+  ]) {
+    for (const entity of dataset[name]) {
+      entity.dataset_version = version;
+      entity.updated_at = dataset.updated_at;
+    }
+  }
+  for (let index = 0; index < generatedProducts; index += 1) {
+    const productId = `P-GENERATED-${seed}-${index}`;
+    const product = {
+      product_id: productId,
+      category_id: "PHONE",
+      brand: `SeedBrand${seed % 10}`,
+      model: `G${index + 1}`,
+      dataset_version: version,
+      updated_at: dataset.updated_at,
+    };
+    dataset.products.push(product);
+    for (const variant of ["128-B", "256-W"]) {
+      const skuId = `S-GENERATED-${seed}-${index}-${variant}`;
+      dataset.skus.push({
+        sku_id: skuId,
+        product_id: productId,
+        dataset_version: version,
+        updated_at: dataset.updated_at,
+        attributes: {
+          ramGb: variant.startsWith("128") ? 8 : 12,
+          storageGb: Number(variant.slice(0, 3)),
+          batteryMah: 4700 + ((seed + index) % 4) * 100,
+          color: variant.endsWith("B") ? "black" : "white",
+        },
+      });
+      dataset.offers.push({
+        offer_id: `O-GENERATED-${seed}-${index}-${variant}`,
+        sku_id: skuId,
+        shop_id: dataset.shops[index % dataset.shops.length].shop_id,
+        price: variant.startsWith("128") ? "1899.00" : "2199.00",
+        currency: "CNY",
+        stock_status: "IN_STOCK",
+        dataset_version: version,
+        updated_at: dataset.updated_at,
+      });
+    }
+  }
+  validateDataset(dataset);
+  return { dataset, report: createDatasetReport(dataset, { seed }) };
+}
+
+export function publishDataset(dataset) {
+  if (!/^commerce-demo-\d{4}\.\d{2}\.\d+$/.test(dataset?.dataset_version ?? ""))
+    throw new Error("cannot activate dataset: invalid version");
+  validateDataset(dataset);
+  return {
+    status: "ACTIVE",
+    dataset_version: dataset.dataset_version,
+    content_hash: stableHash(dataset),
+  };
 }
 
 export function validatePhoneAttributes(attributes, schema) {
