@@ -1,0 +1,118 @@
+openapi: 3.1.0
+jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
+info:
+  title: HengPick Smart Mall Public API
+  version: 0.1.0
+  description: >-
+    P01-S02 contract skeleton. This contract intentionally contains only the
+    public health slice and the shared success/error envelopes.
+paths:
+  /api/v1/health:
+    get:
+      operationId: getHealth
+      summary: Read the public API liveness state
+      security: []
+      responses:
+        "200":
+          description: The public API process is live.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+        "500":
+          description: The public API cannot report a valid liveness state.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+components:
+  schemas:
+    ResponseMeta:
+      type: object
+      additionalProperties: false
+      required:
+        - serverTime
+      properties:
+        serverTime:
+          type: string
+          format: date-time
+    SuccessEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - requestId
+        - data
+        - meta
+      properties:
+        requestId:
+          type: string
+          description: Request correlation identifier assigned by the server.
+        data:
+          type: object
+          description: Endpoint-specific response payload.
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+    ErrorDetail:
+      type: object
+      additionalProperties: false
+      required:
+        - field
+        - reason
+      properties:
+        field:
+          type: string
+        reason:
+          type: string
+    ApiError:
+      type: object
+      additionalProperties: false
+      required:
+        - code
+        - message
+        - retryable
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+          description: User-facing message that does not expose internals.
+        retryable:
+          type: boolean
+        details:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorDetail"
+    ErrorEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - requestId
+        - error
+      properties:
+        requestId:
+          type: string
+        error:
+          $ref: "#/components/schemas/ApiError"
+    HealthData:
+      type: object
+      additionalProperties: false
+      required:
+        - status
+        - service
+        - contractVersion
+      properties:
+        status:
+          type: string
+          enum:
+            - UP
+        service:
+          type: string
+        contractVersion:
+          type: string
+    HealthResponse:
+      allOf:
+        - $ref: "#/components/schemas/SuccessEnvelope"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/HealthData"

@@ -1,0 +1,13 @@
+server:
+  port: ${COMMERCE_PORT:8080}
+
+spring:
+  application:
+    name: commerce-api
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+

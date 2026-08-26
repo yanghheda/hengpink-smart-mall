@@ -1,0 +1,42 @@
+{
+  "name": "hengpick-smart-mall",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/commerce-app",
+    "apps/smart-mall-h5"
+  ],
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "start:commerce-app": "npm run start --workspace @hengpick/commerce-app --",
+    "start:smart-mall-h5": "npm run start --workspace @hengpick/smart-mall-h5 --",
+    "start:commerce-api": "mvn -f services/commerce-api/pom.xml spring-boot:run",
+    "start:agent-service": "services/agent-service/.venv/bin/uvicorn app.main:app --app-dir services/agent-service --reload --reload-dir services/agent-service --port ${AGENT_PORT:-8000}",
+    "contract:validate": "node packages/api-contracts/scripts/contract-tool.mjs validate",
+    "contract:generate": "node packages/api-contracts/scripts/contract-tool.mjs generate",
+    "contract:typecheck": "tsc --noEmit --strict --skipLibCheck --target ES2022 packages/api-contracts/generated/typescript/api-contracts.ts && services/agent-service/.venv/bin/python -c \"import runpy; runpy.run_path('packages/api-contracts/generated/python/api_contracts.py')\"",
+    "contract:check": "node packages/api-contracts/scripts/contract-tool.mjs check && npm run contract:typecheck",
+    "bridge:validate": "node packages/host-bridge/scripts/bridge-tool.mjs validate",
+    "bridge:generate": "node packages/host-bridge/scripts/bridge-tool.mjs generate",
+    "bridge:typecheck": "tsc --noEmit --strict --skipLibCheck --target ES2022 packages/host-bridge/generated/typescript/host-bridge.ts packages/host-bridge/generated/runtime/host-bridge.d.mts",
+    "bridge:check": "node packages/host-bridge/scripts/bridge-tool.mjs check && npm run bridge:typecheck",
+    "tokens:validate": "node packages/design-tokens/scripts/token-tool.mjs validate",
+    "tokens:generate": "node packages/design-tokens/scripts/token-tool.mjs generate",
+    "tokens:typecheck": "tsc --noEmit --strict --skipLibCheck --target ES2022 packages/design-tokens/generated/react-native/tokens.ts",
+    "tokens:check": "node packages/design-tokens/scripts/token-tool.mjs check && npm run tokens:typecheck",
+    "build:js": "npm run build --workspace @hengpick/smart-mall-h5 && npx tsc --noEmit -p apps/commerce-app/tsconfig.json",
+    "test": "node --test tests/*.test.mjs && npm run test:js",
+    "test:js": "npm run test --workspaces",
+    "test:commerce-api": "mvn -f services/commerce-api/pom.xml test",
+    "test:agent-service": "services/agent-service/.venv/bin/python -m pytest services/agent-service",
+    "test:services": "npm run test:commerce-api && npm run test:agent-service",
+    "format:check": "npm run format:check --workspaces && prettier --check package.json packages/api-contracts packages/host-bridge/README.md packages/host-bridge/schemas packages/host-bridge/scripts packages/host-bridge/src packages/design-tokens/README.md packages/design-tokens/tokens.json packages/design-tokens/scripts tests && services/agent-service/.venv/bin/ruff check services/agent-service packages/api-contracts/generated/python && services/agent-service/.venv/bin/ruff format --check services/agent-service packages/api-contracts/generated/python",
+    "check": "npm run contract:check && npm run bridge:check && npm run tokens:check && npm run format:check && npm run build:js && npm test && npm run test:services"
+  },
+  "devDependencies": {
+    "prettier": "3.9.6",
+    "yaml": "^2.8.1"
+  }
+}

@@ -1,0 +1,16 @@
+node_modules/
+dist/
+.expo/
+ios/
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+*.tsbuildinfo
+target/
+.env
+*.log
+.DS_Store
+docs/
+.idea/
