@@ -1,6 +1,6 @@
-"""Generated from packages/api-contracts/openapi.yaml. DO NOT EDIT."""
+"""由 packages/api-contracts/openapi.yaml 生成，请勿手工修改。"""
 
-# 契约源摘要：ba69490c24b134415b96a1cc9d99d6eb317b2eb6b1ec5153217c8ca71b46405e
+# 契约源摘要：c5c2d62e970dc571d353e368116f2caeff02b20d3cf2e4158d7a870af7240fe4
 from typing import Literal, NotRequired, TypedDict
 
 
@@ -101,4 +101,45 @@ class ProductDetail(TypedDict):
 class ProductDetailResponse(TypedDict):
     requestId: str
     data: ProductDetail
+    meta: ResponseMeta
+
+
+class AttributeConstraint(TypedDict):
+    attribute: str
+    operator: Literal[">=", "<=", "="]
+    value: object
+
+
+class CatalogSearchRequest(TypedDict):
+    categoryId: str
+    minPrice: NotRequired[float]
+    maxPrice: NotRequired[float]
+    inStockOnly: bool
+    attributes: list[AttributeConstraint]
+
+
+class SearchCandidate(TypedDict):
+    productId: str
+    skuId: str
+    displayName: str
+    categoryId: str
+    price: NotRequired[float]
+    stockStatus: str
+    stockQuantity: int
+    attributes: dict[str, object]
+
+
+class RejectedCandidate(TypedDict):
+    candidate: SearchCandidate
+    reasonCodes: list[str]
+
+
+class CatalogSearchResult(TypedDict):
+    matched: list[SearchCandidate]
+    rejected: list[RejectedCandidate]
+
+
+class CatalogSearchResponse(TypedDict):
+    requestId: str
+    data: CatalogSearchResult
     meta: ResponseMeta

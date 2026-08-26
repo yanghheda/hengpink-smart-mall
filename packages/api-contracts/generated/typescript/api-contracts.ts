@@ -1,5 +1,5 @@
 // 由 packages/api-contracts/openapi.yaml 生成，请勿手工修改。
-// 契约源摘要：ba69490c24b134415b96a1cc9d99d6eb317b2eb6b1ec5153217c8ca71b46405e
+// 契约源摘要：c5c2d62e970dc571d353e368116f2caeff02b20d3cf2e4158d7a870af7240fe4
 
 export interface ResponseMeta {
   serverTime: string;
@@ -98,5 +98,46 @@ export interface ProductDetail {
 export interface ProductDetailResponse {
   requestId: string;
   data: ProductDetail;
+  meta: ResponseMeta;
+}
+
+export interface AttributeConstraint {
+  attribute: string;
+  operator: ">=" | "<=" | "=";
+  value: unknown;
+}
+
+export interface CatalogSearchRequest {
+  categoryId: string;
+  minPrice?: number;
+  maxPrice?: number;
+  inStockOnly: boolean;
+  attributes: Array<AttributeConstraint>;
+}
+
+export interface SearchCandidate {
+  productId: string;
+  skuId: string;
+  displayName: string;
+  categoryId: string;
+  price?: number;
+  stockStatus: string;
+  stockQuantity: number;
+  attributes: Record<string, unknown>;
+}
+
+export interface RejectedCandidate {
+  candidate: SearchCandidate;
+  reasonCodes: Array<string>;
+}
+
+export interface CatalogSearchResult {
+  matched: Array<SearchCandidate>;
+  rejected: Array<RejectedCandidate>;
+}
+
+export interface CatalogSearchResponse {
+  requestId: string;
+  data: CatalogSearchResult;
   meta: ResponseMeta;
 }

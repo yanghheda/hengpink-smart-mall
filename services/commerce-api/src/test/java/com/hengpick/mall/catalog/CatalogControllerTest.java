@@ -1,11 +1,14 @@
 package com.hengpick.mall.catalog;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.hengpick.mall.catalog.application.CatalogQueryService;
+import com.hengpick.mall.catalog.application.CatalogSearchService;
 import com.hengpick.mall.catalog.domain.CatalogQueryPort;
+import com.hengpick.mall.catalog.domain.CatalogSearchCandidate;
 import com.hengpick.mall.catalog.domain.ProductDetail;
 import com.hengpick.mall.catalog.domain.ProductPage;
 import com.hengpick.mall.catalog.domain.ProductSummary;
@@ -15,6 +18,7 @@ import com.hengpick.mall.catalog.web.CatalogExceptionHandler;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -52,7 +56,11 @@ class CatalogControllerTest {
             }
         };
         var clock = Clock.fixed(Instant.parse("2026-08-26T00:00:00Z"), ZoneOffset.UTC);
-        var controller = new CatalogController(new CatalogQueryService(port), clock);
+        var controller = new CatalogController(new CatalogQueryService(port),
+                new CatalogSearchService(categoryId -> List.of(
+                        new CatalogSearchCandidate("P-1", "S-1", "衡选 H1 256GB", "PHONE",
+                                new BigDecimal("3299.00"), "IN_STOCK", 3,
+                                Map.of("storageGb", 256)))), clock);
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
                 .setControllerAdvice(new CatalogExceptionHandler())
                 .build();
@@ -90,5 +98,19 @@ class CatalogControllerTest {
         mockMvc.perform(get("/api/v1/products").param("size", "101"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error.code").value("CATALOG_QUERY_INVALID"));
+    }
+
+    @Test
+    void returnsRejectedReasonWhenHardConstraintsLeaveNoCandidate() throws Exception {
+        mockMvc.perform(post("/api/v1/products/search")
+                        .contentType("application/json")
+                        .content("""
+                                {"categoryId":"PHONE","maxPrice":3000,"inStockOnly":true,
+                                 "attributes":[{"attribute":"storageGb","operator":">=","value":256}]}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.matched.length()").value(0))
+                .andExpect(jsonPath("$.data.rejected[0].candidate.skuId").value("S-1"))
+                .andExpect(jsonPath("$.data.rejected[0].reasonCodes[0]").value("BUDGET_EXCEEDED"));
     }
 }

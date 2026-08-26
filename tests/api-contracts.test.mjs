@@ -14,7 +14,7 @@ import {
 
 const contractPath = "packages/api-contracts/openapi.yaml";
 
-test("OpenAPI 3.1 defines health and the P04-S01 catalog slice", async () => {
+test("OpenAPI 3.1 defines health and the P04 catalog slices", async () => {
   const source = await readFile(contractPath, "utf8");
   const contract = parse(source);
 
@@ -23,6 +23,7 @@ test("OpenAPI 3.1 defines health and the P04-S01 catalog slice", async () => {
   assert.deepEqual(Object.keys(contract.paths), [
     "/api/v1/health",
     "/api/v1/products",
+    "/api/v1/products/search",
     "/api/v1/products/{productId}",
   ]);
 
@@ -38,6 +39,8 @@ test("OpenAPI 3.1 defines health and the P04-S01 catalog slice", async () => {
     "ProductSummary",
     "ProductPageResponse",
     "ProductDetailResponse",
+    "CatalogSearchRequest",
+    "CatalogSearchResponse",
   ]) {
     assert.ok(schemas[name], `missing components.schemas.${name}`);
   }

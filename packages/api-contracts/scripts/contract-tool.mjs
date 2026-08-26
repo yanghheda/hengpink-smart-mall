@@ -32,6 +32,8 @@ const requiredSchemas = [
   "ProductSummary",
   "ProductPageResponse",
   "ProductDetailResponse",
+  "CatalogSearchRequest",
+  "CatalogSearchResponse",
 ];
 
 function referenceName(reference) {
@@ -81,6 +83,7 @@ function objectShape(schema, document, seen = new Set()) {
 }
 
 function typescriptType(schema) {
+  if (Object.keys(schema).length === 0) return "unknown";
   if (schema.$ref) return referenceName(schema.$ref);
   if (Array.isArray(schema.enum)) {
     return schema.enum.map((value) => JSON.stringify(value)).join(" | ");
@@ -94,6 +97,7 @@ function typescriptType(schema) {
 }
 
 function pythonType(schema) {
+  if (Object.keys(schema).length === 0) return "object";
   if (schema.$ref) return referenceName(schema.$ref);
   if (Array.isArray(schema.enum)) {
     return `Literal[${schema.enum.map((value) => JSON.stringify(value)).join(", ")}]`;
@@ -133,7 +137,7 @@ function generateTypescript(document) {
 
 function generatePython(document) {
   const lines = [
-    '"""Generated from packages/api-contracts/openapi.yaml. DO NOT EDIT."""',
+    '"""由 packages/api-contracts/openapi.yaml 生成，请勿手工修改。"""',
     "",
     `# 契约源摘要：${sourceDigest(document)}`,
     "from typing import Literal, NotRequired, TypedDict",
@@ -171,6 +175,7 @@ export function validateContract(document) {
   const expectedPaths = [
     "/api/v1/health",
     "/api/v1/products",
+    "/api/v1/products/search",
     "/api/v1/products/{productId}",
   ];
   if (JSON.stringify(paths) !== JSON.stringify(expectedPaths)) {

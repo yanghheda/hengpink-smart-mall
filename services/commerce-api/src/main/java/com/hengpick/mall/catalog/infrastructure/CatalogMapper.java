@@ -50,4 +50,20 @@ public interface CatalogMapper {
             ORDER BY created_at, id
             """)
     List<SkuRow> findSkus(@Param("productId") String productId);
+
+    @Select("""
+            SELECT p.id AS productId, s.id AS skuId, CONCAT(p.display_name, ' ', s.display_name) AS displayName,
+                   p.category_id AS categoryId, MIN(o.sale_price) AS price,
+                   s.stock_status AS stockStatus, s.stock_quantity AS stockQuantity,
+                   p.canonical_specs_json AS canonicalSpecsJson, s.attributes_json AS attributesJson
+            FROM products p
+            JOIN categories c ON c.id = p.category_id AND c.status = 'ACTIVE'
+            JOIN skus s ON s.product_id = p.id AND s.status = 'ACTIVE'
+            LEFT JOIN offers o ON o.sku_id = s.id AND o.status = 'ACTIVE'
+            WHERE p.status = 'ACTIVE' AND p.category_id = #{categoryId}
+            GROUP BY p.id, s.id, p.display_name, s.display_name, p.category_id, s.stock_status,
+                     s.stock_quantity, p.canonical_specs_json, s.attributes_json
+            ORDER BY p.created_at DESC, p.id, s.created_at, s.id
+            """)
+    List<SearchCandidateRow> findSearchCandidates(@Param("categoryId") String categoryId);
 }

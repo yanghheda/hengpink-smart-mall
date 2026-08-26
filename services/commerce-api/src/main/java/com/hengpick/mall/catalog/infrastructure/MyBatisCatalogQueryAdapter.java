@@ -3,6 +3,8 @@ package com.hengpick.mall.catalog.infrastructure;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hengpick.mall.catalog.domain.CatalogQueryPort;
+import com.hengpick.mall.catalog.domain.CatalogSearchCandidate;
+import com.hengpick.mall.catalog.domain.CatalogSearchCandidatePort;
 import com.hengpick.mall.catalog.domain.ProductDetail;
 import com.hengpick.mall.catalog.domain.ProductPage;
 import com.hengpick.mall.catalog.domain.ProductSummary;
@@ -15,7 +17,7 @@ import org.springframework.context.annotation.Profile;
 
 @Repository
 @Profile("database")
-public class MyBatisCatalogQueryAdapter implements CatalogQueryPort {
+public class MyBatisCatalogQueryAdapter implements CatalogQueryPort, CatalogSearchCandidatePort {
     private final CatalogMapper mapper;
     private final ObjectMapper objectMapper;
 
@@ -47,6 +49,16 @@ public class MyBatisCatalogQueryAdapter implements CatalogQueryPort {
                 product.displayName(), product.subtitle(), readMap(product.canonicalSpecsJson()),
                 readList(product.sellingPointsJson()), readList(product.limitationJson()), product.warrantySummary(),
                 product.datasetVersion(), product.simulated(), skus, selected));
+    }
+
+    @Override
+    public List<CatalogSearchCandidate> findByCategory(String categoryId) {
+        return mapper.findSearchCandidates(categoryId).stream().map(row -> {
+            var attributes = new java.util.HashMap<>(readMap(row.canonicalSpecsJson()));
+            attributes.putAll(readMap(row.attributesJson()));
+            return new CatalogSearchCandidate(row.productId(), row.skuId(), row.displayName(), row.categoryId(),
+                    row.price(), row.stockStatus(), row.stockQuantity(), Map.copyOf(attributes));
+        }).toList();
     }
 
     private ProductSummary toSummary(ProductRow row) {

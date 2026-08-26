@@ -48,6 +48,26 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorEnvelope"
+  /api/v1/products/search:
+    post:
+      operationId: searchProducts
+      summary: 结构化搜索与硬条件过滤
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CatalogSearchRequest" }
+      responses:
+        "200":
+          description: 匹配与淘汰 SKU 及稳定原因码
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CatalogSearchResponse" }
+        "400":
+          description: 类目、预算、属性或操作符非法
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorEnvelope" }
   /api/v1/products/{productId}:
     get:
       operationId: getProductDetail
@@ -242,3 +262,62 @@ components:
         - type: object
           properties:
             data: { $ref: "#/components/schemas/ProductDetail" }
+    AttributeConstraint:
+      type: object
+      additionalProperties: false
+      required: [attribute, operator, value]
+      properties:
+        attribute: { type: string }
+        operator: { type: string, enum: [">=", "<=", "="] }
+        value: {}
+    CatalogSearchRequest:
+      type: object
+      additionalProperties: false
+      required: [categoryId, inStockOnly, attributes]
+      properties:
+        categoryId: { type: string }
+        minPrice: { type: number }
+        maxPrice: { type: number }
+        inStockOnly: { type: boolean }
+        attributes:
+          type: array
+          items: { $ref: "#/components/schemas/AttributeConstraint" }
+    SearchCandidate:
+      type: object
+      additionalProperties: false
+      required: [productId, skuId, displayName, categoryId, stockStatus, stockQuantity, attributes]
+      properties:
+        productId: { type: string }
+        skuId: { type: string }
+        displayName: { type: string }
+        categoryId: { type: string }
+        price: { type: number }
+        stockStatus: { type: string }
+        stockQuantity: { type: integer }
+        attributes: { type: object }
+    RejectedCandidate:
+      type: object
+      additionalProperties: false
+      required: [candidate, reasonCodes]
+      properties:
+        candidate: { $ref: "#/components/schemas/SearchCandidate" }
+        reasonCodes:
+          type: array
+          items: { type: string }
+    CatalogSearchResult:
+      type: object
+      additionalProperties: false
+      required: [matched, rejected]
+      properties:
+        matched:
+          type: array
+          items: { $ref: "#/components/schemas/SearchCandidate" }
+        rejected:
+          type: array
+          items: { $ref: "#/components/schemas/RejectedCandidate" }
+    CatalogSearchResponse:
+      allOf:
+        - $ref: "#/components/schemas/SuccessEnvelope"
+        - type: object
+          properties:
+            data: { $ref: "#/components/schemas/CatalogSearchResult" }

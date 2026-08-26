@@ -1,6 +1,10 @@
 package com.hengpick.mall.catalog.web;
 
 import com.hengpick.mall.catalog.application.CatalogQueryService;
+import com.hengpick.mall.catalog.application.CatalogSearchService;
+import com.hengpick.mall.catalog.domain.AttributeConstraint;
+import com.hengpick.mall.catalog.domain.CatalogSearchCriteria;
+import com.hengpick.mall.catalog.domain.CatalogSearchResult;
 import com.hengpick.mall.catalog.domain.ProductDetail;
 import com.hengpick.mall.catalog.domain.ProductPage;
 import java.time.Clock;
@@ -12,6 +16,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -25,10 +31,20 @@ import org.springframework.context.annotation.Profile;
 public class CatalogController {
     private final CatalogQueryService queryService;
     private final Clock clock;
+    private final CatalogSearchService searchService;
 
-    public CatalogController(CatalogQueryService queryService, Clock clock) {
+    public CatalogController(CatalogQueryService queryService, CatalogSearchService searchService, Clock clock) {
         this.queryService = queryService;
+        this.searchService = searchService;
         this.clock = clock;
+    }
+
+    @PostMapping("/search")
+    @Operation(summary = "结构化搜索商品", description = "按 SKU 执行预算、库存和属性硬条件，并返回淘汰原因。")
+    public ApiEnvelope<CatalogSearchResult> search(@RequestBody SearchRequest request) {
+        var criteria = new CatalogSearchCriteria(request.categoryId(), request.minPrice(), request.maxPrice(),
+                request.inStockOnly(), request.attributes());
+        return ApiEnvelope.success(searchService.search(criteria), clock.instant());
     }
 
     @GetMapping
@@ -72,4 +88,7 @@ public class CatalogController {
             return new ProductPageResponse(page.items(), page.page(), page.size(), page.totalElements(), page.totalPages());
         }
     }
+
+    public record SearchRequest(String categoryId, java.math.BigDecimal minPrice, java.math.BigDecimal maxPrice,
+                                boolean inStockOnly, java.util.List<AttributeConstraint> attributes) {}
 }
