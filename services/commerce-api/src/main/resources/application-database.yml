@@ -1,0 +1,25 @@
+spring:
+  config:
+    activate:
+      on-profile: database
+  autoconfigure:
+    exclude: []
+  datasource:
+    url: ${MYSQL_URL}
+    username: ${MYSQL_USERNAME}
+    password: ${MYSQL_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: false
+  data:
+    redis:
+      url: ${REDIS_URL}
+
+management:
+  endpoint:
+    health:
+      group:
+        readiness:
+          include: readinessState,db,redis,agentAvailability

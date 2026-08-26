@@ -1,5 +1,9 @@
 {
   "status": "UP",
   "service": "smart-mall-h5",
-  "scope": "P01-S01"
+  "scope": "P01-S01",
+  "gitSha": "development",
+  "builtAt": "development",
+  "bridgeMajor": 1,
+  "apiContractVersion": "v1"
 }

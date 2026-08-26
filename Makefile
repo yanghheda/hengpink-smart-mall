@@ -1,4 +1,4 @@
-.PHONY: install start-commerce-app start-smart-mall-h5 start-commerce-api start-agent-service test check
+.PHONY: install start-commerce-app start-smart-mall-h5 start-commerce-api start-agent-service infra-up infra-down infra-status db-migrate test-db-integration test check
 
 install:
 	npm ci
@@ -16,6 +16,22 @@ start-commerce-api:
 
 start-agent-service:
 	npm run start:agent-service
+
+infra-up:
+	docker compose --env-file deploy/.env -f deploy/docker-compose.yml up -d
+
+infra-down:
+	docker compose --env-file deploy/.env -f deploy/docker-compose.yml down
+
+infra-status:
+	docker compose --env-file deploy/.env -f deploy/docker-compose.yml ps
+
+db-migrate:
+	test -n "$$MYSQL_URL" && test -n "$$MYSQL_USERNAME" && test -n "$$MYSQL_PASSWORD"
+	mvn -f services/commerce-api/pom.xml -Dflyway.url="$$MYSQL_URL" -Dflyway.user="$$MYSQL_USERNAME" -Dflyway.password="$$MYSQL_PASSWORD" flyway:migrate
+
+test-db-integration:
+	mvn -f services/commerce-api/pom.xml verify -Ptestcontainers
 
 test:
 	npm test

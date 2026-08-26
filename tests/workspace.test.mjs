@@ -61,7 +61,7 @@ test("each service has a minimal health implementation and test", async () => {
     ["services/agent-service/pyproject.toml", ["fastapi", "pytest"]],
     [
       "services/agent-service/app/main.py",
-      ['@app.get("/health/live")', '"status": "UP"'],
+      ['@application.get("/health/live")', '"status": "UP"'],
     ],
     [
       "services/agent-service/tests/test_health.py",
