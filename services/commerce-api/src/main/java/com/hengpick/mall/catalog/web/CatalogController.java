@@ -5,6 +5,7 @@ import com.hengpick.mall.catalog.application.CatalogSearchService;
 import com.hengpick.mall.catalog.domain.AttributeConstraint;
 import com.hengpick.mall.catalog.domain.CatalogSearchCriteria;
 import com.hengpick.mall.catalog.domain.CatalogSearchResult;
+import com.hengpick.mall.catalog.domain.CatalogFact;
 import com.hengpick.mall.catalog.domain.ProductDetail;
 import com.hengpick.mall.catalog.domain.ProductPage;
 import java.time.Clock;
@@ -75,6 +76,14 @@ public class CatalogController {
             @Parameter(description = "可选的 SKU 唯一标识", example = "01JSKU00000000000000000001", in = ParameterIn.QUERY)
             @RequestParam(required = false) String skuId) {
         return ApiEnvelope.success(queryService.getProduct(productId, skuId), clock.instant());
+    }
+
+    @GetMapping("/{productId}/facts")
+    @Operation(summary = "查询商品事实", description = "返回 Product 共享事实与目标 SKU 专属事实，Fact ID 可稳定复算。")
+    public ApiEnvelope<java.util.List<CatalogFact>> facts(
+            @PathVariable String productId,
+            @RequestParam(required = false) String skuId) {
+        return ApiEnvelope.success(queryService.getFacts(productId, skuId), clock.instant());
     }
 
     /** 商品列表 API 的分页响应载体。 */

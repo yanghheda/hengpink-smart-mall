@@ -68,6 +68,30 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+  /api/v1/products/{productId}/facts:
+    get:
+      operationId: getProductFacts
+      summary: 查询 Product 与 SKU 作用域事实
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: skuId
+          in: query
+          required: false
+          schema: { type: string }
+      responses:
+        "200":
+          description: 稳定 Fact ID 与确定性事实
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CatalogFactListResponse" }
+        "404":
+          description: 商品不存在或 SKU 不属于商品
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorEnvelope" }
   /api/v1/products/{productId}:
     get:
       operationId: getProductDetail
@@ -188,7 +212,18 @@ components:
     ProductSummary:
       type: object
       additionalProperties: false
-      required: [productId, categoryId, categoryName, brand, model, displayName, datasetVersion, simulated, skuCount]
+      required:
+        [
+          productId,
+          categoryId,
+          categoryName,
+          brand,
+          model,
+          displayName,
+          datasetVersion,
+          simulated,
+          skuCount,
+        ]
       properties:
         productId: { type: string }
         categoryId: { type: string }
@@ -221,7 +256,16 @@ components:
     SkuDetail:
       type: object
       additionalProperties: false
-      required: [skuId, skuCode, displayName, attributes, stockStatus, stockQuantity, warrantyMonths]
+      required:
+        [
+          skuId,
+          skuCode,
+          displayName,
+          attributes,
+          stockStatus,
+          stockQuantity,
+          warrantyMonths,
+        ]
       properties:
         skuId: { type: string }
         skuCode: { type: string }
@@ -233,7 +277,21 @@ components:
     ProductDetail:
       type: object
       additionalProperties: false
-      required: [productId, categoryId, categoryName, brand, model, displayName, canonicalSpecs, sellingPoints, limitations, datasetVersion, simulated, skus]
+      required:
+        [
+          productId,
+          categoryId,
+          categoryName,
+          brand,
+          model,
+          displayName,
+          canonicalSpecs,
+          sellingPoints,
+          limitations,
+          datasetVersion,
+          simulated,
+          skus,
+        ]
       properties:
         productId: { type: string }
         categoryId: { type: string }
@@ -285,7 +343,16 @@ components:
     SearchCandidate:
       type: object
       additionalProperties: false
-      required: [productId, skuId, displayName, categoryId, stockStatus, stockQuantity, attributes]
+      required:
+        [
+          productId,
+          skuId,
+          displayName,
+          categoryId,
+          stockStatus,
+          stockQuantity,
+          attributes,
+        ]
       properties:
         productId: { type: string }
         skuId: { type: string }
@@ -321,3 +388,23 @@ components:
         - type: object
           properties:
             data: { $ref: "#/components/schemas/CatalogSearchResult" }
+    CatalogFact:
+      type: object
+      additionalProperties: false
+      required: [factId, scope, productId, attribute, value, datasetVersion]
+      properties:
+        factId: { type: string }
+        scope: { type: string, enum: [PRODUCT, SKU] }
+        productId: { type: string }
+        skuId: { type: string }
+        attribute: { type: string }
+        value: {}
+        datasetVersion: { type: string }
+    CatalogFactListResponse:
+      allOf:
+        - $ref: "#/components/schemas/SuccessEnvelope"
+        - type: object
+          properties:
+            data:
+              type: array
+              items: { $ref: "#/components/schemas/CatalogFact" }

@@ -1,5 +1,5 @@
 // 由 packages/api-contracts/openapi.yaml 生成，请勿手工修改。
-// 契约源摘要：c5c2d62e970dc571d353e368116f2caeff02b20d3cf2e4158d7a870af7240fe4
+// 契约源摘要：127793bdad4871c70dad00818c3ecb4db5de65b61542505a7f1119e7c3ba1553
 
 export interface ResponseMeta {
   serverTime: string;
@@ -139,5 +139,21 @@ export interface CatalogSearchResult {
 export interface CatalogSearchResponse {
   requestId: string;
   data: CatalogSearchResult;
+  meta: ResponseMeta;
+}
+
+export interface CatalogFact {
+  factId: string;
+  scope: "PRODUCT" | "SKU";
+  productId: string;
+  skuId?: string;
+  attribute: string;
+  value: unknown;
+  datasetVersion: string;
+}
+
+export interface CatalogFactListResponse {
+  requestId: string;
+  data: Array<CatalogFact>;
   meta: ResponseMeta;
 }

@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.hengpick.mall.catalog.application.CatalogQueryService;
 import com.hengpick.mall.catalog.application.CatalogSearchService;
+import com.hengpick.mall.catalog.application.FactRegistry;
 import com.hengpick.mall.catalog.domain.CatalogQueryPort;
 import com.hengpick.mall.catalog.domain.CatalogSearchCandidate;
 import com.hengpick.mall.catalog.domain.ProductDetail;
@@ -56,7 +57,7 @@ class CatalogControllerTest {
             }
         };
         var clock = Clock.fixed(Instant.parse("2026-08-26T00:00:00Z"), ZoneOffset.UTC);
-        var controller = new CatalogController(new CatalogQueryService(port),
+        var controller = new CatalogController(new CatalogQueryService(port, new FactRegistry()),
                 new CatalogSearchService(categoryId -> List.of(
                         new CatalogSearchCandidate("P-1", "S-1", "衡选 H1 256GB", "PHONE",
                                 new BigDecimal("3299.00"), "IN_STOCK", 3,
@@ -83,6 +84,18 @@ class CatalogControllerTest {
                 .andExpect(jsonPath("$.data.productId").value("P-1"))
                 .andExpect(jsonPath("$.data.selectedSku.skuId").value("S-1"))
                 .andExpect(jsonPath("$.data.skus[0].attributes.storageGb").value(256));
+    }
+
+    @Test
+    void returnsProductAndSelectedSkuFactsOverHttp() throws Exception {
+        mockMvc.perform(get("/api/v1/products/P-1/facts").param("skuId", "S-1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.length()").value(2))
+                .andExpect(jsonPath("$.data[0].scope").value("PRODUCT"))
+                .andExpect(jsonPath("$.data[0].attribute").value("batteryMah"))
+                .andExpect(jsonPath("$.data[1].scope").value("SKU"))
+                .andExpect(jsonPath("$.data[1].skuId").value("S-1"))
+                .andExpect(jsonPath("$.data[1].factId").value(org.hamcrest.Matchers.matchesPattern("FACT-[0-9A-F]{20}")));
     }
 
     @Test

@@ -34,6 +34,7 @@ const requiredSchemas = [
   "ProductDetailResponse",
   "CatalogSearchRequest",
   "CatalogSearchResponse",
+  "CatalogFactListResponse",
 ];
 
 function referenceName(reference) {
@@ -176,6 +177,7 @@ export function validateContract(document) {
     "/api/v1/health",
     "/api/v1/products",
     "/api/v1/products/search",
+    "/api/v1/products/{productId}/facts",
     "/api/v1/products/{productId}",
   ];
   if (JSON.stringify(paths) !== JSON.stringify(expectedPaths)) {

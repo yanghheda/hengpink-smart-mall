@@ -1,6 +1,6 @@
 """由 packages/api-contracts/openapi.yaml 生成，请勿手工修改。"""
 
-# 契约源摘要：c5c2d62e970dc571d353e368116f2caeff02b20d3cf2e4158d7a870af7240fe4
+# 契约源摘要：127793bdad4871c70dad00818c3ecb4db5de65b61542505a7f1119e7c3ba1553
 from typing import Literal, NotRequired, TypedDict
 
 
@@ -142,4 +142,20 @@ class CatalogSearchResult(TypedDict):
 class CatalogSearchResponse(TypedDict):
     requestId: str
     data: CatalogSearchResult
+    meta: ResponseMeta
+
+
+class CatalogFact(TypedDict):
+    factId: str
+    scope: Literal["PRODUCT", "SKU"]
+    productId: str
+    skuId: NotRequired[str]
+    attribute: str
+    value: object
+    datasetVersion: str
+
+
+class CatalogFactListResponse(TypedDict):
+    requestId: str
+    data: list[CatalogFact]
     meta: ResponseMeta

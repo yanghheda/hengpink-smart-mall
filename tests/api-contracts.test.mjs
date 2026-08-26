@@ -24,6 +24,7 @@ test("OpenAPI 3.1 defines health and the P04 catalog slices", async () => {
     "/api/v1/health",
     "/api/v1/products",
     "/api/v1/products/search",
+    "/api/v1/products/{productId}/facts",
     "/api/v1/products/{productId}",
   ]);
 
@@ -41,6 +42,7 @@ test("OpenAPI 3.1 defines health and the P04 catalog slices", async () => {
     "ProductDetailResponse",
     "CatalogSearchRequest",
     "CatalogSearchResponse",
+    "CatalogFactListResponse",
   ]) {
     assert.ok(schemas[name], `missing components.schemas.${name}`);
   }
