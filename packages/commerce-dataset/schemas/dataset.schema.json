@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "HengPick Commerce Dataset",
+  "type": "object",
+  "required": [
+    "dataset_version",
+    "updated_at",
+    "categories",
+    "products",
+    "skus",
+    "shops",
+    "offers",
+    "reviews"
+  ],
+  "properties": {
+    "dataset_version": {
+      "type": "string",
+      "pattern": "^commerce-demo-[0-9]{4}\\.[0-9]{2}\\.[0-9]+$"
+    },
+    "updated_at": { "type": "string", "format": "date-time" },
+    "categories": { "type": "array", "minItems": 1 },
+    "products": { "type": "array", "minItems": 1 },
+    "skus": { "type": "array", "minItems": 1 },
+    "shops": { "type": "array", "minItems": 1 },
+    "offers": { "type": "array", "minItems": 1 },
+    "reviews": { "type": "array" }
+  }
+}

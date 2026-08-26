@@ -1,0 +1,357 @@
+{
+  "dataset_version": "commerce-demo-2026.08.1",
+  "updated_at": "2026-08-26T00:00:00Z",
+  "categories": [
+    {
+      "category_id": "PHONE",
+      "dataset_version": "commerce-demo-2026.08.1",
+      "updated_at": "2026-08-26T00:00:00Z",
+      "schema_version": "phone-1.0",
+      "name": "手机",
+      "attributes": ["ramGb", "storageGb", "batteryMah", "color"]
+    }
+  ],
+  "products": [
+    {
+      "product_id": "P-PIXEL-9A",
+      "category_id": "PHONE",
+      "brand": "Northstar",
+      "model": "N9A",
+      "dataset_version": "commerce-demo-2026.08.1",
+      "updated_at": "2026-08-26T00:00:00Z"
+    },
+    {
+      "product_id": "P-LUMEN-14",
+      "category_id": "PHONE",
+      "brand": "Lumen",
+      "model": "L14",
+      "dataset_version": "commerce-demo-2026.08.1",
+      "updated_at": "2026-08-26T00:00:00Z"
+    },
+    {
+      "product_id": "P-ORBIT-X5",
+      "category_id": "PHONE",
+      "brand": "Orbit",
+      "model": "X5",
+      "dataset_version": "commerce-demo-2026.08.1",
+      "updated_at": "2026-08-26T00:00:00Z"
+    },
+    {
+      "product_id": "P-ASTER-3",
+      "category_id": "PHONE",
+      "brand": "Aster",
+      "model": "A3",
+      "dataset_version": "commerce-demo-2026.08.1",
+      "updated_at": "2026-08-26T00:00:00Z"
+    },
+    {
+      "product_id": "P-CEDAR-S",
+      "category_id": "PHONE",
+      "brand": "Cedar",
+      "model": "S1",
+      "dataset_version": "commerce-demo-2026.08.1",
+      "updated_at": "2026-08-26T00:00:00Z"
+    },
+    {
+      "product_id": "P-VALE-8",
+      "category_id": "PHONE",
+      "brand": "Vale",
+      "model": "V8",
+      "dataset_version": "commerce-demo-2026.08.1",
+      "updated_at": "2026-08-26T00:00:00Z"
+    }
+  ],
+  "skus": [
+    {
+      "sku_id": "S-PIXEL-9A-128-B",
+      "product_id": "P-PIXEL-9A",
+      "dataset_version": "commerce-demo-2026.08.1",
+      "updated_at": "2026-08-26T00:00:00Z",
+      "attributes": {
+        "ramGb": 8,
+        "storageGb": 128,
+        "batteryMah": 5100,
+        "color": "black"
+      }
+    },
+    {
+      "sku_id": "S-PIXEL-9A-256-W",
+      "product_id": "P-PIXEL-9A",
+      "dataset_version": "commerce-demo-2026.08.1",
+      "updated_at": "2026-08-26T00:00:00Z",
+      "attributes": {
+        "ramGb": 8,
+        "storageGb": 256,
+        "batteryMah": 5100,
+        "color": "white"
+      }
+    },
+    {
+      "sku_id": "S-LUMEN-14-128-G",
+      "product_id": "P-LUMEN-14",
+      "dataset_version": "commerce-demo-2026.08.1",
+      "updated_at": "2026-08-26T00:00:00Z",
+      "attributes": {
+        "ramGb": 12,
+        "storageGb": 128,
+        "batteryMah": 4800,
+        "color": "green"
+      }
+    },
+    {
+      "sku_id": "S-LUMEN-14-256-B",
+      "product_id": "P-LUMEN-14",
+      "dataset_version": "commerce-demo-2026.08.1",
+      "updated_at": "2026-08-26T00:00:00Z",
+      "attributes": {
+        "ramGb": 12,
+        "storageGb": 256,
+        "batteryMah": 4800,
+        "color": "black"
+      }
+    },
+    {
+      "sku_id": "S-ORBIT-X5-256-B",
+      "product_id": "P-ORBIT-X5",
+      "dataset_version": "commerce-demo-2026.08.1",
+      "updated_at": "2026-08-26T00:00:00Z",
+      "attributes": {
+        "ramGb": 12,
+        "storageGb": 256,
+        "batteryMah": 5300,
+        "color": "black"
+      }
+    },
+    {
+      "sku_id": "S-ORBIT-X5-512-S",
+      "product_id": "P-ORBIT-X5",
+      "dataset_version": "commerce-demo-2026.08.1",
+      "updated_at": "2026-08-26T00:00:00Z",
+      "attributes": {
+        "ramGb": 16,
+        "storageGb": 512,
+        "batteryMah": 5300,
+        "color": "silver"
+      }
+    },
+    {
+      "sku_id": "S-ASTER-3-128-B",
+      "product_id": "P-ASTER-3",
+      "dataset_version": "commerce-demo-2026.08.1",
+      "updated_at": "2026-08-26T00:00:00Z",
+      "attributes": {
+        "ramGb": 8,
+        "storageGb": 128,
+        "batteryMah": 5000,
+        "color": "black"
+      }
+    },
+    {
+      "sku_id": "S-ASTER-3-256-P",
+      "product_id": "P-ASTER-3",
+      "dataset_version": "commerce-demo-2026.08.1",
+      "updated_at": "2026-08-26T00:00:00Z",
+      "attributes": {
+        "ramGb": 12,
+        "storageGb": 256,
+        "batteryMah": 5000,
+        "color": "purple"
+      }
+    },
+    {
+      "sku_id": "S-CEDAR-S-128-W",
+      "product_id": "P-CEDAR-S",
+      "dataset_version": "commerce-demo-2026.08.1",
+      "updated_at": "2026-08-26T00:00:00Z",
+      "attributes": {
+        "ramGb": 8,
+        "storageGb": 128,
+        "batteryMah": 5500,
+        "color": "white"
+      }
+    },
+    {
+      "sku_id": "S-CEDAR-S-256-B",
+      "product_id": "P-CEDAR-S",
+      "dataset_version": "commerce-demo-2026.08.1",
+      "updated_at": "2026-08-26T00:00:00Z",
+      "attributes": {
+        "ramGb": 12,
+        "storageGb": 256,
+        "batteryMah": 5500,
+        "color": "black"
+      }
+    },
+    {
+      "sku_id": "S-VALE-8-128-B",
+      "product_id": "P-VALE-8",
+      "dataset_version": "commerce-demo-2026.08.1",
+      "updated_at": "2026-08-26T00:00:00Z",
+      "attributes": {
+        "ramGb": 8,
+        "storageGb": 128,
+        "batteryMah": 4600,
+        "color": "black"
+      }
+    },
+    {
+      "sku_id": "S-VALE-8-256-B",
+      "product_id": "P-VALE-8",
+      "dataset_version": "commerce-demo-2026.08.1",
+      "updated_at": "2026-08-26T00:00:00Z",
+      "attributes": {
+        "ramGb": 12,
+        "storageGb": 256,
+        "batteryMah": 4600,
+        "color": "blue"
+      }
+    }
+  ],
+  "shops": [
+    {
+      "shop_id": "SHOP-DIRECT",
+      "name": "品牌直营店",
+      "dataset_version": "commerce-demo-2026.08.1",
+      "updated_at": "2026-08-26T00:00:00Z"
+    },
+    {
+      "shop_id": "SHOP-CARE",
+      "name": "安心数码店",
+      "dataset_version": "commerce-demo-2026.08.1",
+      "updated_at": "2026-08-26T00:00:00Z"
+    }
+  ],
+  "offers": [
+    {
+      "offer_id": "O-PIXEL-128",
+      "sku_id": "S-PIXEL-9A-128-B",
+      "shop_id": "SHOP-DIRECT",
+      "price": "2999.00",
+      "currency": "CNY",
+      "stock_status": "IN_STOCK",
+      "dataset_version": "commerce-demo-2026.08.1",
+      "updated_at": "2026-08-26T00:00:00Z"
+    },
+    {
+      "offer_id": "O-PIXEL-256",
+      "sku_id": "S-PIXEL-9A-256-W",
+      "shop_id": "SHOP-DIRECT",
+      "price": "3299.00",
+      "currency": "CNY",
+      "stock_status": "IN_STOCK",
+      "dataset_version": "commerce-demo-2026.08.1",
+      "updated_at": "2026-08-26T00:00:00Z"
+    },
+    {
+      "offer_id": "O-LUMEN-128",
+      "sku_id": "S-LUMEN-14-128-G",
+      "shop_id": "SHOP-CARE",
+      "price": "2699.00",
+      "currency": "CNY",
+      "stock_status": "IN_STOCK",
+      "dataset_version": "commerce-demo-2026.08.1",
+      "updated_at": "2026-08-26T00:00:00Z"
+    },
+    {
+      "offer_id": "O-LUMEN-256",
+      "sku_id": "S-LUMEN-14-256-B",
+      "shop_id": "SHOP-CARE",
+      "price": "2999.00",
+      "currency": "CNY",
+      "stock_status": "IN_STOCK",
+      "dataset_version": "commerce-demo-2026.08.1",
+      "updated_at": "2026-08-26T00:00:00Z"
+    },
+    {
+      "offer_id": "O-ORBIT-256",
+      "sku_id": "S-ORBIT-X5-256-B",
+      "shop_id": "SHOP-DIRECT",
+      "price": "3599.00",
+      "currency": "CNY",
+      "stock_status": "IN_STOCK",
+      "dataset_version": "commerce-demo-2026.08.1",
+      "updated_at": "2026-08-26T00:00:00Z"
+    },
+    {
+      "offer_id": "O-ORBIT-512",
+      "sku_id": "S-ORBIT-X5-512-S",
+      "shop_id": "SHOP-DIRECT",
+      "price": "4299.00",
+      "currency": "CNY",
+      "stock_status": "IN_STOCK",
+      "dataset_version": "commerce-demo-2026.08.1",
+      "updated_at": "2026-08-26T00:00:00Z"
+    },
+    {
+      "offer_id": "O-ASTER-128",
+      "sku_id": "S-ASTER-3-128-B",
+      "shop_id": "SHOP-CARE",
+      "price": "1999.00",
+      "currency": "CNY",
+      "stock_status": "IN_STOCK",
+      "dataset_version": "commerce-demo-2026.08.1",
+      "updated_at": "2026-08-26T00:00:00Z"
+    },
+    {
+      "offer_id": "O-ASTER-256",
+      "sku_id": "S-ASTER-3-256-P",
+      "shop_id": "SHOP-CARE",
+      "price": "2299.00",
+      "currency": "CNY",
+      "stock_status": "IN_STOCK",
+      "dataset_version": "commerce-demo-2026.08.1",
+      "updated_at": "2026-08-26T00:00:00Z"
+    },
+    {
+      "offer_id": "O-CEDAR-128",
+      "sku_id": "S-CEDAR-S-128-W",
+      "shop_id": "SHOP-DIRECT",
+      "price": "2399.00",
+      "currency": "CNY",
+      "stock_status": "IN_STOCK",
+      "dataset_version": "commerce-demo-2026.08.1",
+      "updated_at": "2026-08-26T00:00:00Z"
+    },
+    {
+      "offer_id": "O-CEDAR-256",
+      "sku_id": "S-CEDAR-S-256-B",
+      "shop_id": "SHOP-DIRECT",
+      "price": "2699.00",
+      "currency": "CNY",
+      "stock_status": "IN_STOCK",
+      "dataset_version": "commerce-demo-2026.08.1",
+      "updated_at": "2026-08-26T00:00:00Z"
+    },
+    {
+      "offer_id": "O-VALE-128",
+      "sku_id": "S-VALE-8-128-B",
+      "shop_id": "SHOP-CARE",
+      "price": "1799.00",
+      "currency": "CNY",
+      "stock_status": "IN_STOCK",
+      "dataset_version": "commerce-demo-2026.08.1",
+      "updated_at": "2026-08-26T00:00:00Z"
+    },
+    {
+      "offer_id": "O-VALE-256",
+      "sku_id": "S-VALE-8-256-B",
+      "shop_id": "SHOP-CARE",
+      "price": "2099.00",
+      "currency": "CNY",
+      "stock_status": "IN_STOCK",
+      "dataset_version": "commerce-demo-2026.08.1",
+      "updated_at": "2026-08-26T00:00:00Z"
+    }
+  ],
+  "reviews": [
+    {
+      "review_id": "R-PIXEL-1",
+      "product_id": "P-PIXEL-9A",
+      "sku_id": "S-PIXEL-9A-128-B",
+      "rating": 5,
+      "text": "续航稳定，长辈模式清晰。",
+      "dataset_version": "commerce-demo-2026.08.1",
+      "updated_at": "2026-08-26T00:00:00Z"
+    }
+  ]
+}
