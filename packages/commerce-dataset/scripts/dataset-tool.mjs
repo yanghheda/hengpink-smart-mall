@@ -4,9 +4,58 @@ import { fileURLToPath } from "node:url";
 const fixturePath = fileURLToPath(
   new URL("../fixtures/curated/commerce-demo-2026.08.1.json", import.meta.url),
 );
+const phoneSchemaPath = fileURLToPath(
+  new URL("../schemas/phone.schema.json", import.meta.url),
+);
 
 export async function loadCuratedDataset() {
   return JSON.parse(await readFile(fixturePath, "utf8"));
+}
+
+export async function loadPhoneSchema() {
+  return JSON.parse(await readFile(phoneSchemaPath, "utf8"));
+}
+
+export function validatePhoneAttributes(attributes, schema) {
+  const definitions = new Map(
+    schema.attributes.map((attribute) => [attribute.key, attribute]),
+  );
+  for (const [key, value] of Object.entries(attributes)) {
+    const path = `attributes.${key}`;
+    const definition = definitions.get(key);
+    if (!definition) fail(path, "not defined by phone schema");
+    if (
+      definition.type === "number" &&
+      (typeof value !== "number" || !Number.isFinite(value))
+    )
+      fail(path, "must be a finite number");
+    if (definition.type === "boolean" && typeof value !== "boolean")
+      fail(path, "must be a boolean");
+    if (definition.type === "enum" && !definition.enumValues.includes(value))
+      fail(path, "must be a supported enum value");
+  }
+  return attributes;
+}
+
+export function mapCapabilityFacts(attributes, schema, skuId) {
+  validatePhoneAttributes(attributes, schema);
+  return schema.capabilities.map((capability) => ({
+    capability: capability.key,
+    formula_version: capability.formulaVersion,
+    missing_data_policy: capability.missingDataPolicy,
+    facts: capability.inputAttributes.map((attribute) => {
+      const value = attributes[attribute];
+      return {
+        fact_id: `${skuId}:${attribute}`,
+        attribute,
+        value: value ?? null,
+        ...(typeof value === "boolean"
+          ? { numeric_value: value ? 100 : 0 }
+          : {}),
+        status: value === undefined ? "MISSING" : "KNOWN",
+      };
+    }),
+  }));
 }
 
 function fail(path, reason) {

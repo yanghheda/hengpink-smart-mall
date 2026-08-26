@@ -1,0 +1,271 @@
+{
+  "categoryId": "PHONE",
+  "schemaVersion": "phone-1.0",
+  "attributes": [
+    {
+      "key": "networkType",
+      "label": "网络制式",
+      "type": "enum",
+      "enumValues": ["5G", "4G"],
+      "unit": null,
+      "filterable": true,
+      "comparable": true,
+      "skuSpecific": false
+    },
+    {
+      "key": "weightG",
+      "label": "重量",
+      "type": "number",
+      "unit": "g",
+      "filterable": true,
+      "comparable": true,
+      "skuSpecific": false
+    },
+    {
+      "key": "batteryMah",
+      "label": "电池容量",
+      "type": "number",
+      "unit": "mAh",
+      "filterable": true,
+      "comparable": true,
+      "skuSpecific": false
+    },
+    {
+      "key": "chargingW",
+      "label": "有线充电功率",
+      "type": "number",
+      "unit": "W",
+      "filterable": true,
+      "comparable": true,
+      "skuSpecific": false
+    },
+    {
+      "key": "chipEfficiency",
+      "label": "芯片能效",
+      "type": "number",
+      "unit": "score",
+      "filterable": false,
+      "comparable": true,
+      "skuSpecific": false
+    },
+    {
+      "key": "ramGb",
+      "label": "运行内存",
+      "type": "number",
+      "unit": "GB",
+      "filterable": true,
+      "comparable": true,
+      "skuSpecific": true
+    },
+    {
+      "key": "storageGb",
+      "label": "存储容量",
+      "type": "number",
+      "unit": "GB",
+      "filterable": true,
+      "comparable": true,
+      "skuSpecific": true
+    },
+    {
+      "key": "simpleMode",
+      "label": "简易模式",
+      "type": "boolean",
+      "unit": null,
+      "filterable": true,
+      "comparable": true,
+      "skuSpecific": false
+    },
+    {
+      "key": "largeFontMode",
+      "label": "大字体模式",
+      "type": "boolean",
+      "unit": null,
+      "filterable": true,
+      "comparable": true,
+      "skuSpecific": false
+    },
+    {
+      "key": "accessibilityScore",
+      "label": "无障碍评分",
+      "type": "number",
+      "unit": "score",
+      "filterable": false,
+      "comparable": true,
+      "skuSpecific": false
+    },
+    {
+      "key": "adBloatLevel",
+      "label": "广告干扰等级",
+      "type": "number",
+      "unit": "score",
+      "filterable": true,
+      "comparable": true,
+      "skuSpecific": false
+    },
+    {
+      "key": "mainCameraTier",
+      "label": "主摄等级",
+      "type": "number",
+      "unit": "tier",
+      "filterable": true,
+      "comparable": true,
+      "skuSpecific": false
+    },
+    {
+      "key": "ois",
+      "label": "光学防抖",
+      "type": "boolean",
+      "unit": null,
+      "filterable": true,
+      "comparable": true,
+      "skuSpecific": false
+    },
+    {
+      "key": "telephoto",
+      "label": "长焦镜头",
+      "type": "boolean",
+      "unit": null,
+      "filterable": true,
+      "comparable": true,
+      "skuSpecific": false
+    },
+    {
+      "key": "videoTier",
+      "label": "视频能力等级",
+      "type": "number",
+      "unit": "tier",
+      "filterable": false,
+      "comparable": true,
+      "skuSpecific": false
+    },
+    {
+      "key": "warrantyMonths",
+      "label": "保修月数",
+      "type": "number",
+      "unit": "month",
+      "filterable": true,
+      "comparable": true,
+      "skuSpecific": false
+    },
+    {
+      "key": "offlineServiceCoverage",
+      "label": "线下服务覆盖",
+      "type": "number",
+      "unit": "score",
+      "filterable": false,
+      "comparable": true,
+      "skuSpecific": false
+    },
+    {
+      "key": "systemSupportYears",
+      "label": "系统支持年限",
+      "type": "number",
+      "unit": "year",
+      "filterable": true,
+      "comparable": true,
+      "skuSpecific": false
+    },
+    {
+      "key": "wirelessCharging",
+      "label": "无线充电",
+      "type": "boolean",
+      "unit": null,
+      "filterable": true,
+      "comparable": true,
+      "skuSpecific": false
+    }
+  ],
+  "hardConstraintOperators": {
+    "batteryMah": [">=", "<="],
+    "ramGb": [">=", "="],
+    "storageGb": [">=", "="],
+    "weightG": ["<="],
+    "ois": ["="],
+    "simpleMode": ["="]
+  },
+  "comparisonGroups": [
+    {
+      "key": "performance",
+      "label": "性能",
+      "attributes": ["ramGb", "storageGb", "chipEfficiency"]
+    },
+    {
+      "key": "battery",
+      "label": "续航",
+      "attributes": [
+        "batteryMah",
+        "chargingW",
+        "chipEfficiency",
+        "wirelessCharging"
+      ]
+    },
+    {
+      "key": "camera",
+      "label": "影像",
+      "attributes": ["mainCameraTier", "ois", "telephoto", "videoTier"]
+    },
+    {
+      "key": "easy_use",
+      "label": "易用",
+      "attributes": [
+        "simpleMode",
+        "largeFontMode",
+        "accessibilityScore",
+        "adBloatLevel"
+      ]
+    },
+    {
+      "key": "service",
+      "label": "服务",
+      "attributes": [
+        "warrantyMonths",
+        "offlineServiceCoverage",
+        "systemSupportYears"
+      ]
+    }
+  ],
+  "capabilities": [
+    {
+      "key": "battery",
+      "label": "续航能力",
+      "inputAttributes": ["batteryMah", "chipEfficiency", "chargingW"],
+      "evidenceTopics": ["battery", "charging", "heat"],
+      "formulaVersion": "capability-v1",
+      "missingDataPolicy": "RENORMALIZE_AND_LOWER_COMPLETENESS"
+    },
+    {
+      "key": "easy_use",
+      "label": "易用能力",
+      "inputAttributes": [
+        "simpleMode",
+        "largeFontMode",
+        "accessibilityScore",
+        "adBloatLevel",
+        "systemSupportYears"
+      ],
+      "evidenceTopics": ["accessibility", "elderly-use", "system"],
+      "formulaVersion": "capability-v1",
+      "missingDataPolicy": "RENORMALIZE_AND_LOWER_COMPLETENESS"
+    },
+    {
+      "key": "camera",
+      "label": "影像能力",
+      "inputAttributes": ["mainCameraTier", "ois", "telephoto", "videoTier"],
+      "evidenceTopics": ["camera", "portrait", "video"],
+      "formulaVersion": "capability-v1",
+      "missingDataPolicy": "RENORMALIZE_AND_LOWER_COMPLETENESS"
+    },
+    {
+      "key": "service",
+      "label": "服务能力",
+      "inputAttributes": [
+        "warrantyMonths",
+        "offlineServiceCoverage",
+        "systemSupportYears"
+      ],
+      "evidenceTopics": ["warranty", "repair", "support"],
+      "formulaVersion": "capability-v1",
+      "missingDataPolicy": "RENORMALIZE_AND_LOWER_COMPLETENESS"
+    }
+  ]
+}
