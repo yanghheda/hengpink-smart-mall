@@ -4,6 +4,7 @@ import com.hengpick.mall.pricing.domain.Money;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.Set;
 
 /** 已通过编译校验、可直接执行的单条优惠规则。 */
@@ -72,6 +73,10 @@ public final class CompiledPromotion {
 
     public int priority() {
         return priority;
+    }
+
+    public Optional<String> membershipRequirement() {
+        return Optional.ofNullable(membership);
     }
 
     public PromotionApplicationResult apply(PromotionApplicationContext context) {
