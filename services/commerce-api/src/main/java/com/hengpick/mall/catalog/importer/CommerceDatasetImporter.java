@@ -9,6 +9,8 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 public final class CommerceDatasetImporter {
     private static final String DEFAULT_DATASET_RELATIVE_PATH = "packages/commerce-dataset/fixtures/curated/commerce-demo-2026.08.1.json";
@@ -144,11 +146,14 @@ public final class CommerceDatasetImporter {
 
     private static void importOffers(Connection connection, JsonNode dataset) throws Exception {
         var sql = """
-                INSERT INTO offers (id, sku_id, shop_id, sale_price, currency, stock_status, dataset_version, status, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, 'ACTIVE', ?, ?)
-                ON DUPLICATE KEY UPDATE sale_price = VALUES(sale_price), currency = VALUES(currency),
-                    stock_status = VALUES(stock_status), dataset_version = VALUES(dataset_version),
-                    status = 'ACTIVE', updated_at = VALUES(updated_at)
+                INSERT INTO offers (id, sku_id, shop_id, list_price, sale_price, additional_fee, currency,
+                    stock_status, valid_from, valid_to, dataset_version, status, version, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ACTIVE', ?, ?, ?)
+                ON DUPLICATE KEY UPDATE list_price = VALUES(list_price), sale_price = VALUES(sale_price),
+                    additional_fee = VALUES(additional_fee), currency = VALUES(currency),
+                    stock_status = VALUES(stock_status), valid_from = VALUES(valid_from), valid_to = VALUES(valid_to),
+                    dataset_version = VALUES(dataset_version), status = 'ACTIVE', version = VALUES(version),
+                    updated_at = VALUES(updated_at)
                 """;
         try (var statement = connection.prepareStatement(sql)) {
             for (var offer : dataset.withArray("offers")) {
@@ -156,12 +161,19 @@ public final class CommerceDatasetImporter {
                 statement.setString(1, offer.path("offer_id").asText());
                 statement.setString(2, offer.path("sku_id").asText());
                 statement.setString(3, offer.path("shop_id").asText());
-                statement.setBigDecimal(4, new BigDecimal(offer.path("price").asText()));
-                statement.setString(5, offer.path("currency").asText());
-                statement.setString(6, offer.path("stock_status").asText());
-                statement.setString(7, offer.path("dataset_version").asText());
-                statement.setTimestamp(8, time);
-                statement.setTimestamp(9, time);
+                statement.setBigDecimal(4, new BigDecimal(offer.path("list_price").asText()));
+                statement.setBigDecimal(5, new BigDecimal(offer.path("price").asText()));
+                statement.setBigDecimal(6, new BigDecimal(offer.path("additional_fee").asText()));
+                statement.setString(7, offer.path("currency").asText());
+                statement.setString(8, offer.path("stock_status").asText());
+                statement.setObject(9, LocalDateTime.ofInstant(
+                        Instant.parse(offer.path("valid_from").asText()), ZoneOffset.UTC));
+                statement.setObject(10, LocalDateTime.ofInstant(
+                        Instant.parse(offer.path("valid_to").asText()), ZoneOffset.UTC));
+                statement.setString(11, offer.path("dataset_version").asText());
+                statement.setLong(12, offer.path("version").asLong());
+                statement.setTimestamp(13, time);
+                statement.setTimestamp(14, time);
                 statement.addBatch();
             }
             statement.executeBatch();

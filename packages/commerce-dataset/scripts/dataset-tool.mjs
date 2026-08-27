@@ -86,9 +86,14 @@ export async function generateDataset({
         offer_id: `O-GENERATED-${seed}-${index}-${variant}`,
         sku_id: skuId,
         shop_id: dataset.shops[index % dataset.shops.length].shop_id,
+        list_price: variant.startsWith("128") ? "2099.00" : "2399.00",
         price: variant.startsWith("128") ? "1899.00" : "2199.00",
+        additional_fee: "0.00",
         currency: "CNY",
         stock_status: "IN_STOCK",
+        valid_from: "2026-08-01T00:00:00Z",
+        valid_to: "2026-09-01T00:00:00Z",
+        version: 0,
         dataset_version: version,
         updated_at: dataset.updated_at,
       });
@@ -209,8 +214,21 @@ export function validateDataset(dataset) {
       fail(`offers[${i}].sku_id`, "references unknown SKU");
     if (!shops.has(offer.shop_id))
       fail(`offers[${i}].shop_id`, "references unknown shop");
-    if (!/^\d+\.\d{2}$/.test(offer.price) || Number(offer.price) < 0)
-      fail(`offers[${i}].price`, "must be a non-negative decimal string");
+    for (const field of ["list_price", "price", "additional_fee"]) {
+      if (!/^\d+\.\d{2}$/.test(offer[field]) || Number(offer[field]) < 0)
+        fail(
+          `offers[${i}].${field}`,
+          "must be a non-negative decimal string with two places",
+        );
+    }
+    const validFrom = Date.parse(offer.valid_from);
+    const validTo = Date.parse(offer.valid_to);
+    if (!Number.isFinite(validFrom) || !Number.isFinite(validTo))
+      fail(`offers[${i}]`, "valid_from and valid_to must be date-time values");
+    if (validFrom >= validTo)
+      fail(`offers[${i}].valid_to`, "must be later than valid_from");
+    if (!Number.isInteger(offer.version) || offer.version < 0)
+      fail(`offers[${i}].version`, "must be a non-negative integer");
   }
   for (const [i, review] of dataset.reviews.entries()) {
     if (review.product_id && !products.has(review.product_id))

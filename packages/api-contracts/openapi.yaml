@@ -4,7 +4,7 @@ info:
   title: HengPick Smart Mall Public API
   version: 0.1.0
   description: >-
-    Public contract for health and the P04-S01 catalog list/detail slice.
+    Public contract for health, catalog, and the P05-S01 valid offer slice.
 paths:
   /api/v1/health:
     get:
@@ -118,6 +118,21 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorEnvelope"
+  /api/v1/skus/{skuId}/offers:
+    get:
+      operationId: listValidOffers
+      summary: 按服务端计算时刻查询 SKU 有效报价
+      parameters:
+        - name: skuId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: 半开有效区间内的有效报价
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OfferListResponse" }
 components:
   schemas:
     ResponseMeta:
@@ -408,3 +423,46 @@ components:
             data:
               type: array
               items: { $ref: "#/components/schemas/CatalogFact" }
+    OfferView:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          offerId,
+          shopId,
+          listPrice,
+          salePrice,
+          additionalFee,
+          currency,
+          validFrom,
+          validTo,
+          datasetVersion,
+          version,
+        ]
+      properties:
+        offerId: { type: string }
+        shopId: { type: string }
+        listPrice: { type: string, pattern: "^[0-9]+\\.[0-9]{2}$" }
+        salePrice: { type: string, pattern: "^[0-9]+\\.[0-9]{2}$" }
+        additionalFee: { type: string, pattern: "^[0-9]+\\.[0-9]{2}$" }
+        currency: { type: string, pattern: "^[A-Z]{3}$" }
+        validFrom: { type: string, format: date-time }
+        validTo: { type: string, format: date-time }
+        datasetVersion: { type: string }
+        version: { type: integer, minimum: 0 }
+    OfferList:
+      type: object
+      additionalProperties: false
+      required: [skuId, calculationAt, offers]
+      properties:
+        skuId: { type: string }
+        calculationAt: { type: string, format: date-time }
+        offers:
+          type: array
+          items: { $ref: "#/components/schemas/OfferView" }
+    OfferListResponse:
+      allOf:
+        - $ref: "#/components/schemas/SuccessEnvelope"
+        - type: object
+          properties:
+            data: { $ref: "#/components/schemas/OfferList" }

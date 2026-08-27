@@ -11,44 +11,40 @@ import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
-@Testcontainers
 @Tag("integration")
+@EnabledIfEnvironmentVariable(named = "VM_DATABASE_INTEGRATION", matches = "true")
 class DatabaseMigrationIntegrationTest {
-
-    @Container
-    static final MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.4.0")
-            .withDatabaseName("hengpick_test")
-            .withUsername("test")
-            .withPassword("test")
-            .withCommand("--transaction-isolation=READ-COMMITTED");
-
     private static Flyway flyway;
+    private static String jdbcUrl;
+    private static String username;
+    private static String password;
 
     @BeforeAll
     static void migrateEmptyDatabase() {
+        jdbcUrl = requiredEnvironment("MYSQL_URL");
+        username = requiredEnvironment("MYSQL_USERNAME");
+        password = requiredEnvironment("MYSQL_PASSWORD");
         flyway = Flyway.configure()
-                .dataSource(mysql.getJdbcUrl(), mysql.getUsername(), mysql.getPassword())
+                .dataSource(jdbcUrl, username, password)
                 .locations("classpath:db/migration")
                 .load();
-        assertEquals(2, flyway.migrate().migrationsExecuted);
+        assertEquals(3, flyway.migrate().migrationsExecuted);
     }
 
     @Test
     void migrationIsIdempotentAndAppliesTheDatabaseConventions() throws SQLException {
         assertEquals(0, flyway.migrate().migrationsExecuted);
 
-        try (var connection = mysql.createConnection("");
+        try (var connection = java.sql.DriverManager.getConnection(jdbcUrl, username, password);
                 var statement = connection.createStatement();
                 var result = statement.executeQuery("SELECT @@transaction_isolation")) {
             assertTrue(result.next());
             assertEquals("READ-COMMITTED", result.getString(1));
         }
 
-        try (var connection = mysql.createConnection("");
+        try (var connection = java.sql.DriverManager.getConnection(jdbcUrl, username, password);
                 var statement = connection.createStatement();
                 var result = statement.executeQuery("""
                         SELECT COUNT(*)
@@ -63,11 +59,35 @@ class DatabaseMigrationIntegrationTest {
 
     @Test
     void duplicateBusinessKeysAndInvalidForeignKeysAreRejected() throws SQLException {
-        try (var connection = mysql.createConnection("")) {
+        try (var connection = java.sql.DriverManager.getConnection(jdbcUrl, username, password)) {
             insertUser(connection, "01J5D0M8RZ0000000000000001", "demo-user");
 
             assertThrows(SQLException.class, () -> insertUser(connection, "01J5D0M8RZ0000000000000002", "demo-user"));
             assertThrows(SQLException.class, () -> insertAuthSession(connection, "01J5D0M8RZ0000000000000003", "01J5D0M8RZ0000000000000999"));
+        }
+    }
+
+    private static String requiredEnvironment(String name) {
+        var value = System.getenv(name);
+        if (value == null || value.isBlank()) {
+            throw new IllegalStateException("缺少 VM 数据库集成测试环境变量：" + name);
+        }
+        return value;
+    }
+
+    @Test
+    void offerTableContainsTheDeterministicPricingFields() throws SQLException {
+        try (var connection = java.sql.DriverManager.getConnection(jdbcUrl, username, password);
+                var statement = connection.createStatement();
+                var result = statement.executeQuery("""
+                        SELECT COUNT(*)
+                        FROM information_schema.columns
+                        WHERE table_schema = DATABASE()
+                          AND table_name = 'offers'
+                          AND column_name IN ('list_price', 'sale_price', 'additional_fee', 'valid_from', 'valid_to', 'version')
+                        """)) {
+            assertTrue(result.next());
+            assertEquals(6, result.getInt(1));
         }
     }
 

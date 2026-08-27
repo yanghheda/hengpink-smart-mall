@@ -1,6 +1,6 @@
 """由 packages/api-contracts/openapi.yaml 生成，请勿手工修改。"""
 
-# 契约源摘要：127793bdad4871c70dad00818c3ecb4db5de65b61542505a7f1119e7c3ba1553
+# 契约源摘要：549557fd9ad08b6a9d3836f253083d8513dacb1400dd8d32bf7e7a4111e93e14
 from typing import Literal, NotRequired, TypedDict
 
 
@@ -158,4 +158,29 @@ class CatalogFact(TypedDict):
 class CatalogFactListResponse(TypedDict):
     requestId: str
     data: list[CatalogFact]
+    meta: ResponseMeta
+
+
+class OfferView(TypedDict):
+    offerId: str
+    shopId: str
+    listPrice: str
+    salePrice: str
+    additionalFee: str
+    currency: str
+    validFrom: str
+    validTo: str
+    datasetVersion: str
+    version: int
+
+
+class OfferList(TypedDict):
+    skuId: str
+    calculationAt: str
+    offers: list[OfferView]
+
+
+class OfferListResponse(TypedDict):
+    requestId: str
+    data: OfferList
     meta: ResponseMeta

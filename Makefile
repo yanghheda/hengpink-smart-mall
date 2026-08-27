@@ -35,7 +35,7 @@ db-seed: db-migrate
 	mvn -f services/commerce-api/pom.xml -Dspring-boot.run.main-class=com.hengpick.mall.catalog.importer.CommerceDatasetImporter spring-boot:run
 
 test-db-integration:
-	mvn -f services/commerce-api/pom.xml verify -Ptestcontainers
+	./scripts/test-vm-database.sh
 
 test:
 	npm test

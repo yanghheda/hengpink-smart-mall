@@ -6,35 +6,17 @@ import com.hengpick.mall.catalog.domain.CatalogQueryPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
-@Testcontainers
 @Tag("integration")
+@EnabledIfEnvironmentVariable(named = "VM_DATABASE_INTEGRATION", matches = "true")
 @ActiveProfiles("database")
 @SpringBootTest
 class CatalogMapperIntegrationTest {
-
-    @Container
-    static final MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.4.0")
-            .withDatabaseName("hengpick_catalog_test")
-            .withUsername("test")
-            .withPassword("test");
-
-    @DynamicPropertySource
-    static void databaseProperties(DynamicPropertyRegistry registry) {
-        registry.add("MYSQL_URL", mysql::getJdbcUrl);
-        registry.add("MYSQL_USERNAME", mysql::getUsername);
-        registry.add("MYSQL_PASSWORD", mysql::getPassword);
-        registry.add("REDIS_URL", () -> "redis://localhost:6379");
-    }
 
     @Autowired
     private JdbcTemplate jdbc;

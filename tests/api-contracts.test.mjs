@@ -14,7 +14,7 @@ import {
 
 const contractPath = "packages/api-contracts/openapi.yaml";
 
-test("OpenAPI 3.1 defines health and the P04 catalog slices", async () => {
+test("OpenAPI 3.1 defines health, catalog, and valid offer slices", async () => {
   const source = await readFile(contractPath, "utf8");
   const contract = parse(source);
 
@@ -26,6 +26,7 @@ test("OpenAPI 3.1 defines health and the P04 catalog slices", async () => {
     "/api/v1/products/search",
     "/api/v1/products/{productId}/facts",
     "/api/v1/products/{productId}",
+    "/api/v1/skus/{skuId}/offers",
   ]);
 
   const schemas = contract.components.schemas;
@@ -43,6 +44,7 @@ test("OpenAPI 3.1 defines health and the P04 catalog slices", async () => {
     "CatalogSearchRequest",
     "CatalogSearchResponse",
     "CatalogFactListResponse",
+    "OfferListResponse",
   ]) {
     assert.ok(schemas[name], `missing components.schemas.${name}`);
   }
@@ -72,6 +74,13 @@ test("OpenAPI 3.1 defines health and the P04 catalog slices", async () => {
     ].schema.$ref,
     "#/components/schemas/ErrorEnvelope",
   );
+  assert.equal(
+    contract.paths["/api/v1/skus/{skuId}/offers"].get.responses["200"].content[
+      "application/json"
+    ].schema.$ref,
+    "#/components/schemas/OfferListResponse",
+  );
+  assert.equal(schemas.OfferView.properties.salePrice.type, "string");
 });
 
 test("generated TypeScript and Python types are byte-for-byte current", async () => {

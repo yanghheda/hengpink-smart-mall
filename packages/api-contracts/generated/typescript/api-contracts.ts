@@ -1,5 +1,5 @@
 // 由 packages/api-contracts/openapi.yaml 生成，请勿手工修改。
-// 契约源摘要：127793bdad4871c70dad00818c3ecb4db5de65b61542505a7f1119e7c3ba1553
+// 契约源摘要：549557fd9ad08b6a9d3836f253083d8513dacb1400dd8d32bf7e7a4111e93e14
 
 export interface ResponseMeta {
   serverTime: string;
@@ -155,5 +155,30 @@ export interface CatalogFact {
 export interface CatalogFactListResponse {
   requestId: string;
   data: Array<CatalogFact>;
+  meta: ResponseMeta;
+}
+
+export interface OfferView {
+  offerId: string;
+  shopId: string;
+  listPrice: string;
+  salePrice: string;
+  additionalFee: string;
+  currency: string;
+  validFrom: string;
+  validTo: string;
+  datasetVersion: string;
+  version: number;
+}
+
+export interface OfferList {
+  skuId: string;
+  calculationAt: string;
+  offers: Array<OfferView>;
+}
+
+export interface OfferListResponse {
+  requestId: string;
+  data: OfferList;
   meta: ResponseMeta;
 }

@@ -35,6 +35,7 @@ const requiredSchemas = [
   "CatalogSearchRequest",
   "CatalogSearchResponse",
   "CatalogFactListResponse",
+  "OfferListResponse",
 ];
 
 function referenceName(reference) {
@@ -179,6 +180,7 @@ export function validateContract(document) {
     "/api/v1/products/search",
     "/api/v1/products/{productId}/facts",
     "/api/v1/products/{productId}",
+    "/api/v1/skus/{skuId}/offers",
   ];
   if (JSON.stringify(paths) !== JSON.stringify(expectedPaths)) {
     throw new Error(`Public paths must be: ${expectedPaths.join(", ")}`);

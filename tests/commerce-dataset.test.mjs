@@ -50,3 +50,15 @@ test("every entity carries dataset version and updated timestamp", async () => {
     (error) => /shops\[0\]\.updated_at/.test(error.message),
   );
 });
+
+test("offer validity uses an ordered half-open time window", async () => {
+  const dataset = await loadCuratedDataset();
+  dataset.offers[0].valid_to = dataset.offers[0].valid_from;
+
+  assert.throws(
+    () => validateDataset(dataset),
+    (error) =>
+      /offers\[0\]\.valid_to/.test(error.message) &&
+      /later than valid_from/i.test(error.message),
+  );
+});

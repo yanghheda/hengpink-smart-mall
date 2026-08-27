@@ -28,6 +28,19 @@ make install
 
 本项目的 MySQL、Redis、Qdrant 在 VMware VM 中运行；应用服务仍在开发机启动。基础设施模板在 [`deploy/docker-compose.yml`](./deploy/docker-compose.yml)，真实密码只保留在 VM 的环境文件中。
 
+开发机不运行项目数据库容器。所有数据库、Redis 和 Qdrant 操作统一通过常驻 SSH 隧道访问 VM 内 Docker 容器：
+
+```bash
+ssh -N \
+  -L 13306:127.0.0.1:3306 \
+  -L 16379:127.0.0.1:6379 \
+  -L 16333:127.0.0.1:6333 \
+  -L 16334:127.0.0.1:6334 \
+  root@192.168.234.130
+```
+
+该 SSH 进程应在后台常驻。开发机固定使用 `127.0.0.1:13306/16379/16333/16334`，业务代码和测试不得写入 VM 地址；隧道未建立时数据库相关命令应直接失败，不回退到本机数据库。
+
 VM 运行项目自己的 Compose。首次部署在 VM 将旧 `/opt/dev-env/docker-compose.yml` 停止（不删除卷）并保留为 `docker-compose.legacy.yml`，然后复制 [`deploy/docker-compose.yml`](./deploy/docker-compose.yml)、[`deploy/.env.example`](./deploy/.env.example)、[`deploy/infra-up`](./deploy/infra-up)、[`deploy/infra-down`](./deploy/infra-down)、[`deploy/infra-status`](./deploy/infra-status) 到 `/opt/dev-env`。将 `.env.example` 改名为 `.env` 并设置真实密码/API Key 后执行：
 
 ```bash
@@ -43,7 +56,7 @@ VM 运行项目自己的 Compose。首次部署在 VM 将旧 `/opt/dev-env/docke
 Flyway 的迁移文件位于 `services/commerce-api/src/main/resources/db/migration/`，只能新增版本，不修改已应用迁移。执行迁移时由调用环境提供数据库连接变量，真实密码不写入仓库：
 
 ```bash
-export MYSQL_URL='jdbc:mysql://<host>:3306/hengpick_mall'
+export MYSQL_URL='jdbc:mysql://127.0.0.1:13306/hengpick_mall?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true'
 export MYSQL_USERNAME='<migration-user>'
 export MYSQL_PASSWORD='<migration-password>'
 make db-migrate
@@ -61,11 +74,13 @@ make db-seed
 
 服务需要连接数据库时，显式启用 `database` profile 并提供同一组 `MYSQL_*` 变量和 `REDIS_URL`；任一变量缺失即启动失败。默认 profile 保持 P01 的独立启动行为。
 
-默认 Java 测试不启动容器；Flyway 空库、重复迁移、唯一键和外键约束的 Testcontainers 测试需在安装 Docker 的机器上显式执行：
+默认 Java 测试不访问数据库。VM 数据库集成测试会通过 SSH 隧道，在 VM MySQL 中分别创建一次性迁移、Catalog 和 Pricing 测试库，执行后自动删除；不会触碰业务库：
 
 ```bash
 make test-db-integration
 ```
+
+该命令读取未提交的 `deploy/.env` 中的 VM MySQL 管理密码。禁止把测试库改成已有业务库，也不再以宿主机 Docker/Testcontainers 作为本项目数据库验收入口。
 
 ## 独立启动四个应用
 
