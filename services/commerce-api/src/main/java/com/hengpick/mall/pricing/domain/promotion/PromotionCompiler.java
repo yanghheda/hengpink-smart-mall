@@ -82,7 +82,10 @@ public final class PromotionCompiler {
                 startAt,
                 endAt,
                 amountOff,
-                discountRate);
+                discountRate,
+                promotionTypes(root, "stackableWithTypes"),
+                stringSet(root, "exclusiveWithIds"),
+                optionalInteger(root, "priority", 0));
     }
 
     private PromotionType parseType(String value) {
@@ -122,6 +125,25 @@ public final class PromotionCompiler {
             result.add(value.textValue());
         });
         return result;
+    }
+
+    private Set<PromotionType> promotionTypes(JsonNode node, String field) {
+        var result = new HashSet<PromotionType>();
+        for (var value : stringSet(node, field)) {
+            result.add(parseType(value));
+        }
+        return result;
+    }
+
+    private int optionalInteger(JsonNode node, String field, int defaultValue) {
+        var value = node.path(field);
+        if (value.isMissingNode()) {
+            return defaultValue;
+        }
+        if (!value.isIntegralNumber() || !value.canConvertToInt()) {
+            throw new IllegalArgumentException(field + " 必须是 32 位整数");
+        }
+        return value.intValue();
     }
 
     private BigDecimal decimal(String value, String field) {

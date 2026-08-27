@@ -19,6 +19,9 @@ public final class CompiledPromotion {
     private final Instant endAt;
     private final Money amountOff;
     private final BigDecimal discountRate;
+    private final Set<PromotionType> stackableWithTypes;
+    private final Set<String> exclusiveWithIds;
+    private final int priority;
 
     CompiledPromotion(
             String promotionId,
@@ -31,7 +34,10 @@ public final class CompiledPromotion {
             Instant startAt,
             Instant endAt,
             Money amountOff,
-            BigDecimal discountRate) {
+            BigDecimal discountRate,
+            Set<PromotionType> stackableWithTypes,
+            Set<String> exclusiveWithIds,
+            int priority) {
         this.promotionId = promotionId;
         this.type = type;
         this.categoryIds = Set.copyOf(categoryIds);
@@ -43,6 +49,29 @@ public final class CompiledPromotion {
         this.endAt = endAt;
         this.amountOff = amountOff;
         this.discountRate = discountRate;
+        this.stackableWithTypes = Set.copyOf(stackableWithTypes);
+        this.exclusiveWithIds = Set.copyOf(exclusiveWithIds);
+        this.priority = priority;
+    }
+
+    public String promotionId() {
+        return promotionId;
+    }
+
+    public PromotionType type() {
+        return type;
+    }
+
+    public Set<PromotionType> stackableWithTypes() {
+        return stackableWithTypes;
+    }
+
+    public Set<String> exclusiveWithIds() {
+        return exclusiveWithIds;
+    }
+
+    public int priority() {
+        return priority;
     }
 
     public PromotionApplicationResult apply(PromotionApplicationContext context) {
