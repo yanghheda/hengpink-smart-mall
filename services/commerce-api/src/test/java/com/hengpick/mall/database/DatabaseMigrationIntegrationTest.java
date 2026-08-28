@@ -30,7 +30,7 @@ class DatabaseMigrationIntegrationTest {
                 .dataSource(jdbcUrl, username, password)
                 .locations("classpath:db/migration")
                 .load();
-        assertEquals(5, flyway.migrate().migrationsExecuted);
+        assertEquals(6, flyway.migrate().migrationsExecuted);
     }
 
     @Test
@@ -50,10 +50,26 @@ class DatabaseMigrationIntegrationTest {
                         SELECT COUNT(*)
                         FROM information_schema.tables
                         WHERE table_schema = DATABASE()
-                          AND table_name IN ('users', 'auth_sessions', 'categories', 'products', 'skus', 'shops', 'offers', 'reviews', 'deletion_audit_logs')
+                          AND table_name IN ('users', 'auth_sessions', 'categories', 'products', 'skus', 'shops', 'offers', 'reviews', 'deletion_audit_logs', 'decision_sessions', 'decision_messages', 'decision_runs')
                         """)) {
             assertTrue(result.next());
-            assertEquals(9, result.getInt(1));
+            assertEquals(12, result.getInt(1));
+        }
+    }
+
+    @Test
+    void decisionRunTableRejectsTwoActiveRunsForOneSession() throws SQLException {
+        try (var connection = java.sql.DriverManager.getConnection(jdbcUrl, username, password)) {
+            insertUser(connection, "01J5D0M8RZ0000000000000010", "decision-user");
+            insertDecisionSession(connection, "01J5D0M8RZ0000000000000011", "01J5D0M8RZ0000000000000010");
+            insertDecisionRun(connection, "01J5D0M8RZ0000000000000012", "01J5D0M8RZ0000000000000011", 1,
+                    "RUNNING");
+
+            assertThrows(SQLException.class,
+                    () -> insertDecisionRun(connection, "01J5D0M8RZ0000000000000013",
+                            "01J5D0M8RZ0000000000000011", 2, "RUNNING"));
+            insertDecisionRun(connection, "01J5D0M8RZ0000000000000014", "01J5D0M8RZ0000000000000011", 2,
+                    "FAILED");
         }
     }
 
@@ -106,6 +122,31 @@ class DatabaseMigrationIntegrationTest {
                     INSERT INTO auth_sessions (id, user_id, device_session_id, refresh_token_hash, status, expires_at, created_at)
                     VALUES ('%s', '%s', 'device-1', 'hash-%s', 'ACTIVE', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 DAY), UTC_TIMESTAMP(3))
                     """.formatted(id, userId, id));
+        }
+    }
+
+    private static void insertDecisionSession(Connection connection, String id, String userId) throws SQLException {
+        try (Statement statement = connection.createStatement()) {
+            statement.executeUpdate("""
+                    INSERT INTO decision_sessions (
+                        id, user_id, status, title, intent_json, weights_json, current_run_version,
+                        dataset_version, category_schema_version, created_at, updated_at, version
+                    ) VALUES (
+                        '%s', '%s', 'RUNNING', '测试会话', JSON_OBJECT(), JSON_OBJECT(), 1,
+                        'dataset-test', 'phone-test', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3), 0
+                    )
+                    """.formatted(id, userId));
+        }
+    }
+
+    private static void insertDecisionRun(
+            Connection connection, String id, String sessionId, int runVersion, String status) throws SQLException {
+        try (Statement statement = connection.createStatement()) {
+            statement.executeUpdate("""
+                    INSERT INTO decision_runs (
+                        id, session_id, run_version, status, trigger_type, started_at, created_at
+                    ) VALUES ('%s', '%s', %d, '%s', 'USER_RETRY', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))
+                    """.formatted(id, sessionId, runVersion, status));
         }
     }
 }
