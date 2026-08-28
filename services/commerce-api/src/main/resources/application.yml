@@ -36,3 +36,4 @@ hengpick:
     smart-ticket-ttl: ${AUTH_SMART_TICKET_TTL:PT5M}
     h5-access-token-ttl: ${AUTH_H5_ACCESS_TOKEN_TTL:PT30M}
     jwt-secret: ${AUTH_JWT_SECRET:local-demo-signing-key-change-before-production}
+    smart-mall-h5-origin: ${SMART_MALL_H5_ORIGIN:http://127.0.0.1:5173}

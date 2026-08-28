@@ -50,7 +50,7 @@ public class SmartMallSessionController {
     public record CreateTicketRequest(
             @Pattern(regexp = "REACT_NATIVE") String hostType,
             @NotBlank @Size(max = 128) String deviceSessionId,
-            @Pattern(regexp = "https://[^\\s]+") @Size(max = 255) String h5Origin) {}
+            @Pattern(regexp = "https://[^\\s]+|http://(?:localhost|127\\.0\\.0\\.1)(?::\\d+)?") @Size(max = 255) String h5Origin) {}
 
     public record ExchangeTicketRequest(
             @NotBlank @Size(max = 512) String ticket,

@@ -19,12 +19,14 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { WebView } from "react-native-webview";
 import { useStore } from "zustand";
 
 import { ApiError, createApiClient, type ApiClient } from "./src/api/client.js";
 import { createMemoryCredentialStore } from "./src/auth/credentialStore.js";
 import { secureStorage } from "./src/auth/secureStorage.js";
 import { createSessionController } from "./src/auth/sessionController.js";
+import { createHostBridgeController } from "./src/bridge/hostBridgeController.js";
 import { navigationStore } from "./src/navigation/navigationStore.js";
 
 type SessionStatus = "restoring" | "anonymous" | "authenticated";
@@ -32,6 +34,7 @@ type RootStackParams = {
   Home: undefined;
   Products: undefined;
   ProductDetail: undefined;
+  SmartMall: undefined;
 };
 type ProductSummary = {
   productId: string;
@@ -59,6 +62,11 @@ const queryClient = new QueryClient({
 const credentialStore = createMemoryCredentialStore(secureStorage);
 const apiBaseUrl =
   process.env.EXPO_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8080";
+const smartMallUrl =
+  process.env.EXPO_PUBLIC_SMART_MALL_URL ?? "http://127.0.0.1:5173/standalone";
+const smartMallOrigin = new URL(smartMallUrl).origin;
+const deviceSessionId =
+  process.env.EXPO_PUBLIC_DEVICE_SESSION_ID ?? "commerce-app-local-device";
 
 function ScreenState({ text, retry }: { text: string; retry?: () => void }) {
   return (
@@ -140,6 +148,14 @@ function HomeScreen({ navigation }: any) {
       <Text style={styles.title}>今天想挑点什么？</Text>
       <Text style={styles.simulated}>演示数据 · 金额以服务端返回为准</Text>
       <View style={styles.hero}>
+        <Text style={styles.heroTitle}>衡选 AI 智能商城</Text>
+        <Text style={styles.message}>通过安全握手进入独立 H5 决策体验。</Text>
+        <Button
+          title="打开智能商城"
+          onPress={() => navigation.navigate("SmartMall")}
+        />
+      </View>
+      <View style={styles.hero}>
         <Text style={styles.heroTitle}>手机精选</Text>
         <Text style={styles.message}>
           浏览最小商品目录，查看 SKU 与模拟售价。
@@ -150,6 +166,68 @@ function HomeScreen({ navigation }: any) {
         />
       </View>
     </SafeAreaView>
+  );
+}
+
+function SmartMallScreen({
+  api,
+  navigation,
+}: {
+  api: ApiClient;
+  navigation: any;
+}) {
+  const webViewRef = useMemo(
+    () => ({ current: null as { postMessage(raw: string): void } | null }),
+    [],
+  );
+  const controller = useMemo(
+    () =>
+      createHostBridgeController({
+        allowedOrigin: smartMallOrigin,
+        createTicket: () =>
+          api.post<{ ticket: string; expiresAt: string }>(
+            "/api/v1/smart-mall/tickets",
+            {
+              hostType: "REACT_NATIVE",
+              deviceSessionId,
+              h5Origin: smartMallOrigin,
+            },
+          ),
+        send: (message) =>
+          webViewRef.current?.postMessage(JSON.stringify(message)),
+        openProduct: (selection) => {
+          navigationStore.getState().openProduct(selection);
+          navigation.navigate("ProductDetail");
+        },
+      }),
+    [api, navigation, webViewRef],
+  );
+  return (
+    <WebView
+      ref={(instance) => {
+        webViewRef.current = instance;
+      }}
+      source={{ uri: smartMallUrl }}
+      originWhitelist={[smartMallOrigin]}
+      onShouldStartLoadWithRequest={(request) => {
+        try {
+          return new URL(request.url).origin === smartMallOrigin;
+        } catch {
+          return false;
+        }
+      }}
+      onMessage={(event) => {
+        let origin = "";
+        try {
+          origin = new URL(event.nativeEvent.url).origin;
+        } catch {
+          return;
+        }
+        void controller.onMessage(event.nativeEvent.data, origin);
+      }}
+      javaScriptEnabled
+      setSupportMultipleWindows={false}
+    />
   );
 }
 
@@ -320,6 +398,9 @@ function CommerceApp() {
         </Stack.Screen>
         <Stack.Screen name="ProductDetail" options={{ title: "商品详情" }}>
           {() => <ProductDetailScreen api={api} />}
+        </Stack.Screen>
+        <Stack.Screen name="SmartMall" options={{ title: "智能商城" }}>
+          {(props) => <SmartMallScreen {...props} api={api} />}
         </Stack.Screen>
       </Stack.Navigator>
     </NavigationContainer>

@@ -9,5 +9,6 @@ test("P08-S01 已替换 P01 静态占位页", async () => {
   assert.match(source, /商品列表/);
   assert.match(source, /商品详情/);
   assert.match(source, /模拟数据/);
+  assert.match(source, /http:\/\/127\.0\.0\.1:5173\/standalone/);
   assert.doesNotMatch(source, /暂无业务功能/);
 });
