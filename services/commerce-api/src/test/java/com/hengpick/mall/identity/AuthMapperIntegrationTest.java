@@ -5,6 +5,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.hengpick.mall.identity.application.AuthService;
 import com.hengpick.mall.identity.application.AuthenticationFailedException;
+import com.hengpick.mall.identity.application.ObjectAccessGuard;
+import com.hengpick.mall.identity.domain.OwnedObject;
+import com.hengpick.mall.identity.domain.RequestSubject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -25,9 +28,13 @@ class AuthMapperIntegrationTest {
     @Autowired
     private AuthService authService;
 
+    @Autowired
+    private ObjectAccessGuard objectAccessGuard;
+
     @BeforeEach
     void clearSessions() {
         jdbc.update("DELETE FROM auth_sessions");
+        jdbc.update("DELETE FROM deletion_audit_logs");
     }
 
     @Test
@@ -55,5 +62,20 @@ class AuthMapperIntegrationTest {
                 .isInstanceOf(AuthenticationFailedException.class)
                 .hasMessage("账号或密码错误");
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM auth_sessions", Integer.class)).isZero();
+    }
+
+    @Test
+    void persistsOnlyHashedDeletionAuditMetadata() {
+        objectAccessGuard.deleteOwnedObject(new RequestSubject("USER-1", "DEMO_USER"),
+                new OwnedObject("DECISION_SESSION", "SESSION-1", "USER-1"), () -> {});
+
+        var audit = jdbc.queryForMap("""
+                SELECT action, subject_hash, object_type, object_id_hash
+                FROM deletion_audit_logs
+                """);
+
+        assertThat(audit).containsEntry("action", "DELETE").containsEntry("object_type", "DECISION_SESSION");
+        assertThat(audit.get("subject_hash")).isNotEqualTo("USER-1");
+        assertThat(audit.get("object_id_hash")).isNotEqualTo("SESSION-1");
     }
 }

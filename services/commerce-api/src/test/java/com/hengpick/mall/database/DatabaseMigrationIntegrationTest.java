@@ -30,7 +30,7 @@ class DatabaseMigrationIntegrationTest {
                 .dataSource(jdbcUrl, username, password)
                 .locations("classpath:db/migration")
                 .load();
-        assertEquals(4, flyway.migrate().migrationsExecuted);
+        assertEquals(5, flyway.migrate().migrationsExecuted);
     }
 
     @Test
@@ -50,10 +50,10 @@ class DatabaseMigrationIntegrationTest {
                         SELECT COUNT(*)
                         FROM information_schema.tables
                         WHERE table_schema = DATABASE()
-                          AND table_name IN ('users', 'auth_sessions', 'categories', 'products', 'skus', 'shops', 'offers', 'reviews')
+                          AND table_name IN ('users', 'auth_sessions', 'categories', 'products', 'skus', 'shops', 'offers', 'reviews', 'deletion_audit_logs')
                         """)) {
             assertTrue(result.next());
-            assertEquals(8, result.getInt(1));
+            assertEquals(9, result.getInt(1));
         }
     }
 

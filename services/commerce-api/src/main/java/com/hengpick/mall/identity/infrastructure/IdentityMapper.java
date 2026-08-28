@@ -53,4 +53,12 @@ public interface IdentityMapper {
             @Param("replacementHash") String replacementHash,
             @Param("lastUsedAt") Instant lastUsedAt,
             @Param("expiresAt") Instant expiresAt);
+
+    @Insert("""
+            INSERT INTO deletion_audit_logs
+              (id, action, subject_hash, object_type, object_id_hash, occurred_at)
+            VALUES
+              (#{id}, #{action}, #{subjectHash}, #{objectType}, #{objectIdHash}, #{occurredAt})
+            """)
+    void insertDeletionAudit(DeletionAuditRow row);
 }

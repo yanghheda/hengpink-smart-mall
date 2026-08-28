@@ -1,7 +1,9 @@
 package com.hengpick.mall.identity;
 
 import com.hengpick.mall.identity.application.AuthService;
+import com.hengpick.mall.identity.application.ObjectAccessGuard;
 import com.hengpick.mall.identity.domain.AuthSessionRepository;
+import com.hengpick.mall.identity.domain.DeletionAuditRepository;
 import com.hengpick.mall.identity.infrastructure.JwtAccessTokenIssuer;
 import com.hengpick.mall.identity.infrastructure.JwtH5SessionTokenIssuer;
 import com.hengpick.mall.identity.infrastructure.JwtRnAccessTokenVerifier;
@@ -42,5 +44,10 @@ public class IdentityConfiguration {
     @Bean
     JwtRnAccessTokenVerifier jwtRnAccessTokenVerifier(IdentityProperties properties) {
         return new JwtRnAccessTokenVerifier(properties.jwtSecret());
+    }
+
+    @Bean
+    ObjectAccessGuard objectAccessGuard(DeletionAuditRepository deletionAuditRepository, Clock clock) {
+        return new ObjectAccessGuard(deletionAuditRepository, new Sha256TokenDigester(), clock);
     }
 }
