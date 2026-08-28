@@ -58,6 +58,7 @@ run_test_class() {
 }
 
 run_test_class DatabaseMigrationIntegrationTest migration
+run_test_class AuthMapperIntegrationTest identity
 run_test_class CatalogMapperIntegrationTest catalog
 run_test_class OfferMapperIntegrationTest pricing
 

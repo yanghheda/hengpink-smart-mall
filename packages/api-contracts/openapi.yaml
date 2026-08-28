@@ -6,6 +6,58 @@ info:
   description: >-
     Public contract for health, catalog, and the P05-S01 valid offer slice.
 paths:
+  /api/v1/auth/login:
+    post:
+      operationId: login
+      summary: 使用固定测试账号模拟登录
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LoginRequest" }
+      responses:
+        "200":
+          description: 返回短期 Access Token 与仅本次响应可见的 Refresh Token
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AuthTokenResponse" }
+        "400":
+          description: 请求参数非法
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+        "401":
+          description: 账号、密码或账号状态不允许登录
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+  /api/v1/auth/refresh:
+    post:
+      operationId: refreshAccessToken
+      summary: 旋转 Refresh Token 并签发新的短期 Access Token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RefreshRequest" }
+      responses:
+        "200":
+          description: 返回完成 Rotation 的新 Token 对
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AuthTokenResponse" }
+        "400":
+          description: 请求参数非法
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+        "401":
+          description: Refresh Token 无效、过期或已经旋转
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorEnvelope" }
   /api/v1/health:
     get:
       operationId: getHealth
@@ -135,6 +187,43 @@ paths:
               schema: { $ref: "#/components/schemas/OfferListResponse" }
 components:
   schemas:
+    LoginRequest:
+      type: object
+      additionalProperties: false
+      required: [account, password, deviceSessionId]
+      properties:
+        account: { type: string, minLength: 1, maxLength: 64 }
+        password: { type: string, minLength: 1, maxLength: 128 }
+        deviceSessionId: { type: string, minLength: 1, maxLength: 128 }
+    RefreshRequest:
+      type: object
+      additionalProperties: false
+      required: [refreshToken]
+      properties:
+        refreshToken: { type: string, minLength: 1, maxLength: 512 }
+    AuthTokens:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          tokenType,
+          accessToken,
+          accessTokenExpiresAt,
+          refreshToken,
+          refreshTokenExpiresAt,
+        ]
+      properties:
+        tokenType: { type: string, enum: [Bearer] }
+        accessToken: { type: string }
+        accessTokenExpiresAt: { type: string, format: date-time }
+        refreshToken: { type: string }
+        refreshTokenExpiresAt: { type: string, format: date-time }
+    AuthTokenResponse:
+      allOf:
+        - $ref: "#/components/schemas/SuccessEnvelope"
+        - type: object
+          properties:
+            data: { $ref: "#/components/schemas/AuthTokens" }
     ResponseMeta:
       type: object
       additionalProperties: false

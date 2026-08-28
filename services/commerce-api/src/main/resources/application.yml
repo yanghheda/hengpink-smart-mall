@@ -30,3 +30,7 @@ hengpick:
     environment: ${APP_ENV:local}
     agent-url: ${COMMERCE_INTERNAL_AGENT_URL:http://localhost:8000}
     dataset-version: ${COMMERCE_DATASET_VERSION:commerce-demo-2026.08.0}
+  identity:
+    access-token-ttl: ${AUTH_ACCESS_TOKEN_TTL:PT30M}
+    refresh-token-ttl: ${AUTH_REFRESH_TOKEN_TTL:P7D}
+    jwt-secret: ${AUTH_JWT_SECRET:local-demo-signing-key-change-before-production}

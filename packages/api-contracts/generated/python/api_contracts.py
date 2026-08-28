@@ -1,7 +1,33 @@
 """由 packages/api-contracts/openapi.yaml 生成，请勿手工修改。"""
 
-# 契约源摘要：549557fd9ad08b6a9d3836f253083d8513dacb1400dd8d32bf7e7a4111e93e14
+from __future__ import annotations
+
+# 契约源摘要：8b20b78d85a1ca2f89c8b80e024668c7633e57e55401dedc11ffd5f32d5078f6
 from typing import Literal, NotRequired, TypedDict
+
+
+class LoginRequest(TypedDict):
+    account: str
+    password: str
+    deviceSessionId: str
+
+
+class RefreshRequest(TypedDict):
+    refreshToken: str
+
+
+class AuthTokens(TypedDict):
+    tokenType: Literal["Bearer"]
+    accessToken: str
+    accessTokenExpiresAt: str
+    refreshToken: str
+    refreshTokenExpiresAt: str
+
+
+class AuthTokenResponse(TypedDict):
+    requestId: str
+    data: AuthTokens
+    meta: ResponseMeta
 
 
 class ResponseMeta(TypedDict):

@@ -22,6 +22,10 @@ const generatedPaths = {
 };
 
 const requiredSchemas = [
+  "LoginRequest",
+  "RefreshRequest",
+  "AuthTokens",
+  "AuthTokenResponse",
   "SuccessEnvelope",
   "ErrorEnvelope",
   "ApiError",
@@ -141,6 +145,8 @@ function generatePython(document) {
   const lines = [
     '"""由 packages/api-contracts/openapi.yaml 生成，请勿手工修改。"""',
     "",
+    "from __future__ import annotations",
+    "",
     `# 契约源摘要：${sourceDigest(document)}`,
     "from typing import Literal, NotRequired, TypedDict",
     "",
@@ -175,6 +181,8 @@ export function validateContract(document) {
   }
   const paths = Object.keys(document.paths ?? {});
   const expectedPaths = [
+    "/api/v1/auth/login",
+    "/api/v1/auth/refresh",
     "/api/v1/health",
     "/api/v1/products",
     "/api/v1/products/search",
