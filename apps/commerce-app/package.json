@@ -11,10 +11,17 @@
     "format:check": "prettier --check App.tsx index.ts src tests app.json package.json tsconfig.json"
   },
   "dependencies": {
+    "@react-navigation/native": "^7.3.18",
+    "@react-navigation/native-stack": "^7.18.10",
+    "@tanstack/react-query": "^5.102.8",
     "expo": "57.0.16",
     "expo-dev-client": "~57.0.15",
+    "expo-secure-store": "^57.0.2",
     "react": "19.2.3",
-    "react-native": "0.86.2"
+    "react-native": "0.86.2",
+    "react-native-safe-area-context": "^5.9.1",
+    "react-native-screens": "^4.27.0",
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
     "@types/react": "19.2.14",
