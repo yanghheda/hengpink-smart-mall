@@ -1,5 +1,5 @@
 // 由 packages/api-contracts/openapi.yaml 生成，请勿手工修改。
-// 契约源摘要：8b20b78d85a1ca2f89c8b80e024668c7633e57e55401dedc11ffd5f32d5078f6
+// 契约源摘要：50aab3f76bb7cbe6dc7455fca549b38bfbab8f373c8d8bd043d8419bd03d2c37
 
 export interface LoginRequest {
   account: string;
@@ -22,6 +22,44 @@ export interface AuthTokens {
 export interface AuthTokenResponse {
   requestId: string;
   data: AuthTokens;
+  meta: ResponseMeta;
+}
+
+export interface CreateSmartMallTicketRequest {
+  hostType: "REACT_NATIVE";
+  deviceSessionId: string;
+  h5Origin: string;
+}
+
+export interface SmartMallTicket {
+  ticket: string;
+  expiresAt: string;
+}
+
+export interface SmartMallTicketResponse {
+  requestId: string;
+  data: SmartMallTicket;
+  meta: ResponseMeta;
+}
+
+export interface ExchangeSmartMallTicketRequest {
+  ticket: string;
+  hostType: "REACT_NATIVE";
+  deviceSessionId: string;
+  bridgeVersion: "1.0";
+}
+
+export interface H5Session {
+  tokenType: "Bearer";
+  accessToken: string;
+  accessTokenExpiresAt: string;
+  userContext: Record<string, unknown>;
+  hostContext: Record<string, unknown>;
+}
+
+export interface H5SessionResponse {
+  requestId: string;
+  data: H5Session;
   meta: ResponseMeta;
 }
 

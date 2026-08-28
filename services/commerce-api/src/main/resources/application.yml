@@ -33,4 +33,6 @@ hengpick:
   identity:
     access-token-ttl: ${AUTH_ACCESS_TOKEN_TTL:PT30M}
     refresh-token-ttl: ${AUTH_REFRESH_TOKEN_TTL:P7D}
+    smart-ticket-ttl: ${AUTH_SMART_TICKET_TTL:PT5M}
+    h5-access-token-ttl: ${AUTH_H5_ACCESS_TOKEN_TTL:PT30M}
     jwt-secret: ${AUTH_JWT_SECRET:local-demo-signing-key-change-before-production}

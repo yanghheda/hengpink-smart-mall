@@ -58,6 +58,63 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+  /api/v1/smart-mall/tickets:
+    post:
+      operationId: createSmartMallTicket
+      summary: 创建五分钟有效的一次性 Smart Mall Ticket
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateSmartMallTicketRequest" }
+      responses:
+        "200":
+          description: 明文 Ticket 仅在本次响应返回
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SmartMallTicketResponse" }
+        "400":
+          description: 请求参数非法
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+        "401":
+          description: RN Access Token 无效或过期
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+  /api/v1/smart-mall/sessions/exchange:
+    post:
+      operationId: exchangeSmartMallTicket
+      summary: 原子消费 Ticket 并签发 H5 短期会话
+      security: []
+      parameters:
+        - in: header
+          name: Origin
+          required: true
+          schema: { type: string, format: uri }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ExchangeSmartMallTicketRequest" }
+      responses:
+        "200":
+          description: 返回 H5 短期会话与最小上下文
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/H5SessionResponse" }
+        "400":
+          description: 请求参数或 Bridge 版本非法
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+        "401":
+          description: Ticket 无效、过期或已兑换
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorEnvelope" }
   /api/v1/health:
     get:
       operationId: getHealth
@@ -186,6 +243,11 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/OfferListResponse" }
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   schemas:
     LoginRequest:
       type: object
@@ -224,6 +286,64 @@ components:
         - type: object
           properties:
             data: { $ref: "#/components/schemas/AuthTokens" }
+    CreateSmartMallTicketRequest:
+      type: object
+      additionalProperties: false
+      required: [hostType, deviceSessionId, h5Origin]
+      properties:
+        hostType: { type: string, enum: [REACT_NATIVE] }
+        deviceSessionId: { type: string, minLength: 1, maxLength: 128 }
+        h5Origin: { type: string, format: uri, pattern: "^https://" }
+    SmartMallTicket:
+      type: object
+      additionalProperties: false
+      required: [ticket, expiresAt]
+      properties:
+        ticket: { type: string, minLength: 43, maxLength: 512 }
+        expiresAt: { type: string, format: date-time }
+    SmartMallTicketResponse:
+      allOf:
+        - $ref: "#/components/schemas/SuccessEnvelope"
+        - type: object
+          properties:
+            data: { $ref: "#/components/schemas/SmartMallTicket" }
+    ExchangeSmartMallTicketRequest:
+      type: object
+      additionalProperties: false
+      required: [ticket, hostType, deviceSessionId, bridgeVersion]
+      properties:
+        ticket: { type: string, minLength: 43, maxLength: 512 }
+        hostType: { type: string, enum: [REACT_NATIVE] }
+        deviceSessionId: { type: string, minLength: 1, maxLength: 128 }
+        bridgeVersion: { type: string, enum: ["1.0"] }
+    H5Session:
+      type: object
+      additionalProperties: false
+      required: [tokenType, accessToken, accessTokenExpiresAt, userContext, hostContext]
+      properties:
+        tokenType: { type: string, enum: [Bearer] }
+        accessToken: { type: string }
+        accessTokenExpiresAt: { type: string, format: date-time }
+        userContext:
+          type: object
+          additionalProperties: false
+          required: [userId, role]
+          properties:
+            userId: { type: string }
+            role: { type: string, enum: [DEMO_USER, DEMO_ADMIN] }
+        hostContext:
+          type: object
+          additionalProperties: false
+          required: [hostType, deviceSessionId]
+          properties:
+            hostType: { type: string, enum: [REACT_NATIVE] }
+            deviceSessionId: { type: string }
+    H5SessionResponse:
+      allOf:
+        - $ref: "#/components/schemas/SuccessEnvelope"
+        - type: object
+          properties:
+            data: { $ref: "#/components/schemas/H5Session" }
     ResponseMeta:
       type: object
       additionalProperties: false

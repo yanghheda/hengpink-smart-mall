@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-# 契约源摘要：8b20b78d85a1ca2f89c8b80e024668c7633e57e55401dedc11ffd5f32d5078f6
+# 契约源摘要：50aab3f76bb7cbe6dc7455fca549b38bfbab8f373c8d8bd043d8419bd03d2c37
 from typing import Literal, NotRequired, TypedDict
 
 
@@ -27,6 +27,44 @@ class AuthTokens(TypedDict):
 class AuthTokenResponse(TypedDict):
     requestId: str
     data: AuthTokens
+    meta: ResponseMeta
+
+
+class CreateSmartMallTicketRequest(TypedDict):
+    hostType: Literal["REACT_NATIVE"]
+    deviceSessionId: str
+    h5Origin: str
+
+
+class SmartMallTicket(TypedDict):
+    ticket: str
+    expiresAt: str
+
+
+class SmartMallTicketResponse(TypedDict):
+    requestId: str
+    data: SmartMallTicket
+    meta: ResponseMeta
+
+
+class ExchangeSmartMallTicketRequest(TypedDict):
+    ticket: str
+    hostType: Literal["REACT_NATIVE"]
+    deviceSessionId: str
+    bridgeVersion: Literal["1.0"]
+
+
+class H5Session(TypedDict):
+    tokenType: Literal["Bearer"]
+    accessToken: str
+    accessTokenExpiresAt: str
+    userContext: dict[str, object]
+    hostContext: dict[str, object]
+
+
+class H5SessionResponse(TypedDict):
+    requestId: str
+    data: H5Session
     meta: ResponseMeta
 
 
