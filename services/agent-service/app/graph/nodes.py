@@ -2,12 +2,21 @@ from dataclasses import dataclass
 from typing import Protocol
 
 from app.graph.state import ShoppingDecisionState
+from app.intent.prompt import IntentPrompt
+from app.intent.service import IntentParser
 
 
 class GraphModel(Protocol):
     """模型适配边界；节点不感知具体供应商。"""
 
-    def parse_intent(self, messages: list[dict[str, str]]) -> dict[str, object]: ...
+    def generate_intent(
+        self,
+        messages: list[dict[str, str]],
+        prompt: IntentPrompt,
+        repair_context: dict[str, object] | None = None,
+    ) -> dict[str, object]: ...
+
+    def stub_candidate_ids(self) -> list[str]: ...
 
     def compose_report(self, candidate_ids: list[str]) -> str: ...
 
@@ -22,13 +31,20 @@ class ShoppingDecisionNodes:
         return {"completed_nodes": ["load_context"]}
 
     def intent(self, state: ShoppingDecisionState) -> dict[str, object]:
+        result = IntentParser(self.model).parse(state["messages"])
+        warnings = list(state["warnings"])
+        if result.trace.warning_code:
+            warnings.append(result.trace.warning_code)
         return {
-            "intent": self.model.parse_intent(state["messages"]),
+            "intent": result.intent.model_dump(mode="json"),
+            "intent_trace": result.trace.model_dump(mode="json"),
+            "warnings": warnings,
             "completed_nodes": ["intent"],
         }
 
     def product(self, state: ShoppingDecisionState) -> dict[str, object]:
-        candidate_ids = list(state["intent"].get("candidate_ids", [])) if state["intent"] else []
+        # P10-S01 骨架候选与 Intent 解耦；P10-S04 才替换为真实商品 Tool。
+        candidate_ids = self.model.stub_candidate_ids()
         return {
             "candidates": [{"sku_id": sku_id} for sku_id in candidate_ids],
             "completed_nodes": ["product"],

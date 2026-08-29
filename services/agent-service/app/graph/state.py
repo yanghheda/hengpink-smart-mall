@@ -33,6 +33,7 @@ class ShoppingDecisionState(TypedDict, total=False):
     messages: list[dict[str, str]]
     budget: dict[str, int]
     intent: dict[str, Any] | None
+    intent_trace: dict[str, Any] | None
     candidates: list[dict[str, Any]]
     evidence: dict[str, list[dict[str, Any]]]
     price_plans: dict[str, list[dict[str, Any]]]
@@ -63,6 +64,7 @@ class InitialGraphState(BaseModel):
         return ShoppingDecisionState(
             **self.model_dump(),
             intent=None,
+            intent_trace=None,
             candidates=[],
             evidence={},
             price_plans={},
