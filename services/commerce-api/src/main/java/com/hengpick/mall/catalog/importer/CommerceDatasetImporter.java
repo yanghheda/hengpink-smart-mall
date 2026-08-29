@@ -213,13 +213,14 @@ public final class CommerceDatasetImporter {
                 INSERT INTO knowledge_documents (id, evidence_id, product_id, sku_id, category_id, source_type,
                     topic, sentiment, trust_level, published_at, content, content_hash, embedding_model,
                     embedding_version, injection_flag, dataset_version, is_simulated, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'fixture-hash', 'fixture-hash-v1', 0, ?, 1, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'fixture-hash', 'fixture-hash-v1', ?, ?, 1, ?)
                 ON DUPLICATE KEY UPDATE product_id = VALUES(product_id), sku_id = VALUES(sku_id),
                     category_id = VALUES(category_id), source_type = VALUES(source_type), topic = VALUES(topic),
                     sentiment = VALUES(sentiment), trust_level = VALUES(trust_level),
                     published_at = VALUES(published_at), content = VALUES(content),
                     content_hash = VALUES(content_hash), embedding_model = VALUES(embedding_model),
-                    embedding_version = VALUES(embedding_version), dataset_version = VALUES(dataset_version)
+                    embedding_version = VALUES(embedding_version), injection_flag = VALUES(injection_flag),
+                    dataset_version = VALUES(dataset_version)
                 """;
         try (var statement = connection.prepareStatement(sql)) {
             for (var document : dataset.withArray("knowledge_documents")) {
@@ -240,8 +241,9 @@ public final class CommerceDatasetImporter {
                         Instant.parse(document.path("published_at").asText()), ZoneOffset.UTC));
                 statement.setString(11, content);
                 statement.setString(12, sha256(content));
-                statement.setString(13, document.path("dataset_version").asText());
-                statement.setTimestamp(14, timestamp(document));
+                statement.setBoolean(13, PromptInjectionScanner.isSuspicious(content));
+                statement.setString(14, document.path("dataset_version").asText());
+                statement.setTimestamp(15, timestamp(document));
                 statement.addBatch();
             }
             statement.executeBatch();

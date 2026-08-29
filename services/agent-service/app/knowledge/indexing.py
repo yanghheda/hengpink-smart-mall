@@ -4,6 +4,8 @@ import hashlib
 import math
 from typing import Any
 
+from app.knowledge.security import scan_prompt_injection
+
 EMBEDDING_MODEL = "fixture-hash"
 EMBEDDING_VERSION = "fixture-hash-v1"
 VECTOR_SIZE = 32
@@ -28,6 +30,9 @@ def build_points(chunks: list[dict[str, Any]]) -> list[dict[str, Any]]:
         payload = dict(chunk)
         payload["embedding_model"] = EMBEDDING_MODEL
         payload["embedding_version"] = EMBEDDING_VERSION
+        payload["injection_flag"] = bool(chunk.get("injection_flag", False)) or scan_prompt_injection(
+            str(chunk.get("content", ""))
+        )
         points.append(
             {
                 "id": _point_id(chunk["chunk_id"]),

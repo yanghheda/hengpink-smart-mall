@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
 
 from app.intent.models import StructuredIntent
+from app.knowledge.security import PROMPT_INJECTION_WARNING
 
 PER_TOPIC_TOP_K = 8
 MIN_TOPIC_COUNT = 2
@@ -34,6 +35,12 @@ class RetrievedEvidence:
     semantic_score: float
     final_score: float
     payload: dict[str, Any]
+
+
+@dataclass
+class RetrievalTrace:
+    warning_codes: list[str] = field(default_factory=list)
+    excluded_evidence_ids: list[str] = field(default_factory=list)
 
 
 def build_qdrant_filter(target: RetrievalTarget) -> dict[str, Any]:
@@ -89,16 +96,20 @@ def retrieve_evidence(
     topics: list[str],
     target: RetrievalTarget,
     now: datetime | None = None,
+    trace: RetrievalTrace | None = None,
 ) -> list[RetrievedEvidence]:
     """对各主题召回结果做强过滤、去重和确定性重排。"""
     current_time = now or datetime.now(UTC)
     best_by_evidence_id: dict[str, RetrievedEvidence] = {}
 
     for topic in topics[:MAX_TOPIC_COUNT]:
+        topic_points = points_by_topic.get(topic, [])
+        _record_injection_exclusions(topic_points, target, trace)
         eligible = [
             point
-            for point in points_by_topic.get(topic, [])
+            for point in topic_points
             if _matches_target(point.get("payload", {}), target)
+            and not bool(point.get("payload", {}).get("injection_flag", False))
         ]
         eligible.sort(key=lambda point: float(point.get("score", 0.0)), reverse=True)
         for point in eligible[:PER_TOPIC_TOP_K]:
@@ -120,6 +131,29 @@ def retrieve_evidence(
         key=lambda item: (-item.final_score, item.evidence_id),
     )
     return ranked[:MAX_EVIDENCE_PER_SKU]
+
+
+def _record_injection_exclusions(
+    points: list[dict[str, Any]],
+    target: RetrievalTarget,
+    trace: RetrievalTrace | None,
+) -> None:
+    if trace is None:
+        return
+    excluded = sorted(
+        {
+            str(point.get("payload", {}).get("evidence_id", ""))
+            for point in points
+            if _matches_target(point.get("payload", {}), target)
+            and bool(point.get("payload", {}).get("injection_flag", False))
+            and point.get("payload", {}).get("evidence_id")
+        }
+    )
+    for evidence_id in excluded:
+        if evidence_id not in trace.excluded_evidence_ids:
+            trace.excluded_evidence_ids.append(evidence_id)
+    if excluded and PROMPT_INJECTION_WARNING not in trace.warning_codes:
+        trace.warning_codes.append(PROMPT_INJECTION_WARNING)
 
 
 def _append_unique(values: list[str], value: str) -> None:

@@ -22,6 +22,7 @@ INDEX_FIELDS = {
     "sentiment": "keyword",
     "trust_level": "float",
     "published_at": "datetime",
+    "injection_flag": "bool",
 }
 
 
@@ -46,7 +47,7 @@ def _mysql_chunks(dataset_version: str) -> list[dict[str, Any]]:
             """SELECT id AS chunk_id, evidence_id, product_id, sku_id, category_id, source_type,
             topic, sentiment, CAST(trust_level AS DOUBLE) AS trust_level,
             DATE_FORMAT(published_at, '%Y-%m-%dT%H:%i:%s.000Z') AS published_at,
-            dataset_version, content, content_hash, is_simulated
+            dataset_version, content, content_hash, injection_flag, is_simulated
             FROM knowledge_documents WHERE dataset_version = %s ORDER BY id""",
             (dataset_version,),
         )
