@@ -6,6 +6,14 @@ import org.junit.jupiter.api.Test;
 
 class SmartMallCorsConfigurationTest {
     @Test
+    void decisionStreamAllowsFetchAuthenticationAndResumeHeaders() {
+        var configuration = SmartMallCorsConfiguration.forDecisionStream("https://smart.example");
+
+        assertThat(configuration.getAllowedMethods()).containsExactly("GET", "OPTIONS");
+        assertThat(configuration.getAllowedHeaders()).containsExactly("Authorization", "Last-Event-ID");
+    }
+
+    @Test
     void exchangeOnlyAllowsConfiguredH5OriginWithoutCredentials() {
         var configuration = SmartMallCorsConfiguration.forOrigin("https://smart.example");
 

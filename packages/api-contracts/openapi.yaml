@@ -67,7 +67,8 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: "#/components/schemas/CreateSmartMallTicketRequest" }
+            schema:
+              { $ref: "#/components/schemas/CreateSmartMallTicketRequest" }
       responses:
         "200":
           description: 明文 Ticket 仅在本次响应返回
@@ -98,7 +99,8 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: "#/components/schemas/ExchangeSmartMallTicketRequest" }
+            schema:
+              { $ref: "#/components/schemas/ExchangeSmartMallTicketRequest" }
       responses:
         "200":
           description: 返回 H5 短期会话与最小上下文
@@ -112,6 +114,36 @@ paths:
               schema: { $ref: "#/components/schemas/ErrorEnvelope" }
         "401":
           description: Ticket 无效、过期或已兑换
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+  /api/v1/decision-sessions/{sessionId}/stream:
+    get:
+      operationId: streamDecisionEvents
+      summary: 续读当前 Decision Run 的阶段事件
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: sessionId
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 64 }
+        - in: header
+          name: Last-Event-ID
+          required: false
+          schema: { type: string, pattern: "^[0-9]+-[0-9]+$" }
+      responses:
+        "200":
+          description: Redis Stream ID 作为 SSE id；无游标时只发送连接后的新事件
+          content:
+            text/event-stream:
+              schema: { type: string }
+        "401":
+          description: H5 Access Token 无效或过期
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+        "404":
+          description: Session 不存在、无权访问或尚无当前 Run
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorEnvelope" }
@@ -319,7 +351,8 @@ components:
     H5Session:
       type: object
       additionalProperties: false
-      required: [tokenType, accessToken, accessTokenExpiresAt, userContext, hostContext]
+      required:
+        [tokenType, accessToken, accessTokenExpiresAt, userContext, hostContext]
       properties:
         tokenType: { type: string, enum: [Bearer] }
         accessToken: { type: string }

@@ -1,5 +1,5 @@
 // 由 packages/api-contracts/openapi.yaml 生成，请勿手工修改。
-// 契约源摘要：50aab3f76bb7cbe6dc7455fca549b38bfbab8f373c8d8bd043d8419bd03d2c37
+// 契约源摘要：6cc7954cd1b61226da44cff201242c18016ea1bf4427573d01abc93399b71ed7
 
 export interface LoginRequest {
   account: string;

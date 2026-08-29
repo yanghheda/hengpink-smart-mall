@@ -191,6 +191,7 @@ export function validateContract(document) {
     "/api/v1/auth/refresh",
     "/api/v1/smart-mall/tickets",
     "/api/v1/smart-mall/sessions/exchange",
+    "/api/v1/decision-sessions/{sessionId}/stream",
     "/api/v1/health",
     "/api/v1/products",
     "/api/v1/products/search",

@@ -7,6 +7,7 @@ import com.hengpick.mall.identity.domain.DeletionAuditRepository;
 import com.hengpick.mall.identity.infrastructure.JwtAccessTokenIssuer;
 import com.hengpick.mall.identity.infrastructure.JwtH5SessionTokenIssuer;
 import com.hengpick.mall.identity.infrastructure.JwtRnAccessTokenVerifier;
+import com.hengpick.mall.identity.infrastructure.JwtH5AccessTokenVerifier;
 import com.hengpick.mall.identity.infrastructure.RedisSmartMallTicketRepository;
 import com.hengpick.mall.identity.infrastructure.SecureTokenGenerator;
 import com.hengpick.mall.identity.infrastructure.Sha256TokenDigester;
@@ -44,6 +45,11 @@ public class IdentityConfiguration {
     @Bean
     JwtRnAccessTokenVerifier jwtRnAccessTokenVerifier(IdentityProperties properties) {
         return new JwtRnAccessTokenVerifier(properties.jwtSecret());
+    }
+
+    @Bean
+    JwtH5AccessTokenVerifier jwtH5AccessTokenVerifier(IdentityProperties properties) {
+        return new JwtH5AccessTokenVerifier(properties.jwtSecret());
     }
 
     @Bean

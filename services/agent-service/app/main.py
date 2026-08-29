@@ -8,12 +8,16 @@ import uuid
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from typing import Protocol
+from datetime import UTC, datetime
+from hashlib import sha256
+from typing import Any, Protocol
 from urllib.error import URLError
+from urllib.request import Request as UrlRequest
 from urllib.request import urlopen
 
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI, Request, Response, status
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel, ConfigDict, Field
 
 logger = logging.getLogger("hengpick.agent")
 TRACEPARENT = re.compile(r"00-[0-9a-f]{32}-[0-9a-f]{16}-[0-9a-f]{2}")
@@ -64,6 +68,126 @@ class ReadinessProbe(Protocol):
     async def checks(self) -> dict[str, str]: ...
 
 
+class AgentRunCallback(BaseModel):
+    """回调地址只使用已配置标识，禁止请求携带任意 URL。"""
+
+    model_config = ConfigDict(extra="forbid")
+    baseUrlId: str = Field(pattern=r"^[a-z0-9-]{1,64}$")
+    callbackToken: str = Field(min_length=1, max_length=4096)
+
+
+class AgentRunBudget(BaseModel):
+    """Run 的超时与模型调用预算。"""
+
+    model_config = ConfigDict(extra="forbid")
+    softTimeoutMs: int = Field(ge=100, le=60_000)
+    hardTimeoutMs: int = Field(ge=100, le=120_000)
+    maxModelCalls: int = Field(ge=0, le=10)
+
+
+class AgentRunRequest(BaseModel):
+    """Java 提交给 Python 的异步 Run 协议。"""
+
+    model_config = ConfigDict(extra="forbid")
+    runId: str = Field(min_length=1, max_length=64)
+    sessionId: str = Field(min_length=1, max_length=64)
+    runVersion: int = Field(ge=1)
+    versions: dict[str, str]
+    input: dict[str, Any]
+    callback: AgentRunCallback
+    budget: AgentRunBudget
+
+
+class RunExecutor(Protocol):
+    async def execute(self, request: AgentRunRequest) -> None: ...
+
+
+class CallbackSender(Protocol):
+    async def post(self, path: str, token: str, body: dict[str, Any]) -> None: ...
+
+
+class HttpCallbackSender:
+    """只向配置的 Commerce API 地址发送回调，忽略请求中的地址文本。"""
+
+    def __init__(self, base_url: str) -> None:
+        self._base_url = base_url.rstrip("/")
+
+    async def post(self, path: str, token: str, body: dict[str, Any]) -> None:
+        await asyncio.to_thread(self._post_blocking, path, token, body)
+
+    def _post_blocking(self, path: str, token: str, body: dict[str, Any]) -> None:
+        payload = json.dumps(body, separators=(",", ":"), sort_keys=True).encode("utf-8")
+        request = UrlRequest(
+            f"{self._base_url}{path}",
+            data=payload,
+            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+            method="POST",
+        )
+        with urlopen(request, timeout=2) as response:
+            if not 200 <= response.status < 300:
+                raise RuntimeError(f"回调返回非成功状态: {response.status}")
+
+
+class StubRunExecutor:
+    """P09-S02 的确定性 Stub；真实 Graph 留到 P10。"""
+
+    def __init__(self, callback_sender: CallbackSender | None = None) -> None:
+        self.started_run_ids: list[str] = []
+        self._callback_sender = callback_sender
+
+    async def execute(self, request: AgentRunRequest) -> None:
+        self.started_run_ids.append(request.runId)
+        if self._callback_sender is None:
+            await asyncio.sleep(0)
+            return
+        now = datetime.now(UTC).isoformat().replace("+00:00", "Z")
+        step_without_hash: dict[str, Any] = {
+            "runVersion": request.runVersion,
+            "sequence": 1,
+            "node": "STUB",
+            "status": "COMPLETED",
+            "startedAt": now,
+            "completedAt": now,
+            "inputSummary": {"messageCount": len(request.input.get("messages", []))},
+            "outputSummary": {"stub": True},
+        }
+        step = {**step_without_hash, "contentHash": callback_body_hash(step_without_hash)}
+        await self._callback_sender.post(
+            f"/internal/v1/decision-runs/{request.runId}/steps",
+            request.callback.callbackToken,
+            step,
+        )
+        completion_without_hash: dict[str, Any] = {
+            "runVersion": request.runVersion,
+            "completionType": "REPORT_READY",
+            "resultSummary": {"generationType": "STUB", "message": "Stub Run 已完成"},
+            "completedAt": now,
+        }
+        completion = {
+            **completion_without_hash,
+            "contentHash": callback_body_hash(completion_without_hash),
+        }
+        await self._callback_sender.post(
+            f"/internal/v1/decision-runs/{request.runId}/complete",
+            request.callback.callbackToken,
+            completion,
+        )
+
+
+def callback_body_hash(body: dict[str, Any]) -> str:
+    """对不含 contentHash 的回调体计算稳定 SHA-256。"""
+
+    payload = json.dumps(body, separators=(",", ":"), sort_keys=True)
+    return sha256(payload.encode("utf-8")).hexdigest()
+
+
+def canonical_request_hash(request: AgentRunRequest) -> str:
+    """对规范化请求计算哈希，用于识别同 runId 的内容冲突。"""
+
+    payload = request.model_dump_json(by_alias=True, exclude_none=True)
+    return sha256(payload.encode("utf-8")).hexdigest()
+
+
 @dataclass(frozen=True)
 class StaticReadinessProbe:
     qdrant_up: bool
@@ -104,19 +228,29 @@ class HttpReadinessProbe:
 
 
 def create_app(
-    settings: AgentSettings | None = None, readiness_probe: ReadinessProbe | None = None
+    settings: AgentSettings | None = None,
+    readiness_probe: ReadinessProbe | None = None,
+    run_executor: RunExecutor | None = None,
 ) -> FastAPI:
     @asynccontextmanager
     async def lifespan(application: FastAPI) -> AsyncIterator[None]:
         configured = settings or AgentSettings.from_environment()
         application.state.settings = configured
         application.state.readiness_probe = readiness_probe or HttpReadinessProbe(configured)
+        application.state.run_executor = run_executor or StubRunExecutor(
+            HttpCallbackSender(configured.tool_api_base_url)
+        )
+        application.state.run_registry = {}
         yield
 
     application = FastAPI(title="HengPick Agent Service", version="0.1.0", lifespan=lifespan)
     if settings is not None:
         application.state.settings = settings
         application.state.readiness_probe = readiness_probe or HttpReadinessProbe(settings)
+        application.state.run_executor = run_executor or StubRunExecutor(
+            HttpCallbackSender(settings.tool_api_base_url)
+        )
+        application.state.run_registry = {}
 
     @application.middleware("http")
     async def correlate_request(request: Request, call_next) -> Response:
@@ -164,6 +298,45 @@ def create_app(
             content={"status": status, "checks": checks},
         )
 
+    @application.post("/internal/v1/agent-runs", status_code=status.HTTP_202_ACCEPTED)
+    async def start_agent_run(request: Request, body: AgentRunRequest) -> JSONResponse:
+        request_hash = canonical_request_hash(body)
+        registry: dict[str, dict[str, str]] = request.app.state.run_registry
+        existing = registry.get(body.runId)
+        if existing is not None:
+            if existing["requestHash"] != request_hash:
+                return JSONResponse(
+                    status_code=status.HTTP_409_CONFLICT,
+                    content={
+                        "error": {
+                            "code": "AGENT_RUN_PAYLOAD_CONFLICT",
+                            "message": "同一 runId 对应的请求内容不一致",
+                            "retryable": False,
+                        }
+                    },
+                )
+            return JSONResponse(
+                status_code=status.HTTP_202_ACCEPTED,
+                content={"runId": body.runId, "status": existing["status"]},
+            )
+
+        registry[body.runId] = {"requestHash": request_hash, "status": "ACCEPTED"}
+
+        async def execute_stub() -> None:
+            registry[body.runId]["status"] = "RUNNING"
+            try:
+                await request.app.state.run_executor.execute(body)
+                registry[body.runId]["status"] = "COMPLETED"
+            except Exception:
+                registry[body.runId]["status"] = "FAILED"
+                logger.exception("Stub Run 执行失败 runId=%s", body.runId)
+
+        asyncio.create_task(execute_stub())
+        return JSONResponse(
+            status_code=status.HTTP_202_ACCEPTED,
+            content={"runId": body.runId, "status": "ACCEPTED"},
+        )
+
     return application
 
 
@@ -171,5 +344,5 @@ app = create_app()
 
 
 def configured_port() -> int:
-    """Expose the environment-driven port for repeatable launcher tests."""
+    """暴露环境变量驱动的端口，便于启动器做可重复测试。"""
     return int(os.getenv("AGENT_PORT", "8000"))
