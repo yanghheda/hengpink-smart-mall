@@ -2,6 +2,7 @@ from copy import deepcopy
 
 import pytest
 from pydantic import ValidationError
+from tool_fakes import deterministic_tool_client
 
 from app.graph.state import InitialGraphState
 from app.graph.workflow import StubGraphModel, build_shopping_decision_graph
@@ -41,7 +42,7 @@ def test_initial_state_rejects_invalid_identity_and_budget() -> None:
 def test_success_route_is_deterministic_and_keeps_identity_unchanged() -> None:
     source = initial_state()
     source_snapshot = deepcopy(source)
-    graph = build_shopping_decision_graph(StubGraphModel())
+    graph = build_shopping_decision_graph(StubGraphModel(), deterministic_tool_client())
 
     result = graph.invoke(source)
 
@@ -74,7 +75,7 @@ def test_success_route_is_deterministic_and_keeps_identity_unchanged() -> None:
 
 
 def test_no_candidate_route_stops_before_analysis_and_never_fabricates_report() -> None:
-    graph = build_shopping_decision_graph(StubGraphModel(candidate_ids=[]))
+    graph = build_shopping_decision_graph(StubGraphModel(), deterministic_tool_client(0))
 
     result = graph.invoke(initial_state())
 
@@ -94,12 +95,13 @@ def test_model_output_cannot_supply_amount_or_final_score() -> None:
     graph = build_shopping_decision_graph(
         StubGraphModel(
             report_text="首选引用确定性结果", attempted_amount="0.01", attempted_score=100
-        )
+        ),
+        deterministic_tool_client(),
     )
 
     result = graph.invoke(initial_state())
 
-    assert result["price_plans"]["sku-stub-1"][0]["amount"] == "3999.00"
-    assert result["score_cards"][0]["final_score"] == 80
+    assert result["price_plans"]["SKU-PHONE-1"][0]["finalPrice"] == "2999.00"
+    assert result["score_cards"][0]["finalScore"] == "91"
     assert "attempted_amount" not in result["report"]
     assert "attempted_score" not in result["report"]

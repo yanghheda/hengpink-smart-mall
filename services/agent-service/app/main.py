@@ -19,6 +19,10 @@ from fastapi import FastAPI, Request, Response, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.graph.state import InitialGraphState
+from app.graph.workflow import StubGraphModel, build_shopping_decision_graph
+from app.tools.client import CommerceToolClient, UrlLibToolTransport
+
 logger = logging.getLogger("hengpick.agent")
 TRACEPARENT = re.compile(r"00-[0-9a-f]{32}-[0-9a-f]{16}-[0-9a-f]{2}")
 REQUEST_ID = re.compile(r"[A-Za-z0-9_-]{1,128}")
@@ -36,6 +40,7 @@ class AgentSettings:
     model_provider: str
     model_name: str
     model_api_key: str | None
+    tool_api_token: str | None = None
 
     @classmethod
     def from_environment(cls) -> "AgentSettings":
@@ -61,6 +66,7 @@ class AgentSettings:
             model_provider=provider,
             model_name=required["AGENT_MODEL_NAME"],
             model_api_key=api_key,
+            tool_api_token=os.getenv("COMMERCE_INTERNAL_SERVICE_TOKEN"),
         )
 
 
@@ -174,6 +180,83 @@ class StubRunExecutor:
         )
 
 
+class GraphRunExecutor:
+    """把异步 Run 请求接入真实 Commerce Tool 商品主链。"""
+
+    def __init__(
+        self,
+        settings: AgentSettings,
+        callback_sender: CallbackSender,
+    ) -> None:
+        self._settings = settings
+        self._callback_sender = callback_sender
+
+    async def execute(self, request: AgentRunRequest) -> None:
+        client = CommerceToolClient(
+            UrlLibToolTransport(
+                self._settings.tool_api_base_url,
+                self._settings.tool_api_token,
+            )
+        )
+        state = InitialGraphState(
+            run_id=request.runId,
+            session_id=request.sessionId,
+            run_version=request.runVersion,
+            user_id_ref=str(request.input.get("userIdRef", "internal-user-ref")),
+            dataset_version=request.versions["dataset"],
+            prompt_version=request.versions.get("prompt", "intent-v1"),
+            scoring_version=request.versions.get("scoring", "scoring-v1"),
+            pricing_rule_version=request.versions.get("pricing", "pricing-v1"),
+            messages=request.input.get("messages", []),
+            budget={"max_model_calls": request.budget.maxModelCalls},
+            previous_intent=request.input.get("previousIntent"),
+            clarification_round=int(request.input.get("clarificationRound", 0)),
+        ).to_graph_state()
+        graph = build_shopping_decision_graph(StubGraphModel(), client)
+        result = await asyncio.to_thread(graph.invoke, state)
+        now = datetime.now(UTC).isoformat().replace("+00:00", "Z")
+        step_without_hash: dict[str, Any] = {
+            "runVersion": request.runVersion,
+            "sequence": 1,
+            "node": "PRODUCT_MAIN_CHAIN",
+            "status": "COMPLETED",
+            "startedAt": now,
+            "completedAt": now,
+            "inputSummary": {"messageCount": len(request.input.get("messages", []))},
+            "outputSummary": {
+                "candidateCount": len(result["candidates"]),
+                "toolCallCount": len(result["tool_calls"]),
+            },
+        }
+        await self._callback_sender.post(
+            f"/internal/v1/decision-runs/{request.runId}/steps",
+            request.callback.callbackToken,
+            {**step_without_hash, "contentHash": callback_body_hash(step_without_hash)},
+        )
+        completion_type = "CLARIFICATION_REQUIRED" if (
+            result.get("clarification") or {}
+        ).get("questions") else ("NO_RESULT" if not result["candidates"] else "REPORT_READY")
+        completion_without_hash: dict[str, Any] = {
+            "runVersion": request.runVersion,
+            "completionType": completion_type,
+            "resultSummary": {
+                "generationType": "TOOL_BACKED_REVIEW_STUB",
+                "candidates": result["candidates"][:3],
+                "scoreCards": result["score_cards"][:3],
+                "warnings": result["warnings"],
+            },
+            "completedAt": now,
+        }
+        await self._callback_sender.post(
+            f"/internal/v1/decision-runs/{request.runId}/complete",
+            request.callback.callbackToken,
+            {
+                **completion_without_hash,
+                "contentHash": callback_body_hash(completion_without_hash),
+            },
+        )
+
+
 def callback_body_hash(body: dict[str, Any]) -> str:
     """对不含 contentHash 的回调体计算稳定 SHA-256。"""
 
@@ -237,8 +320,8 @@ def create_app(
         configured = settings or AgentSettings.from_environment()
         application.state.settings = configured
         application.state.readiness_probe = readiness_probe or HttpReadinessProbe(configured)
-        application.state.run_executor = run_executor or StubRunExecutor(
-            HttpCallbackSender(configured.tool_api_base_url)
+        application.state.run_executor = run_executor or GraphRunExecutor(
+            configured, HttpCallbackSender(configured.tool_api_base_url)
         )
         application.state.run_registry = {}
         yield
@@ -247,8 +330,8 @@ def create_app(
     if settings is not None:
         application.state.settings = settings
         application.state.readiness_probe = readiness_probe or HttpReadinessProbe(settings)
-        application.state.run_executor = run_executor or StubRunExecutor(
-            HttpCallbackSender(settings.tool_api_base_url)
+        application.state.run_executor = run_executor or GraphRunExecutor(
+            settings, HttpCallbackSender(settings.tool_api_base_url)
         )
         application.state.run_registry = {}
 

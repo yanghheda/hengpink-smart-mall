@@ -6,13 +6,13 @@ from langgraph.graph.state import CompiledStateGraph
 from app.graph.nodes import ShoppingDecisionNodes, route_after_clarification, route_after_product
 from app.graph.state import ShoppingDecisionState
 from app.intent.prompt import IntentPrompt
+from app.tools.client import CommerceToolClient
 
 
 @dataclass(frozen=True)
 class StubGraphModel:
     """路由测试使用的可控模型，不产生金额、分数或标识。"""
 
-    candidate_ids: tuple[str, ...] | list[str] = ("sku-stub-1",)
     report_text: str = "基于确定性结果生成的骨架报告"
     attempted_amount: str | None = None
     attempted_score: int | None = None
@@ -35,17 +35,16 @@ class StubGraphModel:
             "inferences": [],
         }
 
-    def stub_candidate_ids(self) -> list[str]:
-        return list(self.candidate_ids)
-
     def compose_report(self, candidate_ids: list[str]) -> str:
         return self.report_text
 
 
-def build_shopping_decision_graph(model: StubGraphModel) -> CompiledStateGraph:
-    """构建主链骨架，并接入 P10-S02 Intent 严格边界。"""
+def build_shopping_decision_graph(
+    model: StubGraphModel, tool_client: CommerceToolClient
+) -> CompiledStateGraph:
+    """构建接入真实 Commerce Tool 契约的商品主链。"""
 
-    nodes = ShoppingDecisionNodes(model)
+    nodes = ShoppingDecisionNodes(model, tool_client)
     builder = StateGraph(ShoppingDecisionState)
     builder.add_node("load_context", nodes.load_context)
     builder.add_node("intent", nodes.intent)

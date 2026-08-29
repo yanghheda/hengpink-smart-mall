@@ -42,6 +42,7 @@ class ShoppingDecisionState(TypedDict, total=False):
     evidence: dict[str, list[dict[str, Any]]]
     price_plans: dict[str, list[dict[str, Any]]]
     score_cards: list[dict[str, Any]]
+    tool_calls: list[dict[str, Any]]
     report: dict[str, Any] | None
     validation: dict[str, Any] | None
     warnings: list[str]
@@ -77,6 +78,7 @@ class InitialGraphState(BaseModel):
             evidence={},
             price_plans={},
             score_cards=[],
+            tool_calls=[],
             report=None,
             validation=None,
             warnings=[],

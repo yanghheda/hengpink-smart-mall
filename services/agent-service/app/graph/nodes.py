@@ -5,6 +5,7 @@ from app.clarification.service import ClarificationPlanner, merge_intents
 from app.graph.state import ShoppingDecisionState
 from app.intent.prompt import IntentPrompt
 from app.intent.service import IntentParser
+from app.tools.client import CommerceToolClient
 
 
 class GraphModel(Protocol):
@@ -17,16 +18,15 @@ class GraphModel(Protocol):
         repair_context: dict[str, object] | None = None,
     ) -> dict[str, object]: ...
 
-    def stub_candidate_ids(self) -> list[str]: ...
-
     def compose_report(self, candidate_ids: list[str]) -> str: ...
 
 
 @dataclass(frozen=True)
 class ShoppingDecisionNodes:
-    """P10-S01 的确定性节点骨架。"""
+    """商品事实经受控 Tool Client 进入的确定性主链。"""
 
     model: GraphModel
+    tool_client: CommerceToolClient
 
     def load_context(self, state: ShoppingDecisionState) -> dict[str, object]:
         return {"completed_nodes": ["load_context"]}
@@ -61,38 +61,75 @@ class ShoppingDecisionNodes:
         }
 
     def product(self, state: ShoppingDecisionState) -> dict[str, object]:
-        # P10-S01 骨架候选与 Intent 解耦；P10-S04 才替换为真实商品 Tool。
-        candidate_ids = self.model.stub_candidate_ids()
+        intent = state["intent"] or {}
+        search = self._call(
+            state,
+            "search_products",
+            "product-search",
+            {
+                "categoryId": intent.get("category"),
+                "budget": intent.get("budget"),
+                "hardConstraints": intent.get("hard_constraints", []),
+                "limit": 30,
+            },
+        )
+        matched = search.get("matchedCandidates", [])
+        selected = matched[:6]
+        specs = (
+            self._call(state, "get_product_specs", "product-specs", {"candidates": selected})
+            if selected
+            else {"candidates": []}
+        )
         return {
-            "candidates": [{"sku_id": sku_id} for sku_id in candidate_ids],
+            "candidates": specs.get("candidates", []),
+            "tool_calls": self._tool_traces(),
             "completed_nodes": ["product"],
         }
 
     def review_stub(self, state: ShoppingDecisionState) -> dict[str, object]:
         evidence = {
-            candidate["sku_id"]: [{"evidence_id": f"stub-{candidate['sku_id']}"}]
+            candidate["skuId"]: [{"evidence_id": f"stub-{candidate['skuId']}"}]
             for candidate in state["candidates"]
         }
         return {"evidence": evidence, "completed_nodes": ["review_stub"]}
 
     def price(self, state: ShoppingDecisionState) -> dict[str, object]:
-        plans = {
-            candidate["sku_id"]: [
-                {"price_plan_id": f"plan-{candidate['sku_id']}", "amount": "3999.00"}
-            ]
-            for candidate in state["candidates"]
+        sku_ids = [candidate["skuId"] for candidate in state["candidates"]]
+        offers = self._call(state, "get_price_offers", "price-offers", {"skuIds": sku_ids})
+        plans = self._call(
+            state,
+            "calculate_final_price",
+            "final-price",
+            {
+                "offers": offers.get("offers", []),
+                "memberships": (state["intent"] or {}).get("memberships", []),
+            },
+        )
+        return {
+            "price_plans": plans.get("pricePlans", {}),
+            "tool_calls": self._tool_traces(),
+            "completed_nodes": ["price"],
         }
-        return {"price_plans": plans, "completed_nodes": ["price"]}
 
     def score(self, state: ShoppingDecisionState) -> dict[str, object]:
-        cards = [
-            {"sku_id": candidate["sku_id"], "final_score": 80 - index}
-            for index, candidate in enumerate(state["candidates"])
-        ]
-        return {"score_cards": cards, "completed_nodes": ["score"]}
+        result = self._call(
+            state,
+            "score_candidates",
+            "candidate-score",
+            {
+                "intent": state["intent"],
+                "candidates": state["candidates"],
+                "pricePlans": state["price_plans"],
+            },
+        )
+        return {
+            "score_cards": result.get("scoreCards", []),
+            "tool_calls": self._tool_traces(),
+            "completed_nodes": ["score"],
+        }
 
     def report_stub(self, state: ShoppingDecisionState) -> dict[str, object]:
-        candidate_ids = [card["sku_id"] for card in state["score_cards"]]
+        candidate_ids = [card["skuId"] for card in state["score_cards"]]
         return {
             "report": {
                 "generation_type": "STUB",
@@ -104,7 +141,7 @@ class ShoppingDecisionNodes:
 
     def validate(self, state: ShoppingDecisionState) -> dict[str, object]:
         report_ids = state["report"]["candidate_ids"] if state["report"] else []
-        known_ids = [candidate["sku_id"] for candidate in state["candidates"]]
+        known_ids = [candidate["skuId"] for candidate in state["candidates"]]
         return {
             "validation": {"valid": bool(report_ids) and report_ids == known_ids},
             "completed_nodes": ["validate"],
@@ -115,6 +152,25 @@ class ShoppingDecisionNodes:
             "warnings": [*state["warnings"], "NO_MATCHED_CANDIDATE"],
             "completed_nodes": ["no_result"],
         }
+
+    def _call(
+        self,
+        state: ShoppingDecisionState,
+        tool_name: str,
+        call_suffix: str,
+        input_data: dict[str, object],
+    ) -> dict[str, object]:
+        return self.tool_client.call(
+            tool_name,
+            run_id=state["run_id"],
+            run_version=state["run_version"],
+            tool_call_id=f"{state['run_id']}:{call_suffix}",
+            dataset_version=state["dataset_version"],
+            input_data=input_data,
+        )
+
+    def _tool_traces(self) -> list[dict[str, object]]:
+        return [trace.model_dump() for trace in self.tool_client.traces]
 
 
 def route_after_product(state: ShoppingDecisionState) -> str:

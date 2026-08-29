@@ -13,6 +13,7 @@ def settings() -> AgentSettings:
         model_provider="stub",
         model_name="stub-v1",
         model_api_key=None,
+        tool_api_token="test-internal-token",
     )
 
 

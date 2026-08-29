@@ -28,6 +28,7 @@ def test_ready_health_reports_missing_dependencies() -> None:
         model_provider="stub",
         model_name="stub-model",
         model_api_key=None,
+        tool_api_token="test-internal-token",
     )
     response = TestClient(
         create_app(

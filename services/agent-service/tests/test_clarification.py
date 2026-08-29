@@ -1,5 +1,7 @@
 from copy import deepcopy
 
+from tool_fakes import deterministic_tool_client
+
 from app.clarification.service import ClarificationPlanner, merge_intents
 from app.graph.state import InitialGraphState
 from app.graph.workflow import StubGraphModel, build_shopping_decision_graph
@@ -119,7 +121,9 @@ def test_previous_intent_is_merged_without_mutating_persisted_snapshot() -> None
 
 
 def test_graph_interrupts_for_questions_then_restores_old_intent_on_new_run() -> None:
-    first_graph = build_shopping_decision_graph(StubGraphModel(intent_output=intent(category=None)))
+    first_graph = build_shopping_decision_graph(
+        StubGraphModel(intent_output=intent(category=None)), deterministic_tool_client()
+    )
     first = first_graph.invoke(graph_state())
 
     assert first["completed_nodes"] == ["load_context", "intent", "clarification"]
@@ -134,7 +138,8 @@ def test_graph_interrupts_for_questions_then_restores_old_intent_on_new_run() ->
                 budget={"max": "3000.00", "currency": "CNY"},
                 usage_scenarios=["DAILY_COMMUNICATION"],
             )
-        )
+        ),
+        deterministic_tool_client(),
     )
     resumed = resumed_graph.invoke(graph_state(previous_intent=previous, clarification_round=1))
 
