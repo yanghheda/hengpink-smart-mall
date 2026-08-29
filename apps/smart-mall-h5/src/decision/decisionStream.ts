@@ -5,6 +5,25 @@ export type DecisionStreamEvent = {
   payload: Record<string, unknown>;
 };
 
+export type DecisionSessionSnapshot = {
+  sessionId: string;
+  currentRunId: string | null;
+  currentRunVersion: number;
+  status:
+    | "DRAFT"
+    | "RUNNING"
+    | "WAITING_CLARIFICATION"
+    | "COMPLETED"
+    | "PARTIAL"
+    | "FAILED"
+    | "SUPERSEDED"
+    | "CANCELLED";
+  currentReportVersion: number | null;
+};
+
+export type DecisionTransportState =
+  "STREAMING" | "RECONNECTING" | "POLLING" | "STOPPED";
+
 type Options = {
   url: string;
   accessToken?: string;
@@ -79,4 +98,80 @@ export async function consumeDecisionStream({
     }
   }
   return cursor;
+}
+
+const terminalStatuses = new Set<DecisionSessionSnapshot["status"]>([
+  "WAITING_CLARIFICATION",
+  "COMPLETED",
+  "PARTIAL",
+  "FAILED",
+  "SUPERSEDED",
+  "CANCELLED",
+]);
+
+export async function fetchDecisionSessionSnapshot({
+  url,
+  accessToken,
+  fetcher = fetch,
+  signal,
+}: {
+  url: string;
+  accessToken?: string;
+  fetcher?: typeof fetch;
+  signal?: AbortSignal;
+}) {
+  const headers: Record<string, string> = { Accept: "application/json" };
+  if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+  const response = await fetcher(url, { headers, signal });
+  if (!response.ok) throw new Error(`Session 快照读取失败: ${response.status}`);
+  const envelope = (await response.json()) as { data: DecisionSessionSnapshot };
+  return envelope.data;
+}
+
+export async function recoverDecisionSession({
+  fetchSnapshot,
+  consumeStream,
+  onSnapshot,
+  onTransportState,
+  wait = (milliseconds) =>
+    new Promise<void>((resolve) =>
+      globalThis.setTimeout(resolve, milliseconds),
+    ),
+  pollIntervalMs = 2_000,
+  maxSseFailures = 3,
+}: {
+  fetchSnapshot: () => Promise<DecisionSessionSnapshot>;
+  consumeStream: () => Promise<unknown>;
+  onSnapshot: (snapshot: DecisionSessionSnapshot) => void;
+  onTransportState: (state: DecisionTransportState) => void;
+  wait?: (milliseconds: number) => Promise<void>;
+  pollIntervalMs?: number;
+  maxSseFailures?: number;
+}) {
+  let snapshot = await fetchSnapshot();
+  onSnapshot(snapshot);
+  if (terminalStatuses.has(snapshot.status)) {
+    onTransportState("STOPPED");
+    return snapshot;
+  }
+
+  for (let failures = 0; failures < maxSseFailures; failures += 1) {
+    onTransportState(failures === 0 ? "STREAMING" : "RECONNECTING");
+    try {
+      await consumeStream();
+    } catch {
+      // 连接失败由状态切换显式呈现，达到阈值后由 MySQL 轮询接管。
+    }
+  }
+
+  onTransportState("POLLING");
+  while (true) {
+    await wait(pollIntervalMs);
+    snapshot = await fetchSnapshot();
+    onSnapshot(snapshot);
+    if (terminalStatuses.has(snapshot.status)) {
+      onTransportState("STOPPED");
+      return snapshot;
+    }
+  }
 }

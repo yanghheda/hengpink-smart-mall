@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { consumeDecisionStream } from "../src/decision/decisionStream";
+import {
+  consumeDecisionStream,
+  fetchDecisionSessionSnapshot,
+  recoverDecisionSession,
+} from "../src/decision/decisionStream";
 
 function responseFrom(chunks: string[]) {
   const encoder = new TextEncoder();
@@ -77,5 +81,91 @@ describe("Decision SSE", () => {
 
     expect(onEvent).toHaveBeenCalledTimes(1);
     expect(onEvent.mock.calls[0][0].progress).toBe(65);
+  });
+
+  it("连续三次 SSE 失败后显式切换轮询，并在终态停止", async () => {
+    const fetchSnapshot = vi
+      .fn()
+      .mockResolvedValueOnce({
+        sessionId: "session-1",
+        currentRunId: "run-1",
+        currentRunVersion: 1,
+        status: "RUNNING",
+        currentReportVersion: null,
+      })
+      .mockResolvedValueOnce({
+        sessionId: "session-1",
+        currentRunId: "run-1",
+        currentRunVersion: 1,
+        status: "COMPLETED",
+        currentReportVersion: 1,
+      });
+    const consumeStream = vi.fn().mockRejectedValue(new Error("SSE 不可用"));
+    const onTransportState = vi.fn();
+
+    const result = await recoverDecisionSession({
+      fetchSnapshot,
+      consumeStream,
+      wait: vi.fn().mockResolvedValue(undefined),
+      onSnapshot: vi.fn(),
+      onTransportState,
+    });
+
+    expect(consumeStream).toHaveBeenCalledTimes(3);
+    expect(fetchSnapshot).toHaveBeenCalledTimes(2);
+    expect(onTransportState).toHaveBeenCalledWith("POLLING");
+    expect(result.status).toBe("COMPLETED");
+    expect(onTransportState).toHaveBeenLastCalledWith("STOPPED");
+  });
+
+  it("页面刷新或事件过期时直接用 MySQL 快照恢复终态", async () => {
+    const terminalSnapshot = {
+      sessionId: "session-1",
+      currentRunId: "run-1",
+      currentRunVersion: 1,
+      status: "FAILED" as const,
+      currentReportVersion: null,
+    };
+    const consumeStream = vi.fn();
+
+    const result = await recoverDecisionSession({
+      fetchSnapshot: vi.fn().mockResolvedValue(terminalSnapshot),
+      consumeStream,
+      wait: vi.fn(),
+      onSnapshot: vi.fn(),
+      onTransportState: vi.fn(),
+    });
+
+    expect(consumeStream).not.toHaveBeenCalled();
+    expect(result).toEqual(terminalSnapshot);
+  });
+
+  it("快照查询携带 H5 认证且只返回 data", async () => {
+    const snapshot = {
+      sessionId: "session-1",
+      currentRunId: "run-1",
+      currentRunVersion: 1,
+      status: "RUNNING" as const,
+      currentReportVersion: null,
+    };
+    const fetcher = vi
+      .fn()
+      .mockResolvedValue(new Response(JSON.stringify({ data: snapshot })));
+
+    await expect(
+      fetchDecisionSessionSnapshot({
+        url: "/api/v1/decision-sessions/session-1",
+        accessToken: "h5-token",
+        fetcher,
+      }),
+    ).resolves.toEqual(snapshot);
+    expect(fetcher).toHaveBeenCalledWith(
+      "/api/v1/decision-sessions/session-1",
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Authorization: "Bearer h5-token",
+        }),
+      }),
+    );
   });
 });

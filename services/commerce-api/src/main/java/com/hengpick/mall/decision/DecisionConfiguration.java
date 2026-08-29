@@ -2,8 +2,10 @@ package com.hengpick.mall.decision;
 
 import com.hengpick.mall.decision.application.DecisionRunCoordinator;
 import com.hengpick.mall.decision.application.DecisionRunService;
+import com.hengpick.mall.decision.application.DecisionSessionQueryService;
 import com.hengpick.mall.decision.application.DecisionStreamQueryService;
 import com.hengpick.mall.decision.domain.DecisionRunRepository;
+import com.hengpick.mall.decision.domain.DecisionSessionSnapshotRepository;
 import com.hengpick.mall.decision.domain.DecisionStreamAccessRepository;
 import com.hengpick.mall.decision.event.DecisionEventPublisher;
 import com.hengpick.mall.decision.event.DecisionStreamStore;
@@ -43,6 +45,11 @@ public class DecisionConfiguration {
     @Bean
     DecisionStreamQueryService decisionStreamQueryService(DecisionStreamAccessRepository repository) {
         return new DecisionStreamQueryService(repository);
+    }
+
+    @Bean
+    DecisionSessionQueryService decisionSessionQueryService(DecisionSessionSnapshotRepository repository) {
+        return new DecisionSessionQueryService(repository);
     }
 
     @Bean

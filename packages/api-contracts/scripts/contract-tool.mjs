@@ -32,6 +32,8 @@ const requiredSchemas = [
   "ExchangeSmartMallTicketRequest",
   "H5Session",
   "H5SessionResponse",
+  "DecisionSessionSnapshot",
+  "DecisionSessionSnapshotResponse",
   "SuccessEnvelope",
   "ErrorEnvelope",
   "ApiError",
@@ -97,6 +99,13 @@ function objectShape(schema, document, seen = new Set()) {
 function typescriptType(schema) {
   if (Object.keys(schema).length === 0) return "unknown";
   if (schema.$ref) return referenceName(schema.$ref);
+  if (Array.isArray(schema.type)) {
+    return schema.type
+      .map((type) =>
+        type === "null" ? "null" : typescriptType({ ...schema, type }),
+      )
+      .join(" | ");
+  }
   if (Array.isArray(schema.enum)) {
     return schema.enum.map((value) => JSON.stringify(value)).join(" | ");
   }
@@ -111,6 +120,13 @@ function typescriptType(schema) {
 function pythonType(schema) {
   if (Object.keys(schema).length === 0) return "object";
   if (schema.$ref) return referenceName(schema.$ref);
+  if (Array.isArray(schema.type)) {
+    return schema.type
+      .map((type) =>
+        type === "null" ? "None" : pythonType({ ...schema, type }),
+      )
+      .join(" | ");
+  }
   if (Array.isArray(schema.enum)) {
     return `Literal[${schema.enum.map((value) => JSON.stringify(value)).join(", ")}]`;
   }
@@ -192,6 +208,7 @@ export function validateContract(document) {
     "/api/v1/smart-mall/tickets",
     "/api/v1/smart-mall/sessions/exchange",
     "/api/v1/decision-sessions/{sessionId}/stream",
+    "/api/v1/decision-sessions/{sessionId}",
     "/api/v1/health",
     "/api/v1/products",
     "/api/v1/products/search",

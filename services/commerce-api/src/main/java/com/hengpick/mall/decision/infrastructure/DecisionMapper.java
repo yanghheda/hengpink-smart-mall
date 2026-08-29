@@ -2,6 +2,7 @@ package com.hengpick.mall.decision.infrastructure;
 
 import com.hengpick.mall.decision.domain.DecisionRun;
 import com.hengpick.mall.decision.domain.DecisionSession;
+import com.hengpick.mall.decision.domain.DecisionSessionSnapshot;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -11,6 +12,18 @@ import org.apache.ibatis.annotations.Update;
 /** 将 Decision 仓储操作映射到冻结的数据表。 */
 @Mapper
 public interface DecisionMapper {
+    @Select("""
+            SELECT s.id AS sessionId, r.id AS currentRunId,
+                   s.current_run_version AS currentRunVersion, s.status,
+                   s.current_report_version AS currentReportVersion
+            FROM decision_sessions s
+            LEFT JOIN decision_runs r
+              ON r.session_id = s.id AND r.run_version = s.current_run_version
+            WHERE s.id = #{sessionId} AND s.user_id = #{userId} AND s.deleted_at IS NULL
+            """)
+    DecisionSessionSnapshot findSessionSnapshot(
+            @Param("sessionId") String sessionId, @Param("userId") String userId);
+
     @Select("""
             SELECT r.id
             FROM decision_sessions s

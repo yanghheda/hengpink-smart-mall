@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-# 契约源摘要：6cc7954cd1b61226da44cff201242c18016ea1bf4427573d01abc93399b71ed7
+# 契约源摘要：2412e4df78c37947f265256c8e7e4d87fe2e74e8c5d29e3fa869a585246f618b
 from typing import Literal, NotRequired, TypedDict
 
 
@@ -93,6 +93,20 @@ class ApiError(TypedDict):
 class ErrorEnvelope(TypedDict):
     requestId: str
     error: ApiError
+
+
+class DecisionSessionSnapshot(TypedDict):
+    sessionId: str
+    currentRunId: NotRequired[str | None]
+    currentRunVersion: int
+    status: Literal["DRAFT", "RUNNING", "WAITING_CLARIFICATION", "COMPLETED", "PARTIAL", "FAILED", "SUPERSEDED", "CANCELLED"]
+    currentReportVersion: NotRequired[int | None]
+
+
+class DecisionSessionSnapshotResponse(TypedDict):
+    requestId: str
+    data: DecisionSessionSnapshot
+    meta: ResponseMeta
 
 
 class HealthData(TypedDict):

@@ -147,6 +147,33 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+  /api/v1/decision-sessions/{sessionId}:
+    get:
+      operationId: getDecisionSession
+      summary: 从 MySQL 读取用于刷新恢复和轮询降级的会话快照
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: sessionId
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 64 }
+      responses:
+        "200":
+          description: 返回当前 Session 与 Run 的权威状态
+          content:
+            application/json:
+              schema:
+                { $ref: "#/components/schemas/DecisionSessionSnapshotResponse" }
+        "401":
+          description: H5 Access Token 无效或过期
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+        "404":
+          description: Session 不存在或无权访问
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorEnvelope" }
   /api/v1/health:
     get:
       operationId: getHealth
@@ -443,6 +470,44 @@ components:
           type: string
         error:
           $ref: "#/components/schemas/ApiError"
+    DecisionSessionSnapshot:
+      type: object
+      additionalProperties: false
+      required:
+        - sessionId
+        - currentRunVersion
+        - status
+      properties:
+        sessionId:
+          type: string
+        currentRunId:
+          type: [string, "null"]
+        currentRunVersion:
+          type: integer
+          minimum: 0
+        status:
+          type: string
+          enum:
+            [
+              DRAFT,
+              RUNNING,
+              WAITING_CLARIFICATION,
+              COMPLETED,
+              PARTIAL,
+              FAILED,
+              SUPERSEDED,
+              CANCELLED,
+            ]
+        currentReportVersion:
+          type: [integer, "null"]
+          minimum: 1
+    DecisionSessionSnapshotResponse:
+      allOf:
+        - $ref: "#/components/schemas/SuccessEnvelope"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/DecisionSessionSnapshot"
     HealthData:
       type: object
       additionalProperties: false

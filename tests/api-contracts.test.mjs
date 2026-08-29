@@ -26,6 +26,7 @@ test("OpenAPI 3.1 defines auth, health, catalog, and valid offer slices", async 
     "/api/v1/smart-mall/tickets",
     "/api/v1/smart-mall/sessions/exchange",
     "/api/v1/decision-sessions/{sessionId}/stream",
+    "/api/v1/decision-sessions/{sessionId}",
     "/api/v1/health",
     "/api/v1/products",
     "/api/v1/products/search",
