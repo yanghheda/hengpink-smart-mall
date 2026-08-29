@@ -10,7 +10,8 @@
     "skus",
     "shops",
     "offers",
-    "reviews"
+    "reviews",
+    "knowledge_documents"
   ],
   "properties": {
     "dataset_version": {
@@ -63,6 +64,26 @@
         "additionalProperties": false
       }
     },
-    "reviews": { "type": "array" }
+    "reviews": { "type": "array" },
+    "knowledge_documents": {
+      "type": "array",
+      "minItems": 5,
+      "items": {
+        "type": "object",
+        "required": [
+          "evidence_id",
+          "product_id",
+          "category_id",
+          "source_type",
+          "topic",
+          "trust_level",
+          "published_at",
+          "content",
+          "dataset_version",
+          "is_simulated",
+          "updated_at"
+        ]
+      }
+    }
   }
 }

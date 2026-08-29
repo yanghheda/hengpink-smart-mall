@@ -41,6 +41,7 @@ test("report contains version, counts, hash, and explicit anomalies", async () =
     shops: 2,
     offers: 14,
     reviews: 1,
+    knowledge_documents: 5,
   });
   assert.match(report.content_hash, /^[a-f0-9]{64}$/);
   assert.deepEqual(report.anomalies, ["missing_attribute", "out_of_stock"]);

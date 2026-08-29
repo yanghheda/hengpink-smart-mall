@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  buildKnowledgeChunks,
   loadCuratedDataset,
   validateDataset,
 } from "../packages/commerce-dataset/scripts/dataset-tool.mjs";
@@ -15,6 +16,33 @@ test("curated dataset has the minimum P03 phone slice", async () => {
   assert.ok(dataset.shops.length >= 2);
   assert.ok(dataset.offers.length >= 12);
   assert.doesNotThrow(() => validateDataset(dataset));
+});
+
+test("knowledge document cannot bind a SKU from another product", async () => {
+  const dataset = await loadCuratedDataset();
+  dataset.knowledge_documents[0].sku_id = dataset.skus[2].sku_id;
+
+  assert.throws(
+    () => validateDataset(dataset),
+    (error) =>
+      /knowledge_documents\[0\]\.sku_id/.test(error.message) &&
+      /does not belong to product/i.test(error.message),
+  );
+});
+
+test("typed chunks keep one evidence boundary and stable content hashes", async () => {
+  const dataset = await loadCuratedDataset();
+  const first = buildKnowledgeChunks(dataset);
+  const second = buildKnowledgeChunks(dataset);
+
+  assert.deepEqual(first, second);
+  assert.ok(first.length >= dataset.knowledge_documents.length);
+  assert.ok(first.every((chunk) => /^[a-f0-9]{64}$/.test(chunk.content_hash)));
+  assert.ok(first.every((chunk) => chunk.is_simulated === true));
+  assert.equal(
+    new Set(first.map((chunk) => chunk.chunk_id)).size,
+    first.length,
+  );
 });
 
 test("unknown SKU attribute reports its JSON path and reason", async () => {

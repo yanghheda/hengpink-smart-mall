@@ -3,7 +3,9 @@ package com.hengpick.mall.catalog.importer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.security.MessageDigest;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -34,6 +36,7 @@ public final class CommerceDatasetImporter {
                 importShops(connection, dataset);
                 importOffers(connection, dataset);
                 importReviews(connection, dataset);
+                importKnowledgeDocuments(connection, dataset);
                 connection.commit();
             } catch (Exception exception) {
                 connection.rollback();
@@ -203,6 +206,55 @@ public final class CommerceDatasetImporter {
             }
             statement.executeBatch();
         }
+    }
+
+    private static void importKnowledgeDocuments(Connection connection, JsonNode dataset) throws Exception {
+        var sql = """
+                INSERT INTO knowledge_documents (id, evidence_id, product_id, sku_id, category_id, source_type,
+                    topic, sentiment, trust_level, published_at, content, content_hash, embedding_model,
+                    embedding_version, injection_flag, dataset_version, is_simulated, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'fixture-hash', 'fixture-hash-v1', 0, ?, 1, ?)
+                ON DUPLICATE KEY UPDATE product_id = VALUES(product_id), sku_id = VALUES(sku_id),
+                    category_id = VALUES(category_id), source_type = VALUES(source_type), topic = VALUES(topic),
+                    sentiment = VALUES(sentiment), trust_level = VALUES(trust_level),
+                    published_at = VALUES(published_at), content = VALUES(content),
+                    content_hash = VALUES(content_hash), embedding_model = VALUES(embedding_model),
+                    embedding_version = VALUES(embedding_version), dataset_version = VALUES(dataset_version)
+                """;
+        try (var statement = connection.prepareStatement(sql)) {
+            for (var document : dataset.withArray("knowledge_documents")) {
+                var evidenceId = document.path("evidence_id").asText();
+                var content = normalizeContent(document.path("content").asText());
+                statement.setString(1, evidenceId + "-C001");
+                statement.setString(2, evidenceId);
+                statement.setString(3, document.path("product_id").asText());
+                if (document.path("sku_id").isNull()) statement.setNull(4, java.sql.Types.VARCHAR);
+                else statement.setString(4, document.path("sku_id").asText());
+                statement.setString(5, document.path("category_id").asText());
+                statement.setString(6, document.path("source_type").asText());
+                statement.setString(7, document.path("topic").asText());
+                if (document.path("sentiment").isNull()) statement.setNull(8, java.sql.Types.VARCHAR);
+                else statement.setString(8, document.path("sentiment").asText());
+                statement.setBigDecimal(9, document.path("trust_level").decimalValue());
+                statement.setObject(10, LocalDateTime.ofInstant(
+                        Instant.parse(document.path("published_at").asText()), ZoneOffset.UTC));
+                statement.setString(11, content);
+                statement.setString(12, sha256(content));
+                statement.setString(13, document.path("dataset_version").asText());
+                statement.setTimestamp(14, timestamp(document));
+                statement.addBatch();
+            }
+            statement.executeBatch();
+        }
+    }
+
+    private static String normalizeContent(String content) {
+        return content.trim().replaceAll("\\s+", " ");
+    }
+
+    private static String sha256(String content) throws Exception {
+        var bytes = MessageDigest.getInstance("SHA-256").digest(content.getBytes(StandardCharsets.UTF_8));
+        return java.util.HexFormat.of().formatHex(bytes);
     }
 
     private static Timestamp timestamp(JsonNode node) {

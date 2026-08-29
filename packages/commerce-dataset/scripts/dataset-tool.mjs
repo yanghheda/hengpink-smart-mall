@@ -26,9 +26,15 @@ export function createDatasetReport(dataset, options = {}) {
     dataset_version: dataset.dataset_version,
     seed: options.seed ?? null,
     counts: Object.fromEntries(
-      ["categories", "products", "skus", "shops", "offers", "reviews"].map(
-        (name) => [name, dataset[name].length],
-      ),
+      [
+        "categories",
+        "products",
+        "skus",
+        "shops",
+        "offers",
+        "reviews",
+        "knowledge_documents",
+      ].map((name) => [name, dataset[name].length]),
     ),
     content_hash: stableHash(dataset),
     anomalies: options.anomalies ?? [],
@@ -51,6 +57,7 @@ export async function generateDataset({
     "shops",
     "offers",
     "reviews",
+    "knowledge_documents",
   ]) {
     for (const entity of dataset[name]) {
       entity.dataset_version = version;
@@ -178,6 +185,7 @@ export function validateDataset(dataset) {
     "shops",
     "offers",
     "reviews",
+    "knowledge_documents",
   ];
   for (const name of collections) {
     if (!Array.isArray(dataset[name])) fail(name, "must be an array");
@@ -240,7 +248,75 @@ export function validateDataset(dataset) {
         fail(`reviews[${i}].sku_id`, "does not belong to product");
     }
   }
+  const evidenceIds = new Set();
+  const sourceTypes = new Set([
+    "SPECIFICATION",
+    "SIMULATED_REVIEW",
+    "FAQ",
+    "AFTER_SALES_POLICY",
+    "EXPERT_SUMMARY",
+  ]);
+  for (const [i, document] of dataset.knowledge_documents.entries()) {
+    const path = `knowledge_documents[${i}]`;
+    for (const field of [
+      "evidence_id",
+      "product_id",
+      "category_id",
+      "source_type",
+      "topic",
+      "published_at",
+      "content",
+    ])
+      requireField(document[field], `${path}.${field}`);
+    if (evidenceIds.has(document.evidence_id))
+      fail(`${path}.evidence_id`, "must be globally unique");
+    evidenceIds.add(document.evidence_id);
+    const product = products.get(document.product_id);
+    if (!product) fail(`${path}.product_id`, "references unknown product");
+    if (product.category_id !== document.category_id)
+      fail(`${path}.category_id`, "does not belong to product");
+    if (document.sku_id) {
+      const sku = skus.get(document.sku_id);
+      if (!sku) fail(`${path}.sku_id`, "references unknown SKU");
+      if (sku.product_id !== document.product_id)
+        fail(`${path}.sku_id`, "does not belong to product");
+    }
+    if (!sourceTypes.has(document.source_type))
+      fail(`${path}.source_type`, "is not supported in P11-S01");
+    if (document.is_simulated !== true)
+      fail(`${path}.is_simulated`, "must be true for the demo dataset");
+    if (!(document.trust_level >= 0 && document.trust_level <= 1))
+      fail(`${path}.trust_level`, "must be between 0 and 1");
+  }
   return dataset;
+}
+
+function normalizeKnowledgeContent(content) {
+  return content.trim().replace(/\s+/g, " ");
+}
+
+export function buildKnowledgeChunks(dataset) {
+  validateDataset(dataset);
+  return dataset.knowledge_documents.flatMap((document) => {
+    const content = normalizeKnowledgeContent(document.content);
+    const parts = content.split(/\n\s*\n/).filter(Boolean);
+    return parts.map((part, index) => ({
+      chunk_id: `${document.evidence_id}-C${String(index + 1).padStart(3, "0")}`,
+      evidence_id: document.evidence_id,
+      product_id: document.product_id,
+      sku_id: document.sku_id ?? null,
+      category_id: document.category_id,
+      source_type: document.source_type,
+      topic: document.topic,
+      sentiment: document.sentiment ?? null,
+      trust_level: document.trust_level,
+      published_at: document.published_at,
+      dataset_version: document.dataset_version,
+      content: part,
+      content_hash: createHash("sha256").update(part).digest("hex"),
+      is_simulated: true,
+    }));
+  });
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

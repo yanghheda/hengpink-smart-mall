@@ -1,4 +1,4 @@
-.PHONY: install start-commerce-app start-smart-mall-h5 start-commerce-api start-agent-service infra-up infra-down infra-status db-migrate db-seed test-db-integration test check
+.PHONY: install start-commerce-app start-smart-mall-h5 start-commerce-api start-agent-service infra-up infra-down infra-status db-migrate db-seed rag-index test-db-integration test check
 
 install:
 	npm ci
@@ -33,6 +33,10 @@ db-migrate:
 db-seed: db-migrate
 	test -n "$$MYSQL_URL" && test -n "$$MYSQL_USERNAME" && test -n "$$MYSQL_PASSWORD"
 	mvn -f services/commerce-api/pom.xml -Dspring-boot.run.main-class=com.hengpick.mall.catalog.importer.CommerceDatasetImporter spring-boot:run
+
+rag-index:
+	test -n "$$DATASET_VERSION" && test -n "$$MYSQL_HOST" && test -n "$$MYSQL_USERNAME" && test -n "$$MYSQL_PASSWORD" && test -n "$$MYSQL_DATABASE" && test -n "$$QDRANT_URL"
+	PYTHONPATH=services/agent-service services/agent-service/.venv/bin/python -m app.knowledge.cli
 
 test-db-integration:
 	./scripts/test-vm-database.sh
