@@ -48,6 +48,7 @@ def test_success_route_is_deterministic_and_keeps_identity_unchanged() -> None:
     assert result["completed_nodes"] == [
         "load_context",
         "intent",
+        "clarification",
         "product",
         "review_stub",
         "price",
@@ -77,7 +78,13 @@ def test_no_candidate_route_stops_before_analysis_and_never_fabricates_report() 
 
     result = graph.invoke(initial_state())
 
-    assert result["completed_nodes"] == ["load_context", "intent", "product", "no_result"]
+    assert result["completed_nodes"] == [
+        "load_context",
+        "intent",
+        "clarification",
+        "product",
+        "no_result",
+    ]
     assert result["candidates"] == []
     assert result["report"] is None
     assert result["warnings"] == ["NO_MATCHED_CANDIDATE"]

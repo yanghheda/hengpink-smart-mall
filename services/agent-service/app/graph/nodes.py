@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Protocol
 
+from app.clarification.service import ClarificationPlanner, merge_intents
 from app.graph.state import ShoppingDecisionState
 from app.intent.prompt import IntentPrompt
 from app.intent.service import IntentParser
@@ -32,14 +33,31 @@ class ShoppingDecisionNodes:
 
     def intent(self, state: ShoppingDecisionState) -> dict[str, object]:
         result = IntentParser(self.model).parse(state["messages"])
+        merged_intent = merge_intents(
+            state.get("previous_intent"), result.intent.model_dump(mode="json")
+        )
         warnings = list(state["warnings"])
         if result.trace.warning_code:
             warnings.append(result.trace.warning_code)
         return {
-            "intent": result.intent.model_dump(mode="json"),
+            "intent": merged_intent,
             "intent_trace": result.trace.model_dump(mode="json"),
             "warnings": warnings,
             "completed_nodes": ["intent"],
+        }
+
+    def clarification(self, state: ShoppingDecisionState) -> dict[str, object]:
+        plan = ClarificationPlanner().plan(
+            state["intent"] or {}, state["messages"], state["clarification_round"]
+        )
+        warnings = list(state["warnings"])
+        if plan.confidence_penalty:
+            warnings.append(plan.reason)
+        return {
+            "clarification": plan.model_dump(mode="json"),
+            "confidence_penalty": plan.confidence_penalty,
+            "warnings": warnings,
+            "completed_nodes": ["clarification"],
         }
 
     def product(self, state: ShoppingDecisionState) -> dict[str, object]:
@@ -103,3 +121,10 @@ def route_after_product(state: ShoppingDecisionState) -> str:
     """零候选必须终止，禁止生成违规首选。"""
 
     return "review_stub" if state["candidates"] else "no_result"
+
+
+def route_after_clarification(state: ShoppingDecisionState) -> str:
+    """有问题时在唯一等待点停止，否则继续确定性商品主链。"""
+
+    clarification = state.get("clarification") or {}
+    return "wait_for_user" if clarification.get("questions") else "product"

@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
-from app.graph.nodes import ShoppingDecisionNodes, route_after_product
+from app.graph.nodes import ShoppingDecisionNodes, route_after_clarification, route_after_product
 from app.graph.state import ShoppingDecisionState
 from app.intent.prompt import IntentPrompt
 
@@ -16,6 +16,7 @@ class StubGraphModel:
     report_text: str = "基于确定性结果生成的骨架报告"
     attempted_amount: str | None = None
     attempted_score: int | None = None
+    intent_output: dict[str, object] | None = None
 
     def generate_intent(
         self,
@@ -23,12 +24,12 @@ class StubGraphModel:
         prompt: IntentPrompt,
         repair_context: dict[str, object] | None = None,
     ) -> dict[str, object]:
-        return {
+        return self.intent_output or {
             "category": "PHONE",
             "recipient": None,
-            "budget": None,
+            "budget": {"max": "5000.00", "currency": "CNY"},
             "hard_constraints": [],
-            "usage_scenarios": [],
+            "usage_scenarios": ["DAILY_USE"],
             "preferences": [],
             "memberships": [],
             "inferences": [],
@@ -48,6 +49,7 @@ def build_shopping_decision_graph(model: StubGraphModel) -> CompiledStateGraph:
     builder = StateGraph(ShoppingDecisionState)
     builder.add_node("load_context", nodes.load_context)
     builder.add_node("intent", nodes.intent)
+    builder.add_node("clarification", nodes.clarification)
     builder.add_node("product", nodes.product)
     builder.add_node("review_stub", nodes.review_stub)
     builder.add_node("price", nodes.price)
@@ -57,7 +59,10 @@ def build_shopping_decision_graph(model: StubGraphModel) -> CompiledStateGraph:
     builder.add_node("no_result", nodes.no_result)
     builder.add_edge(START, "load_context")
     builder.add_edge("load_context", "intent")
-    builder.add_edge("intent", "product")
+    builder.add_edge("intent", "clarification")
+    builder.add_conditional_edges(
+        "clarification", route_after_clarification, {"wait_for_user": END, "product": "product"}
+    )
     builder.add_conditional_edges("product", route_after_product)
     builder.add_edge("review_stub", "price")
     builder.add_edge("price", "score")

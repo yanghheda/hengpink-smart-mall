@@ -34,6 +34,10 @@ class ShoppingDecisionState(TypedDict, total=False):
     budget: dict[str, int]
     intent: dict[str, Any] | None
     intent_trace: dict[str, Any] | None
+    previous_intent: dict[str, Any] | None
+    clarification_round: int
+    clarification: dict[str, Any] | None
+    confidence_penalty: str | None
     candidates: list[dict[str, Any]]
     evidence: dict[str, list[dict[str, Any]]]
     price_plans: dict[str, list[dict[str, Any]]]
@@ -59,12 +63,16 @@ class InitialGraphState(BaseModel):
     pricing_rule_version: str = Field(min_length=1)
     messages: list[GraphMessage]
     budget: GraphBudget
+    previous_intent: dict[str, Any] | None = None
+    clarification_round: int = Field(default=0, ge=0, le=2)
 
     def to_graph_state(self) -> ShoppingDecisionState:
         return ShoppingDecisionState(
             **self.model_dump(),
             intent=None,
             intent_trace=None,
+            clarification=None,
+            confidence_penalty=None,
             candidates=[],
             evidence={},
             price_plans={},
