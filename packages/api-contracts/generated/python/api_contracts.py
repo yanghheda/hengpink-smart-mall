@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-# 契约源摘要：e73547ebfd64f31ed3b7f07889d65da30113f10a76c579be445d14eea3837cda
+# 契约源摘要：b7d8cea1bc4c081011f4689db19e9a645d7d51c38376549ba7aab02014ad584b
 from typing import Literal, NotRequired, TypedDict
 
 
@@ -323,6 +323,59 @@ class MemoryDecisionResult(TypedDict):
 class MemoryDecisionResponse(TypedDict):
     requestId: str
     data: MemoryDecisionResult
+    meta: ResponseMeta
+
+
+class FavoriteRequest(TypedDict):
+    entityType: Literal["PRODUCT", "REPORT"]
+    entityId: str
+    reportVersion: NotRequired[int]
+
+
+class Favorite(TypedDict):
+    id: str
+    userId: str
+    entityType: Literal["PRODUCT", "REPORT"]
+    entityId: str
+    snapshot: dict[str, object]
+    createdAt: str
+
+
+class FavoriteResponse(TypedDict):
+    requestId: str
+    data: Favorite
+    meta: ResponseMeta
+
+
+class FavoriteListResponse(TypedDict):
+    requestId: str
+    data: list[Favorite]
+    meta: ResponseMeta
+
+
+class HistoricalReport(TypedDict):
+    sessionId: str
+    userId: str
+    version: int
+    selectedSkuId: str
+    report: dict[str, object]
+    versions: dict[str, object]
+    createdAt: str
+
+
+class HistoricalReportResponse(TypedDict):
+    requestId: str
+    data: HistoricalReport
+    meta: ResponseMeta
+
+
+class DeletionResult(TypedDict):
+    deleted: bool
+
+
+class DeletionResponse(TypedDict):
+    requestId: str
+    data: DeletionResult
     meta: ResponseMeta
 
 

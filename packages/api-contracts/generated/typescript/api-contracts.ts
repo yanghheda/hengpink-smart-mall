@@ -1,5 +1,5 @@
 // 由 packages/api-contracts/openapi.yaml 生成，请勿手工修改。
-// 契约源摘要：e73547ebfd64f31ed3b7f07889d65da30113f10a76c579be445d14eea3837cda
+// 契约源摘要：b7d8cea1bc4c081011f4689db19e9a645d7d51c38376549ba7aab02014ad584b
 
 export interface LoginRequest {
   account: string;
@@ -317,6 +317,59 @@ export interface MemoryDecisionResult {
 export interface MemoryDecisionResponse {
   requestId: string;
   data: MemoryDecisionResult;
+  meta: ResponseMeta;
+}
+
+export interface FavoriteRequest {
+  entityType: "PRODUCT" | "REPORT";
+  entityId: string;
+  reportVersion?: number;
+}
+
+export interface Favorite {
+  id: string;
+  userId: string;
+  entityType: "PRODUCT" | "REPORT";
+  entityId: string;
+  snapshot: Record<string, unknown>;
+  createdAt: string;
+}
+
+export interface FavoriteResponse {
+  requestId: string;
+  data: Favorite;
+  meta: ResponseMeta;
+}
+
+export interface FavoriteListResponse {
+  requestId: string;
+  data: Array<Favorite>;
+  meta: ResponseMeta;
+}
+
+export interface HistoricalReport {
+  sessionId: string;
+  userId: string;
+  version: number;
+  selectedSkuId: string;
+  report: Record<string, unknown>;
+  versions: Record<string, unknown>;
+  createdAt: string;
+}
+
+export interface HistoricalReportResponse {
+  requestId: string;
+  data: HistoricalReport;
+  meta: ResponseMeta;
+}
+
+export interface DeletionResult {
+  deleted: boolean;
+}
+
+export interface DeletionResponse {
+  requestId: string;
+  data: DeletionResult;
   meta: ResponseMeta;
 }
 

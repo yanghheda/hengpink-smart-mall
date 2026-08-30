@@ -52,6 +52,11 @@ const requiredSchemas = [
   "MemoryProposalResponse",
   "MemoryDecisionRequest",
   "MemoryDecisionResponse",
+  "FavoriteRequest",
+  "FavoriteResponse",
+  "FavoriteListResponse",
+  "HistoricalReportResponse",
+  "DeletionResponse",
   "CatalogFactListResponse",
   "OfferListResponse",
 ];
@@ -221,6 +226,9 @@ export function validateContract(document) {
   }
   const paths = Object.keys(document.paths ?? {});
   const expectedPaths = [
+    "/api/v1/favorites",
+    "/api/v1/favorites/{favoriteId}",
+    "/api/v1/decision-sessions/{sessionId}/reports/{version}",
     "/api/v1/auth/login",
     "/api/v1/auth/refresh",
     "/api/v1/smart-mall/tickets",

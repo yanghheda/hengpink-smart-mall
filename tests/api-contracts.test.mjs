@@ -14,13 +14,16 @@ import {
 
 const contractPath = "packages/api-contracts/openapi.yaml";
 
-test("OpenAPI 3.1 defines auth, decision, memory, catalog, and offer slices", async () => {
+test("OpenAPI 3.1 defines auth, decision, engagement, catalog, and offer slices", async () => {
   const source = await readFile(contractPath, "utf8");
   const contract = parse(source);
 
   assert.doesNotThrow(() => validateContract(contract));
   assert.match(contract.openapi, /^3\.1\./);
   assert.deepEqual(Object.keys(contract.paths), [
+    "/api/v1/favorites",
+    "/api/v1/favorites/{favoriteId}",
+    "/api/v1/decision-sessions/{sessionId}/reports/{version}",
     "/api/v1/auth/login",
     "/api/v1/auth/refresh",
     "/api/v1/smart-mall/tickets",
@@ -68,6 +71,11 @@ test("OpenAPI 3.1 defines auth, decision, memory, catalog, and offer slices", as
     "MemoryProposalResponse",
     "MemoryDecisionRequest",
     "MemoryDecisionResponse",
+    "FavoriteRequest",
+    "FavoriteResponse",
+    "FavoriteListResponse",
+    "HistoricalReportResponse",
+    "DeletionResponse",
     "CatalogFactListResponse",
     "OfferListResponse",
   ]) {

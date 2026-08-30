@@ -4,8 +4,134 @@ info:
   title: HengPick Smart Mall Public API
   version: 0.1.0
   description: >-
-    Public contract for health, catalog, and the P05-S01 valid offer slice.
+    Public contract for health, catalog, decision, memory, favorites, and historical reports.
 paths:
+  /api/v1/favorites:
+    get:
+      operationId: listFavorites
+      summary: 按当前用户列出类型化收藏
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: query
+          name: entityType
+          required: false
+          schema: { type: string, enum: [PRODUCT, REPORT] }
+      responses:
+        "200":
+          description: 商品收藏读取当前事实，报告收藏返回保存时的版本快照
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FavoriteListResponse" }
+        "401":
+          description: H5 Access Token 无效或过期
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+    post:
+      operationId: addFavorite
+      summary: 幂等收藏商品或指定版本的历史报告
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FavoriteRequest" }
+      responses:
+        "200":
+          description: 首次和重复收藏均返回当前收藏资源
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FavoriteResponse" }
+        "400":
+          description: 收藏目标不存在、无权访问或报告版本非法
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+        "401":
+          description: H5 Access Token 无效或过期
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+  /api/v1/favorites/{favoriteId}:
+    delete:
+      operationId: deleteFavorite
+      summary: 幂等删除当前用户的收藏
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: favoriteId
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 64 }
+      responses:
+        "200":
+          description: 收藏不存在时也返回删除成功
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DeletionResponse" }
+        "401":
+          description: H5 Access Token 无效或过期
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+  /api/v1/decision-sessions/{sessionId}/reports/{version}:
+    get:
+      operationId: getHistoricalReport
+      summary: 读取当前用户保存的指定报告版本
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: sessionId
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 64 }
+        - in: path
+          name: version
+          required: true
+          schema: { type: integer, minimum: 1 }
+      responses:
+        "200":
+          description: 返回生成时保存的报告与版本矩阵，不使用新数据集重算
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HistoricalReportResponse" }
+        "400":
+          description: 历史报告不存在或无权访问
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+        "401":
+          description: H5 Access Token 无效或过期
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+    delete:
+      operationId: deleteHistoricalReport
+      summary: 删除报告原文并脱敏关联收藏快照
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: sessionId
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 64 }
+        - in: path
+          name: version
+          required: true
+          schema: { type: integer, minimum: 1 }
+      responses:
+        "200":
+          description: 报告原文已删除，关联收藏只保留必要的非叙述性快照
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DeletionResponse" }
+        "400":
+          description: 历史报告不存在或无权访问
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+        "401":
+          description: H5 Access Token 无效或过期
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorEnvelope" }
   /api/v1/auth/login:
     post:
       operationId: login
@@ -958,6 +1084,70 @@ components:
         - type: object
           properties:
             data: { $ref: "#/components/schemas/MemoryDecisionResult" }
+    FavoriteRequest:
+      type: object
+      additionalProperties: false
+      required: [entityType, entityId]
+      properties:
+        entityType: { type: string, enum: [PRODUCT, REPORT] }
+        entityId: { type: string, minLength: 1, maxLength: 64 }
+        reportVersion: { type: integer, minimum: 1 }
+    Favorite:
+      type: object
+      additionalProperties: false
+      required: [id, userId, entityType, entityId, snapshot, createdAt]
+      properties:
+        id: { type: string }
+        userId: { type: string }
+        entityType: { type: string, enum: [PRODUCT, REPORT] }
+        entityId: { type: string }
+        snapshot: { type: object }
+        createdAt: { type: string, format: date-time }
+    FavoriteResponse:
+      allOf:
+        - $ref: "#/components/schemas/SuccessEnvelope"
+        - type: object
+          properties:
+            data: { $ref: "#/components/schemas/Favorite" }
+    FavoriteListResponse:
+      allOf:
+        - $ref: "#/components/schemas/SuccessEnvelope"
+        - type: object
+          properties:
+            data:
+              type: array
+              items: { $ref: "#/components/schemas/Favorite" }
+    HistoricalReport:
+      type: object
+      additionalProperties: false
+      required:
+        [sessionId, userId, version, selectedSkuId, report, versions, createdAt]
+      properties:
+        sessionId: { type: string }
+        userId: { type: string }
+        version: { type: integer, minimum: 1 }
+        selectedSkuId: { type: string }
+        report: { type: object }
+        versions: { type: object }
+        createdAt: { type: string, format: date-time }
+    HistoricalReportResponse:
+      allOf:
+        - $ref: "#/components/schemas/SuccessEnvelope"
+        - type: object
+          properties:
+            data: { $ref: "#/components/schemas/HistoricalReport" }
+    DeletionResult:
+      type: object
+      additionalProperties: false
+      required: [deleted]
+      properties:
+        deleted: { type: boolean }
+    DeletionResponse:
+      allOf:
+        - $ref: "#/components/schemas/SuccessEnvelope"
+        - type: object
+          properties:
+            data: { $ref: "#/components/schemas/DeletionResult" }
     CatalogFact:
       type: object
       additionalProperties: false
