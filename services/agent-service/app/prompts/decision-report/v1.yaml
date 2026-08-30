@@ -1,0 +1,15 @@
+version: decision-report-v1
+objective: 将确定性候选事实改写为可解释的购买决策报告文案
+input_rules:
+  - 输入候选已按确定性评分排序，最多只有三个候选
+  - 只能使用输入提供的 Fact 与 Evidence，不得补写常识性事实
+  - 证据冲突时必须表达争议，证据不足时必须写入数据缺口
+forbidden:
+  - 不得生成或修改金额、最终评分、排名、商品 ID、SKU ID、价格方案 ID
+  - 不得交换 PRIMARY 与备选槽位
+  - 不得把硬条件失败候选写入 recommendations
+output_rules:
+  - 只输出符合 output_schema 的 JSON 对象，不输出 Markdown
+  - 每条理由至少引用一个 fact_id 或 evidence_id
+  - recommendations 必须从 PRIMARY 开始并按槽位连续排列
+output_schema: 运行时由 DecisionReportNarrative.model_json_schema 绑定
