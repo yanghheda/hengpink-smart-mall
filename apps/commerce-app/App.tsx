@@ -35,6 +35,7 @@ type RootStackParams = {
   Products: undefined;
   ProductDetail: undefined;
   SmartMall: undefined;
+  MockCheckout: undefined;
 };
 type ProductSummary = {
   productId: string;
@@ -199,6 +200,10 @@ function SmartMallScreen({
           navigationStore.getState().openProduct(selection);
           navigation.navigate("ProductDetail");
         },
+        openMockCheckout: ({ purchaseIntentId }) => {
+          navigationStore.getState().openMockCheckout({ purchaseIntentId });
+          navigation.navigate("MockCheckout");
+        },
       }),
     [api, navigation, webViewRef],
   );
@@ -339,6 +344,60 @@ function ProductDetailScreen({ api }: { api: ApiClient }) {
   );
 }
 
+type PurchaseIntent = {
+  id: string;
+  skuId: string;
+  status: "CREATED" | "CONFIRMED" | "CANCELLED" | "EXPIRED";
+  pricePlanSnapshot: { finalPrice: string; currency: string };
+};
+
+function MockCheckoutScreen({ api }: { api: ApiClient }) {
+  const intentId = useStore(
+    navigationStore,
+    (state) => state.selectedPurchaseIntentId,
+  );
+  const query = useQuery({
+    queryKey: ["purchase-intent", intentId],
+    enabled: Boolean(intentId),
+    queryFn: () =>
+      api.get<PurchaseIntent>(
+        `/api/v1/purchase-intents/${encodeURIComponent(intentId!)}`,
+      ),
+  });
+  if (!intentId) return <ScreenState text="未选择购买意向" />;
+  if (query.isPending) return <ScreenState text="正在读取服务端价格快照…" />;
+  if (query.isError)
+    return (
+      <ScreenState text={query.error.message} retry={() => query.refetch()} />
+    );
+  return (
+    <SafeAreaView style={styles.page}>
+      <Text style={styles.simulated}>
+        模拟结算 · 不支付、不扣库存、不生成订单
+      </Text>
+      <Text style={styles.title}>确认模拟购买</Text>
+      <Text style={styles.meta}>SKU：{query.data.skuId}</Text>
+      <Text style={styles.price}>
+        预计到手价 ¥{query.data.pricePlanSnapshot.finalPrice}
+      </Text>
+      <Text style={styles.meta}>状态：{query.data.status}</Text>
+      <Button
+        title={
+          query.data.status === "CONFIRMED" ? "已完成模拟确认" : "确认模拟购买"
+        }
+        disabled={query.data.status !== "CREATED"}
+        onPress={async () => {
+          await api.post(
+            `/api/v1/purchase-intents/${encodeURIComponent(intentId)}/confirm`,
+            {},
+          );
+          await query.refetch();
+        }}
+      />
+    </SafeAreaView>
+  );
+}
+
 function CommerceApp() {
   const [status, setStatus] = useState<SessionStatus>("restoring");
   const [reason, setReason] = useState<string>();
@@ -401,6 +460,9 @@ function CommerceApp() {
         </Stack.Screen>
         <Stack.Screen name="SmartMall" options={{ title: "智能商城" }}>
           {(props) => <SmartMallScreen {...props} api={api} />}
+        </Stack.Screen>
+        <Stack.Screen name="MockCheckout" options={{ title: "模拟结算" }}>
+          {() => <MockCheckoutScreen api={api} />}
         </Stack.Screen>
       </Stack.Navigator>
     </NavigationContainer>

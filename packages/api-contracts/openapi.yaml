@@ -4,8 +4,83 @@ info:
   title: HengPick Smart Mall Public API
   version: 0.1.0
   description: >-
-    Public contract for health, catalog, decision, memory, favorites, and historical reports.
+    Public contract for health, catalog, decision, memory, favorites, historical reports, and mock checkout.
 paths:
+  /api/v1/purchase-intents:
+    post:
+      operationId: createPurchaseIntent
+      summary: 重确认服务端价格并创建不可支付的购买意向
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 128 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreatePurchaseIntentRequest" }
+      responses:
+        "200":
+          description: 返回服务端重确认后的不可支付快照
+          content:
+            {
+              application/json:
+                {
+                  schema:
+                    { $ref: "#/components/schemas/PurchaseIntentResponse" },
+                },
+            }
+        "409":
+          description: 报告价格方案已过期
+          content:
+            {
+              application/json:
+                { schema: { $ref: "#/components/schemas/ErrorEnvelope" } },
+            }
+  /api/v1/purchase-intents/{purchaseIntentId}:
+    get:
+      operationId: getPurchaseIntent
+      summary: RN 按对象归属重新读取购买意向
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: purchaseIntentId
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 64 }
+      responses:
+        "200":
+          description: 返回购买意向快照
+          content:
+            {
+              application/json:
+                {
+                  schema:
+                    { $ref: "#/components/schemas/PurchaseIntentResponse" },
+                },
+            }
+  /api/v1/purchase-intents/{purchaseIntentId}/confirm:
+    post:
+      operationId: confirmPurchaseIntent
+      summary: 幂等确认模拟购买，不产生订单、支付或库存变化
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: purchaseIntentId
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 64 }
+      responses:
+        "200":
+          description: 返回 CONFIRMED 购买意向
+          content:
+            {
+              application/json:
+                {
+                  schema:
+                    { $ref: "#/components/schemas/PurchaseIntentResponse" },
+                },
+            }
   /api/v1/favorites:
     get:
       operationId: listFavorites
@@ -1148,6 +1223,65 @@ components:
         - type: object
           properties:
             data: { $ref: "#/components/schemas/DeletionResult" }
+    CreatePurchaseIntentRequest:
+      type: object
+      additionalProperties: false
+      required: [sessionId, reportVersion, skuId, pricePlanId]
+      properties:
+        sessionId: { type: string, minLength: 1, maxLength: 64 }
+        reportVersion: { type: integer, minimum: 1 }
+        skuId: { type: string, minLength: 1, maxLength: 64 }
+        pricePlanId: { type: string, minLength: 1, maxLength: 256 }
+    PurchaseIntent:
+      type: object
+      required:
+        [
+          id,
+          userId,
+          sessionId,
+          reportVersion,
+          skuId,
+          pricePlanSnapshot,
+          status,
+          expiresAt,
+          createdAt,
+        ]
+      properties:
+        id: { type: string }
+        userId: { type: string }
+        sessionId: { type: string }
+        reportVersion: { type: integer, minimum: 1 }
+        skuId: { type: string }
+        pricePlanSnapshot:
+          type: object
+          required:
+            [
+              pricePlanId,
+              skuId,
+              offerId,
+              finalPrice,
+              currency,
+              datasetVersion,
+              offerVersion,
+            ]
+          properties:
+            pricePlanId: { type: string }
+            skuId: { type: string }
+            offerId: { type: string }
+            finalPrice: { type: string, pattern: "^[0-9]+\\.[0-9]{2}$" }
+            currency: { type: string, pattern: "^[A-Z]{3}$" }
+            datasetVersion: { type: string }
+            offerVersion: { type: integer, minimum: 0 }
+        status: { type: string, enum: [CREATED, CONFIRMED, CANCELLED, EXPIRED] }
+        expiresAt: { type: string, format: date-time }
+        createdAt: { type: string, format: date-time }
+        confirmedAt: { type: [string, "null"], format: date-time }
+    PurchaseIntentResponse:
+      allOf:
+        - $ref: "#/components/schemas/SuccessEnvelope"
+        - type: object
+          properties:
+            data: { $ref: "#/components/schemas/PurchaseIntent" }
     CatalogFact:
       type: object
       additionalProperties: false

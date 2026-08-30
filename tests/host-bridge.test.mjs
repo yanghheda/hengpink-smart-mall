@@ -156,7 +156,7 @@ const messages = [
   },
 ];
 
-test("Bridge schema freezes only ready, bootstrap and openProduct", async () => {
+test("Bridge schema freezes checkout navigation without amount fields", async () => {
   const schema = JSON.parse(await readFile(schemaPath, "utf8"));
 
   assert.doesNotThrow(() => validateBridgeSchema(schema));
@@ -164,6 +164,7 @@ test("Bridge schema freezes only ready, bootstrap and openProduct", async () => 
     "bridge.ready",
     "bridge.bootstrap",
     "openProduct",
+    "openMockCheckout",
   ]);
 });
 

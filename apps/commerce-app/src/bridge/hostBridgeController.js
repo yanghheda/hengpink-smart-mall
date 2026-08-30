@@ -18,6 +18,7 @@ export function createHostBridgeController({
   createTicket,
   send,
   openProduct,
+  openMockCheckout,
   theme = "light",
   locale = "zh-CN",
 }) {
@@ -36,7 +37,7 @@ export function createHostBridgeController({
       version: BRIDGE_VERSION,
       messageId: messageId(),
       kind: "response",
-      action: "openProduct",
+      action: request.action,
       timestamp: now(),
       replyTo: request.messageId,
       success,
@@ -97,6 +98,30 @@ export function createHostBridgeController({
           handledResponses.set(message.messageId, response);
           send(response);
           return { ok: false, error: "OPEN_PRODUCT_FAILED" };
+        }
+      }
+      if (message.action === "openMockCheckout" && message.kind === "request") {
+        const cached = handledResponses.get(message.messageId);
+        if (cached) {
+          send(cached);
+          return { ok: true, duplicate: true };
+        }
+        try {
+          openMockCheckout({
+            purchaseIntentId: message.payload.purchaseIntentId,
+          });
+          const response = responseFor(message, true);
+          handledResponses.set(message.messageId, response);
+          send(response);
+          return { ok: true };
+        } catch {
+          const response = responseFor(message, false, {
+            code: "OPEN_MOCK_CHECKOUT_FAILED",
+            message: "模拟结算暂时无法打开",
+          });
+          handledResponses.set(message.messageId, response);
+          send(response);
+          return { ok: false, error: "OPEN_MOCK_CHECKOUT_FAILED" };
         }
       }
       return { ok: false, error: "BRIDGE_ACTION_UNSUPPORTED" };

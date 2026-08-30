@@ -4,7 +4,12 @@ import { pathToFileURL } from "node:url";
 
 const defaultSchemaPath =
   "packages/host-bridge/schemas/bridge-message.schema.json";
-const actions = ["bridge.ready", "bridge.bootstrap", "openProduct"];
+const actions = [
+  "bridge.ready",
+  "bridge.bootstrap",
+  "openProduct",
+  "openMockCheckout",
+];
 
 function requiredObject(value, label) {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
@@ -24,7 +29,7 @@ export function validateBridgeSchema(schema) {
 
   const definitions = requiredObject(schema.$defs, "Bridge schema $defs");
   if (JSON.stringify(definitions.action?.enum) !== JSON.stringify(actions)) {
-    throw new Error(`P01-S03 actions must be exactly: ${actions.join(", ")}`);
+    throw new Error(`Bridge actions must be exactly: ${actions.join(", ")}`);
   }
 
   const expectedMessages = [
@@ -32,6 +37,8 @@ export function validateBridgeSchema(schema) {
     ["bootstrapMessage", "event", "bridge.bootstrap"],
     ["openProductMessage", "request", "openProduct"],
     ["openProductResponseMessage", "response", "openProduct"],
+    ["openMockCheckoutMessage", "request", "openMockCheckout"],
+    ["openMockCheckoutResponseMessage", "response", "openMockCheckout"],
   ];
   for (const [name, kind, action] of expectedMessages) {
     const message = requiredObject(definitions[name], `$defs.${name}`);
@@ -128,7 +135,7 @@ function validateReady(value, errors) {
     return;
   }
   if (!uniqueAllowedStrings(payload.supportedVersions, [definitions.version.const], 1)) errors.push("supportedVersions is invalid");
-  if (!uniqueAllowedStrings(payload.capabilities, ["openProduct"])) errors.push("capabilities is invalid");
+  if (!uniqueAllowedStrings(payload.capabilities, ["openProduct", "openMockCheckout"])) errors.push("capabilities is invalid");
 }
 
 function validateBootstrap(value, errors) {
@@ -179,6 +186,23 @@ function validateOpenProduct(value, errors) {
   if (!matchesString(payload.skuId, definitions.skuId)) errors.push("skuId is invalid");
 }
 
+function validateOpenMockCheckout(value, errors) {
+  if (value.kind === "response") {
+    const keys = [...envelopeKeys, "replyTo", "success"];
+    if (value.success === false) keys.push("error");
+    if (!hasExactKeys(value, keys)) errors.push("openMockCheckout response envelope has invalid fields");
+    if (!matchesString(value.replyTo, definitions.messageId)) errors.push("replyTo must be a ULID");
+    if (!hasExactKeys(value.payload, [])) errors.push("openMockCheckout response payload must be empty");
+    return;
+  }
+  if (!hasExactKeys(value, envelopeKeys)) errors.push("openMockCheckout request envelope has invalid fields");
+  const definition = definitions.openMockCheckoutMessage.properties.payload.properties.purchaseIntentId;
+  if (value.kind !== "request" || !hasExactKeys(value.payload, ["purchaseIntentId"])
+      || !matchesString(value.payload.purchaseIntentId, definition)) {
+    errors.push("openMockCheckout payload is invalid");
+  }
+}
+
 export function validateBridgeMessage(value) {
   const errors = [];
   if (!validateEnvelope(value, errors)) return { ok: false, errors };
@@ -188,6 +212,7 @@ export function validateBridgeMessage(value) {
   if (value.action === "bridge.ready") validateReady(value, errors);
   if (value.action === "bridge.bootstrap") validateBootstrap(value, errors);
   if (value.action === "openProduct") validateOpenProduct(value, errors);
+  if (value.action === "openMockCheckout") validateOpenMockCheckout(value, errors);
   return errors.length === 0 ? { ok: true, value } : { ok: false, errors };
 }
 `;

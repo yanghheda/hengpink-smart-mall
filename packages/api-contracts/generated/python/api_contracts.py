@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-# 契约源摘要：b7d8cea1bc4c081011f4689db19e9a645d7d51c38376549ba7aab02014ad584b
+# 契约源摘要：44e0ec400a5452bc255ce03a6506cf61aecf1365ddc4fdf998fffe63c570b7cf
 from typing import Literal, NotRequired, TypedDict
 
 
@@ -376,6 +376,32 @@ class DeletionResult(TypedDict):
 class DeletionResponse(TypedDict):
     requestId: str
     data: DeletionResult
+    meta: ResponseMeta
+
+
+class CreatePurchaseIntentRequest(TypedDict):
+    sessionId: str
+    reportVersion: int
+    skuId: str
+    pricePlanId: str
+
+
+class PurchaseIntent(TypedDict):
+    id: str
+    userId: str
+    sessionId: str
+    reportVersion: int
+    skuId: str
+    pricePlanSnapshot: dict[str, object]
+    status: Literal["CREATED", "CONFIRMED", "CANCELLED", "EXPIRED"]
+    expiresAt: str
+    createdAt: str
+    confirmedAt: NotRequired[str | None]
+
+
+class PurchaseIntentResponse(TypedDict):
+    requestId: str
+    data: PurchaseIntent
     meta: ResponseMeta
 
 

@@ -9,10 +9,18 @@ export function createHostBridgeWeb({
 }: HostBridgeWebOptions): HostBridge {
   return {
     mode: "web",
-    capabilities: new Set(["openProduct"]),
+    capabilities: new Set<"openProduct" | "openMockCheckout">([
+      "openProduct",
+      "openMockCheckout",
+    ]),
     async openProduct({ productId, skuId }: OpenProductInput) {
       navigate(
         `/standalone/products/${encodeURIComponent(productId)}?skuId=${encodeURIComponent(skuId)}`,
+      );
+    },
+    async openMockCheckout({ purchaseIntentId }) {
+      navigate(
+        `/standalone/mock-checkout/${encodeURIComponent(purchaseIntentId)}`,
       );
     },
     async closeSmartMall() {

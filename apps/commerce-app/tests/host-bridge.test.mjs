@@ -5,6 +5,7 @@ import { createHostBridgeController } from "../src/bridge/hostBridgeController.j
 
 const READY_ID = "01J00000000000000000000000";
 const OPEN_ID = "01J00000000000000000000001";
+const CHECKOUT_ID = "01J00000000000000000000005";
 
 function ready(overrides = {}) {
   return JSON.stringify({
@@ -31,6 +32,54 @@ function openProduct(overrides = {}) {
     ...overrides,
   });
 }
+
+function openMockCheckout(overrides = {}) {
+  return JSON.stringify({
+    protocol: "hengpick.host-bridge",
+    version: "1.0",
+    messageId: CHECKOUT_ID,
+    kind: "request",
+    action: "openMockCheckout",
+    timestamp: 1_000,
+    payload: { purchaseIntentId: "intent-1" },
+    ...overrides,
+  });
+}
+
+test("openMockCheckout 只用 PurchaseIntent ID 导航且重复消息不重复导航", async () => {
+  const selections = [];
+  const controller = createHostBridgeController({
+    allowedOrigin: "https://smart.example",
+    now: () => 1_000,
+    createTicket: async () => ({ ticket: "opaque-ticket-value" }),
+    send: () => undefined,
+    openProduct: () => undefined,
+    openMockCheckout: (selection) => selections.push(selection),
+  });
+
+  await controller.onMessage(openMockCheckout(), "https://smart.example");
+  await controller.onMessage(openMockCheckout(), "https://smart.example");
+
+  assert.deepEqual(selections, [{ purchaseIntentId: "intent-1" }]);
+});
+
+test("openMockCheckout 拒绝 H5 夹带金额", async () => {
+  const controller = createHostBridgeController({
+    allowedOrigin: "https://smart.example",
+    now: () => 1_000,
+    createTicket: async () => ({ ticket: "opaque-ticket-value" }),
+    send: () => undefined,
+    openProduct: () => undefined,
+    openMockCheckout: () => assert.fail("非法请求不应导航"),
+  });
+  const result = await controller.onMessage(
+    openMockCheckout({
+      payload: { purchaseIntentId: "intent-1", finalPrice: "0.01" },
+    }),
+    "https://smart.example",
+  );
+  assert.equal(result.ok, false);
+});
 
 test("ready 通过版本与来源校验后才发送不含 URL 凭证的 bootstrap", async () => {
   const sent = [];

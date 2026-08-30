@@ -106,7 +106,10 @@ export function createHostBridgeReactNative({
 
   return {
     mode: "react-native",
-    capabilities: new Set(["openProduct"]),
+    capabilities: new Set<"openProduct" | "openMockCheckout">([
+      "openProduct",
+      "openMockCheckout",
+    ]),
     start() {
       update({ status: "handshaking" });
       send({
@@ -118,7 +121,7 @@ export function createHostBridgeReactNative({
         timestamp: now(),
         payload: {
           supportedVersions: [BRIDGE_VERSION],
-          capabilities: ["openProduct"],
+          capabilities: ["openProduct", "openMockCheckout"],
         },
       });
       timeout = setTimeout(() => {
@@ -165,7 +168,9 @@ export function createHostBridgeReactNative({
         message &&
         typeof message === "object" &&
         !Array.isArray(message) &&
-        (message as Record<string, unknown>).action === "openProduct" &&
+        ["openProduct", "openMockCheckout"].includes(
+          String((message as Record<string, unknown>).action),
+        ) &&
         (message as Record<string, unknown>).kind === "response"
       ) {
         const reply = message as Record<string, unknown>;
@@ -196,6 +201,25 @@ export function createHostBridgeReactNative({
           action: "openProduct",
           timestamp: now(),
           payload: { productId, skuId },
+        });
+      });
+    },
+    openMockCheckout({ purchaseIntentId }) {
+      const requestId = createMessageId();
+      return new Promise<void>((resolve, reject) => {
+        const requestTimeout = setTimeout(() => {
+          pending.delete(requestId);
+          reject(new Error("打开模拟结算请求超时"));
+        }, 3_000);
+        pending.set(requestId, { resolve, reject, timeout: requestTimeout });
+        send({
+          protocol: BRIDGE_PROTOCOL,
+          version: BRIDGE_VERSION,
+          messageId: requestId,
+          kind: "request",
+          action: "openMockCheckout",
+          timestamp: now(),
+          payload: { purchaseIntentId },
         });
       });
     },

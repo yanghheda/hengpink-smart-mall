@@ -57,6 +57,8 @@ const requiredSchemas = [
   "FavoriteListResponse",
   "HistoricalReportResponse",
   "DeletionResponse",
+  "CreatePurchaseIntentRequest",
+  "PurchaseIntentResponse",
   "CatalogFactListResponse",
   "OfferListResponse",
 ];
@@ -226,6 +228,9 @@ export function validateContract(document) {
   }
   const paths = Object.keys(document.paths ?? {});
   const expectedPaths = [
+    "/api/v1/purchase-intents",
+    "/api/v1/purchase-intents/{purchaseIntentId}",
+    "/api/v1/purchase-intents/{purchaseIntentId}/confirm",
     "/api/v1/favorites",
     "/api/v1/favorites/{favoriteId}",
     "/api/v1/decision-sessions/{sessionId}/reports/{version}",

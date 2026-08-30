@@ -1,5 +1,5 @@
 // 由 packages/api-contracts/openapi.yaml 生成，请勿手工修改。
-// 契约源摘要：b7d8cea1bc4c081011f4689db19e9a645d7d51c38376549ba7aab02014ad584b
+// 契约源摘要：44e0ec400a5452bc255ce03a6506cf61aecf1365ddc4fdf998fffe63c570b7cf
 
 export interface LoginRequest {
   account: string;
@@ -370,6 +370,32 @@ export interface DeletionResult {
 export interface DeletionResponse {
   requestId: string;
   data: DeletionResult;
+  meta: ResponseMeta;
+}
+
+export interface CreatePurchaseIntentRequest {
+  sessionId: string;
+  reportVersion: number;
+  skuId: string;
+  pricePlanId: string;
+}
+
+export interface PurchaseIntent {
+  id: string;
+  userId: string;
+  sessionId: string;
+  reportVersion: number;
+  skuId: string;
+  pricePlanSnapshot: Record<string, unknown>;
+  status: "CREATED" | "CONFIRMED" | "CANCELLED" | "EXPIRED";
+  expiresAt: string;
+  createdAt: string;
+  confirmedAt?: string | null;
+}
+
+export interface PurchaseIntentResponse {
+  requestId: string;
+  data: PurchaseIntent;
   meta: ResponseMeta;
 }
 

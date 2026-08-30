@@ -15,6 +15,7 @@ export function createHostBridgeController(options: {
   createTicket: () => Promise<{ ticket: string; expiresAt?: string }>;
   send: (message: unknown) => void;
   openProduct: (selection: { productId: string; skuId: string }) => void;
+  openMockCheckout: (selection: { purchaseIntentId: string }) => void;
   theme?: "light" | "dark" | "system";
   locale?: string;
 }): BridgeController;

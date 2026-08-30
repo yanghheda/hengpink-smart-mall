@@ -110,4 +110,23 @@ describe("HostBridgeReactNative", () => {
     bridge.stop();
     await request;
   });
+
+  it("openMockCheckout 只发送 PurchaseIntent ID", async () => {
+    const postMessage = vi.fn();
+    const bridge = createHostBridgeReactNative({
+      postMessage,
+      exchangeTicket: vi.fn(),
+      now: () => 1_000,
+      createMessageId: () => "01J00000000000000000000005",
+    });
+    bridge.start();
+    const request = bridge
+      .openMockCheckout({ purchaseIntentId: "intent-1" })
+      .catch(() => undefined);
+    expect(JSON.parse(postMessage.mock.calls[1][0]).payload).toEqual({
+      purchaseIntentId: "intent-1",
+    });
+    bridge.stop();
+    await request;
+  });
 });

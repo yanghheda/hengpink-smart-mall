@@ -6,7 +6,9 @@
     { "$ref": "#/$defs/readyMessage" },
     { "$ref": "#/$defs/bootstrapMessage" },
     { "$ref": "#/$defs/openProductMessage" },
-    { "$ref": "#/$defs/openProductResponseMessage" }
+    { "$ref": "#/$defs/openProductResponseMessage" },
+    { "$ref": "#/$defs/openMockCheckoutMessage" },
+    { "$ref": "#/$defs/openMockCheckoutResponseMessage" }
   ],
   "$defs": {
     "protocol": { "const": "hengpick.host-bridge" },
@@ -17,7 +19,12 @@
     },
     "timestamp": { "type": "integer", "minimum": 0 },
     "action": {
-      "enum": ["bridge.ready", "bridge.bootstrap", "openProduct"]
+      "enum": [
+        "bridge.ready",
+        "bridge.bootstrap",
+        "openProduct",
+        "openMockCheckout"
+      ]
     },
     "productId": { "type": "string", "minLength": 1, "maxLength": 64 },
     "skuId": { "type": "string", "minLength": 1, "maxLength": 64 },
@@ -54,7 +61,7 @@
             "capabilities": {
               "type": "array",
               "uniqueItems": true,
-              "items": { "enum": ["openProduct"] }
+              "items": { "enum": ["openProduct", "openMockCheckout"] }
             }
           }
         }
@@ -128,6 +135,89 @@
             "skuId": { "$ref": "#/$defs/skuId" }
           }
         }
+      }
+    },
+    "openMockCheckoutMessage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol",
+        "version",
+        "messageId",
+        "kind",
+        "action",
+        "timestamp",
+        "payload"
+      ],
+      "properties": {
+        "protocol": { "$ref": "#/$defs/protocol" },
+        "version": { "$ref": "#/$defs/version" },
+        "messageId": { "$ref": "#/$defs/messageId" },
+        "kind": { "const": "request" },
+        "action": { "const": "openMockCheckout" },
+        "timestamp": { "$ref": "#/$defs/timestamp" },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["purchaseIntentId"],
+          "properties": {
+            "purchaseIntentId": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            }
+          }
+        }
+      }
+    },
+    "openMockCheckoutResponseMessage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol",
+        "version",
+        "messageId",
+        "kind",
+        "action",
+        "timestamp",
+        "replyTo",
+        "success",
+        "payload"
+      ],
+      "properties": {
+        "protocol": { "$ref": "#/$defs/protocol" },
+        "version": { "$ref": "#/$defs/version" },
+        "messageId": { "$ref": "#/$defs/messageId" },
+        "kind": { "const": "response" },
+        "action": { "const": "openMockCheckout" },
+        "timestamp": { "$ref": "#/$defs/timestamp" },
+        "replyTo": { "$ref": "#/$defs/messageId" },
+        "success": { "type": "boolean" },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {}
+        },
+        "error": { "$ref": "#/$defs/bridgeError" }
+      },
+      "oneOf": [
+        {
+          "properties": { "success": { "const": true } },
+          "not": { "required": ["error"] }
+        },
+        {
+          "required": ["error"],
+          "properties": { "success": { "const": false } }
+        }
+      ]
+    },
+    "bridgeError": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message"],
+      "properties": {
+        "code": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]{2,63}$" },
+        "message": { "type": "string", "minLength": 1, "maxLength": 256 }
       }
     },
     "openProductResponseMessage": {
