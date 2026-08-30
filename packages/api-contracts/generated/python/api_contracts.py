@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-# 契约源摘要：6f7ae9a92954c9ce9d57b6a49158896fa48533686e73a0d9b88ba290671755cd
+# 契约源摘要：e73547ebfd64f31ed3b7f07889d65da30113f10a76c579be445d14eea3837cda
 from typing import Literal, NotRequired, TypedDict
 
 
@@ -262,6 +262,67 @@ class ProductComparison(TypedDict):
 class ProductComparisonResponse(TypedDict):
     requestId: str
     data: ProductComparison
+    meta: ResponseMeta
+
+
+class MemoryProposalRequest(TypedDict):
+    proposalType: str
+    preferenceKey: str
+    value: dict[str, object]
+    rationaleSummary: str
+    scope: NotRequired[Literal["GLOBAL", "CATEGORY", "RECIPIENT_CONTEXT"]]
+
+
+class MemoryProposal(TypedDict):
+    id: str
+    userId: str
+    sessionId: str
+    proposalType: str
+    preferenceKey: str
+    scope: Literal["GLOBAL", "CATEGORY", "RECIPIENT_CONTEXT"]
+    recipientKey: NotRequired[str | None]
+    categoryId: NotRequired[str | None]
+    value: dict[str, object]
+    rationaleSummary: str
+    status: Literal["PENDING", "ACCEPTED", "MODIFIED", "REJECTED", "EXPIRED"]
+    expiresAt: str
+    createdAt: str
+    decidedAt: NotRequired[str | None]
+
+
+class MemoryProposalResponse(TypedDict):
+    requestId: str
+    data: MemoryProposal
+    meta: ResponseMeta
+
+
+class MemoryDecisionRequest(TypedDict):
+    decision: Literal["ACCEPT", "MODIFY", "REJECT"]
+    value: NotRequired[dict[str, object]]
+
+
+class UserPreference(TypedDict):
+    id: str
+    userId: str
+    scope: Literal["GLOBAL", "CATEGORY", "RECIPIENT_CONTEXT"]
+    recipientKey: NotRequired[str | None]
+    categoryId: NotRequired[str | None]
+    preferenceType: str
+    preferenceKey: str
+    value: dict[str, object]
+    sourceSessionId: str
+    confirmedAt: str
+    expiresAt: str
+
+
+class MemoryDecisionResult(TypedDict):
+    proposal: MemoryProposal
+    preference: dict[str, object] | None
+
+
+class MemoryDecisionResponse(TypedDict):
+    requestId: str
+    data: MemoryDecisionResult
     meta: ResponseMeta
 
 

@@ -14,7 +14,7 @@ import {
 
 const contractPath = "packages/api-contracts/openapi.yaml";
 
-test("OpenAPI 3.1 defines auth, health, catalog, and valid offer slices", async () => {
+test("OpenAPI 3.1 defines auth, decision, memory, catalog, and offer slices", async () => {
   const source = await readFile(contractPath, "utf8");
   const contract = parse(source);
 
@@ -27,6 +27,8 @@ test("OpenAPI 3.1 defines auth, health, catalog, and valid offer slices", async 
     "/api/v1/smart-mall/sessions/exchange",
     "/api/v1/decision-sessions/{sessionId}/stream",
     "/api/v1/decision-sessions/{sessionId}",
+    "/api/v1/decision-sessions/{sessionId}/memory-proposals",
+    "/api/v1/me/memory-proposals/{proposalId}/decision",
     "/api/v1/health",
     "/api/v1/products",
     "/api/v1/products/search",
@@ -62,6 +64,10 @@ test("OpenAPI 3.1 defines auth, health, catalog, and valid offer slices", async 
     "CatalogSearchResponse",
     "ProductComparisonRequest",
     "ProductComparisonResponse",
+    "MemoryProposalRequest",
+    "MemoryProposalResponse",
+    "MemoryDecisionRequest",
+    "MemoryDecisionResponse",
     "CatalogFactListResponse",
     "OfferListResponse",
   ]) {

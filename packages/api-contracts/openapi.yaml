@@ -174,6 +174,73 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+  /api/v1/decision-sessions/{sessionId}/memory-proposals:
+    post:
+      operationId: proposeMemory
+      summary: 为当前 Decision Session 创建待用户确认的 Memory 提议
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: sessionId
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 64 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MemoryProposalRequest" }
+      responses:
+        "200":
+          description: 返回 PENDING 提议；他人购买场景会收窄作用域
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MemoryProposalResponse" }
+        "400":
+          description: 请求非法、Session 不存在或不属于当前用户
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+        "401":
+          description: H5 Access Token 无效或过期
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+  /api/v1/me/memory-proposals/{proposalId}/decision:
+    post:
+      operationId: decideMemoryProposal
+      summary: 显式接受、修改或拒绝 Memory 提议
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: proposalId
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 64 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MemoryDecisionRequest" }
+      responses:
+        "200":
+          description: 返回提议决定；拒绝时 preference 为 null
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MemoryDecisionResponse" }
+        "400":
+          description: 请求非法或 Proposal 不属于当前用户
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+        "401":
+          description: H5 Access Token 无效或过期
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+        "409":
+          description: Proposal 已处理或已过期
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorEnvelope" }
   /api/v1/health:
     get:
       operationId: getHealth
@@ -792,6 +859,105 @@ components:
         - type: object
           properties:
             data: { $ref: "#/components/schemas/ProductComparison" }
+    MemoryProposalRequest:
+      type: object
+      additionalProperties: false
+      required: [proposalType, preferenceKey, value, rationaleSummary]
+      properties:
+        proposalType: { type: string, minLength: 1, maxLength: 64 }
+        preferenceKey: { type: string, minLength: 1, maxLength: 128 }
+        value: { type: object, minProperties: 1 }
+        rationaleSummary: { type: string, minLength: 1, maxLength: 500 }
+        scope: { type: string, enum: [GLOBAL, CATEGORY, RECIPIENT_CONTEXT] }
+    MemoryProposal:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          id,
+          userId,
+          sessionId,
+          proposalType,
+          preferenceKey,
+          scope,
+          value,
+          rationaleSummary,
+          status,
+          expiresAt,
+          createdAt,
+        ]
+      properties:
+        id: { type: string }
+        userId: { type: string }
+        sessionId: { type: string }
+        proposalType: { type: string }
+        preferenceKey: { type: string }
+        scope: { type: string, enum: [GLOBAL, CATEGORY, RECIPIENT_CONTEXT] }
+        recipientKey: { type: [string, "null"] }
+        categoryId: { type: [string, "null"] }
+        value: { type: object }
+        rationaleSummary: { type: string }
+        status:
+          {
+            type: string,
+            enum: [PENDING, ACCEPTED, MODIFIED, REJECTED, EXPIRED],
+          }
+        expiresAt: { type: string, format: date-time }
+        createdAt: { type: string, format: date-time }
+        decidedAt: { type: [string, "null"], format: date-time }
+    MemoryProposalResponse:
+      allOf:
+        - $ref: "#/components/schemas/SuccessEnvelope"
+        - type: object
+          properties:
+            data: { $ref: "#/components/schemas/MemoryProposal" }
+    MemoryDecisionRequest:
+      type: object
+      additionalProperties: false
+      required: [decision]
+      properties:
+        decision: { type: string, enum: [ACCEPT, MODIFY, REJECT] }
+        value: { type: object, minProperties: 1 }
+    UserPreference:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          id,
+          userId,
+          scope,
+          preferenceType,
+          preferenceKey,
+          value,
+          sourceSessionId,
+          confirmedAt,
+          expiresAt,
+        ]
+      properties:
+        id: { type: string }
+        userId: { type: string }
+        scope: { type: string, enum: [GLOBAL, CATEGORY, RECIPIENT_CONTEXT] }
+        recipientKey: { type: [string, "null"] }
+        categoryId: { type: [string, "null"] }
+        preferenceType: { type: string }
+        preferenceKey: { type: string }
+        value: { type: object }
+        sourceSessionId: { type: string }
+        confirmedAt: { type: string, format: date-time }
+        expiresAt: { type: string, format: date-time }
+    MemoryDecisionResult:
+      type: object
+      additionalProperties: false
+      required: [proposal, preference]
+      properties:
+        proposal: { $ref: "#/components/schemas/MemoryProposal" }
+        preference: { type: [object, "null"] }
+    MemoryDecisionResponse:
+      allOf:
+        - $ref: "#/components/schemas/SuccessEnvelope"
+        - type: object
+          properties:
+            data: { $ref: "#/components/schemas/MemoryDecisionResult" }
     CatalogFact:
       type: object
       additionalProperties: false

@@ -1,5 +1,5 @@
 // 由 packages/api-contracts/openapi.yaml 生成，请勿手工修改。
-// 契约源摘要：6f7ae9a92954c9ce9d57b6a49158896fa48533686e73a0d9b88ba290671755cd
+// 契约源摘要：e73547ebfd64f31ed3b7f07889d65da30113f10a76c579be445d14eea3837cda
 
 export interface LoginRequest {
   account: string;
@@ -256,6 +256,67 @@ export interface ProductComparison {
 export interface ProductComparisonResponse {
   requestId: string;
   data: ProductComparison;
+  meta: ResponseMeta;
+}
+
+export interface MemoryProposalRequest {
+  proposalType: string;
+  preferenceKey: string;
+  value: Record<string, unknown>;
+  rationaleSummary: string;
+  scope?: "GLOBAL" | "CATEGORY" | "RECIPIENT_CONTEXT";
+}
+
+export interface MemoryProposal {
+  id: string;
+  userId: string;
+  sessionId: string;
+  proposalType: string;
+  preferenceKey: string;
+  scope: "GLOBAL" | "CATEGORY" | "RECIPIENT_CONTEXT";
+  recipientKey?: string | null;
+  categoryId?: string | null;
+  value: Record<string, unknown>;
+  rationaleSummary: string;
+  status: "PENDING" | "ACCEPTED" | "MODIFIED" | "REJECTED" | "EXPIRED";
+  expiresAt: string;
+  createdAt: string;
+  decidedAt?: string | null;
+}
+
+export interface MemoryProposalResponse {
+  requestId: string;
+  data: MemoryProposal;
+  meta: ResponseMeta;
+}
+
+export interface MemoryDecisionRequest {
+  decision: "ACCEPT" | "MODIFY" | "REJECT";
+  value?: Record<string, unknown>;
+}
+
+export interface UserPreference {
+  id: string;
+  userId: string;
+  scope: "GLOBAL" | "CATEGORY" | "RECIPIENT_CONTEXT";
+  recipientKey?: string | null;
+  categoryId?: string | null;
+  preferenceType: string;
+  preferenceKey: string;
+  value: Record<string, unknown>;
+  sourceSessionId: string;
+  confirmedAt: string;
+  expiresAt: string;
+}
+
+export interface MemoryDecisionResult {
+  proposal: MemoryProposal;
+  preference: Record<string, unknown> | null;
+}
+
+export interface MemoryDecisionResponse {
+  requestId: string;
+  data: MemoryDecisionResult;
   meta: ResponseMeta;
 }
 

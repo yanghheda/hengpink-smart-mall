@@ -1,0 +1,42 @@
+CREATE TABLE memory_proposals (
+    id CHAR(26) NOT NULL,
+    user_id CHAR(26) NOT NULL,
+    session_id CHAR(26) NOT NULL,
+    proposal_type VARCHAR(64) NOT NULL,
+    preference_key VARCHAR(128) NOT NULL,
+    scope VARCHAR(32) NOT NULL,
+    recipient_key VARCHAR(64) NULL,
+    category_id VARCHAR(64) NULL,
+    value_json JSON NOT NULL,
+    rationale_summary VARCHAR(500) NOT NULL,
+    status VARCHAR(32) NOT NULL,
+    expires_at DATETIME(3) NOT NULL,
+    created_at DATETIME(3) NOT NULL,
+    decided_at DATETIME(3) NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_memory_proposals_user FOREIGN KEY (user_id) REFERENCES users (id),
+    CONSTRAINT fk_memory_proposals_session FOREIGN KEY (session_id) REFERENCES decision_sessions (id),
+    INDEX idx_memory_proposals_user_status (user_id, status, expires_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE user_preferences (
+    id CHAR(26) NOT NULL,
+    user_id CHAR(26) NOT NULL,
+    scope VARCHAR(32) NOT NULL,
+    recipient_key VARCHAR(64) NULL,
+    category_id VARCHAR(64) NULL,
+    preference_type VARCHAR(64) NOT NULL,
+    preference_key VARCHAR(128) NOT NULL,
+    value_json JSON NOT NULL,
+    source_session_id CHAR(26) NOT NULL,
+    status VARCHAR(32) NOT NULL,
+    confirmed_at DATETIME(3) NOT NULL,
+    expires_at DATETIME(3) NOT NULL,
+    created_at DATETIME(3) NOT NULL,
+    updated_at DATETIME(3) NOT NULL,
+    version BIGINT UNSIGNED NOT NULL DEFAULT 0,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_user_preferences_user FOREIGN KEY (user_id) REFERENCES users (id),
+    CONSTRAINT fk_user_preferences_session FOREIGN KEY (source_session_id) REFERENCES decision_sessions (id),
+    INDEX idx_user_preferences_read (user_id, status, expires_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
