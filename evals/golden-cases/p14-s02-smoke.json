@@ -1,0 +1,114 @@
+[
+  {
+    "caseId": "GC-PHONE-001",
+    "versions": {
+      "datasetVersion": "commerce-demo-2026.08.1",
+      "promptVersion": "intent-v1",
+      "pricingRuleVersion": "pricing-v1",
+      "scoringVersion": "scoring-v1"
+    },
+    "input": "给爸妈买 3000 元以内手机，续航好，系统简单",
+    "expected": {
+      "intent": {
+        "category": "PHONE",
+        "recipient": "PARENTS",
+        "budgetMax": "3000.00"
+      },
+      "product": {
+        "relevantProductIds": ["P-LUMEN-14", "P-CEDAR-S"],
+        "forbiddenProductIds": ["P-ORBIT-X5"]
+      },
+      "pricing": {
+        "finalPrice": "2699.00",
+        "promotionIds": ["PROMO-PHONE-001"]
+      },
+      "citation": {
+        "requiredReasonIds": ["R-EASY-USE", "R-BATTERY"]
+      }
+    },
+    "actual": {
+      "datasetVersion": "commerce-demo-2026.08.1",
+      "intent": {
+        "category": "PHONE",
+        "recipient": "PARENTS",
+        "budgetMax": "3000.00"
+      },
+      "product": {
+        "topProductIds": ["P-LUMEN-14", "P-CEDAR-S", "P-PIXEL-9A"]
+      },
+      "pricing": {
+        "finalPrice": "2699.00",
+        "promotionIds": ["PROMO-PHONE-001"]
+      },
+      "citation": {
+        "reasons": [
+          {
+            "reasonId": "R-EASY-USE",
+            "evidenceIds": ["EV-P1001-EASY-USE"],
+            "factIds": []
+          },
+          {
+            "reasonId": "R-BATTERY",
+            "evidenceIds": [],
+            "factIds": ["FACT-P1001-BATTERY"]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "caseId": "GC-PHONE-002",
+    "versions": {
+      "datasetVersion": "commerce-demo-2026.08.1",
+      "promptVersion": "intent-v1",
+      "pricingRuleVersion": "pricing-v1",
+      "scoringVersion": "scoring-v1"
+    },
+    "input": "预算 2000 元以内，必须 256GB 的手机",
+    "expected": {
+      "intent": {
+        "category": "PHONE",
+        "budgetMax": "2000.00",
+        "hardConstraints": ["storage_gb:GTE:256"]
+      },
+      "product": {
+        "relevantProductIds": ["P-ASTER-3"],
+        "forbiddenProductIds": ["P-VALE-8"]
+      }
+    },
+    "actual": {
+      "datasetVersion": "commerce-demo-2026.08.1",
+      "intent": {
+        "category": "PHONE",
+        "budgetMax": "2000.00",
+        "hardConstraints": ["storage_gb:GTE:256"]
+      },
+      "product": {
+        "topProductIds": ["P-ASTER-3"]
+      }
+    }
+  },
+  {
+    "caseId": "GC-PHONE-003",
+    "versions": {
+      "datasetVersion": "commerce-demo-2026.08.1",
+      "promptVersion": "intent-v1",
+      "pricingRuleVersion": "pricing-v1",
+      "scoringVersion": "scoring-v1"
+    },
+    "input": "没有会员，给我最省步骤的手机价格方案",
+    "expected": {
+      "pricing": {
+        "finalPrice": "2919.00",
+        "promotionIds": ["FULL"]
+      }
+    },
+    "actual": {
+      "datasetVersion": "commerce-demo-2026.08.1",
+      "pricing": {
+        "finalPrice": "2919.00",
+        "promotionIds": ["FULL"]
+      }
+    }
+  }
+]

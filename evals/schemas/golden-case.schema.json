@@ -1,0 +1,135 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hengpick.local/schemas/golden-case.schema.json",
+  "title": "HengPick Golden Case",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["caseId", "versions", "input", "expected", "actual"],
+    "properties": {
+      "caseId": { "type": "string", "minLength": 1 },
+      "input": { "type": "string", "minLength": 1 },
+      "versions": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "datasetVersion",
+          "promptVersion",
+          "pricingRuleVersion",
+          "scoringVersion"
+        ],
+        "properties": {
+          "datasetVersion": { "type": "string", "minLength": 1 },
+          "promptVersion": { "type": "string", "minLength": 1 },
+          "pricingRuleVersion": { "type": "string", "minLength": 1 },
+          "scoringVersion": { "type": "string", "minLength": 1 }
+        }
+      },
+      "expected": { "$ref": "#/$defs/expected" },
+      "actual": { "$ref": "#/$defs/actual" }
+    }
+  },
+  "$defs": {
+    "intent": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "category": { "type": "string" },
+        "recipient": { "type": "string" },
+        "budgetMax": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)\\.[0-9]{2}$"
+        },
+        "hardConstraints": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "pricing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["finalPrice"],
+      "properties": {
+        "finalPrice": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)\\.[0-9]{2}$"
+        },
+        "promotionIds": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "expected": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "intent": { "$ref": "#/$defs/intent" },
+        "product": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "relevantProductIds": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "forbiddenProductIds": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        },
+        "pricing": { "$ref": "#/$defs/pricing" },
+        "citation": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "requiredReasonIds": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "actual": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["datasetVersion"],
+      "properties": {
+        "datasetVersion": { "type": "string", "minLength": 1 },
+        "intent": { "$ref": "#/$defs/intent" },
+        "product": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "topProductIds": {
+              "type": "array",
+              "maxItems": 10,
+              "items": { "type": "string" }
+            }
+          }
+        },
+        "pricing": { "$ref": "#/$defs/pricing" },
+        "citation": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "reasons": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["reasonId"],
+                "properties": {
+                  "reasonId": { "type": "string" },
+                  "evidenceIds": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                  },
+                  "factIds": { "type": "array", "items": { "type": "string" } }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

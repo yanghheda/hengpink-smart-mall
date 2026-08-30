@@ -1,4 +1,4 @@
-.PHONY: install start-commerce-app start-smart-mall-h5 start-commerce-api start-agent-service infra-up infra-down infra-status db-migrate db-seed rag-index test-db-integration test check
+.PHONY: install start-commerce-app start-smart-mall-h5 start-commerce-api start-agent-service infra-up infra-down infra-status db-migrate db-seed rag-index eval-golden test-db-integration test check
 
 install:
 	npm ci
@@ -37,6 +37,9 @@ db-seed: db-migrate
 rag-index:
 	test -n "$$DATASET_VERSION" && test -n "$$MYSQL_HOST" && test -n "$$MYSQL_USERNAME" && test -n "$$MYSQL_PASSWORD" && test -n "$$MYSQL_DATABASE" && test -n "$$QDRANT_URL"
 	PYTHONPATH=services/agent-service services/agent-service/.venv/bin/python -m app.knowledge.cli
+
+eval-golden:
+	npm run eval:golden
 
 test-db-integration:
 	./scripts/test-vm-database.sh
