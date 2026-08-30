@@ -8,12 +8,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.hengpick.mall.catalog.application.CatalogQueryService;
 import com.hengpick.mall.catalog.application.CatalogSearchService;
 import com.hengpick.mall.catalog.application.FactRegistry;
+import com.hengpick.mall.catalog.application.ProductComparisonService;
 import com.hengpick.mall.catalog.domain.CatalogQueryPort;
 import com.hengpick.mall.catalog.domain.CatalogSearchCandidate;
 import com.hengpick.mall.catalog.domain.ProductDetail;
 import com.hengpick.mall.catalog.domain.ProductPage;
 import com.hengpick.mall.catalog.domain.ProductSummary;
 import com.hengpick.mall.catalog.domain.SkuDetail;
+import com.hengpick.mall.catalog.domain.CategoryComparisonSchema;
+import com.hengpick.mall.catalog.domain.ComparisonCandidate;
+import com.hengpick.mall.catalog.domain.ProductComparisonPort;
 import com.hengpick.mall.catalog.web.CatalogController;
 import com.hengpick.mall.catalog.web.CatalogExceptionHandler;
 import java.time.Clock;
@@ -57,11 +61,26 @@ class CatalogControllerTest {
             }
         };
         var clock = Clock.fixed(Instant.parse("2026-08-26T00:00:00Z"), ZoneOffset.UTC);
+        ProductComparisonPort comparisonPort = new ProductComparisonPort() {
+            @Override
+            public List<ComparisonCandidate> findCandidates(List<String> skuIds) {
+                return skuIds.stream().map(skuId -> new ComparisonCandidate(
+                        "P-1", skuId, "衡选 H1", "PHONE",
+                        "S-2".equals(skuId) ? Map.of("storageGb", 128) : Map.of("storageGb", 256)))
+                        .toList();
+            }
+
+            @Override
+            public CategoryComparisonSchema findSchema(String categoryId) {
+                return new CategoryComparisonSchema("PHONE", "phone-1.0", List.of(
+                        new CategoryComparisonSchema.Attribute("storageGb", "存储容量", "GB", true)));
+            }
+        };
         var controller = new CatalogController(new CatalogQueryService(port, new FactRegistry()),
                 new CatalogSearchService(categoryId -> List.of(
                         new CatalogSearchCandidate("P-1", "S-1", "衡选 H1 256GB", "PHONE",
                                 new BigDecimal("3299.00"), "IN_STOCK", 3,
-                                Map.of("storageGb", 256)))), clock);
+                                Map.of("storageGb", 256)))), new ProductComparisonService(comparisonPort), clock);
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
                 .setControllerAdvice(new CatalogExceptionHandler())
                 .build();
@@ -125,5 +144,19 @@ class CatalogControllerTest {
                 .andExpect(jsonPath("$.data.matched.length()").value(0))
                 .andExpect(jsonPath("$.data.rejected[0].candidate.skuId").value("S-1"))
                 .andExpect(jsonPath("$.data.rejected[0].reasonCodes[0]").value("BUDGET_EXCEEDED"));
+    }
+
+    @Test
+    void comparesTwoSkusOverHttp() throws Exception {
+        mockMvc.perform(post("/api/v1/products/compare")
+                        .contentType("application/json")
+                        .content("""
+                                {"skuIds":["S-1","S-2"],"mode":"DIFFERENCES"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.schemaVersion").value("phone-1.0"))
+                .andExpect(jsonPath("$.data.products[0].skuId").value("S-1"))
+                .andExpect(jsonPath("$.data.rows[0].attributeKey").value("storageGb"))
+                .andExpect(jsonPath("$.data.rows[0].values[1]").value(128));
     }
 }

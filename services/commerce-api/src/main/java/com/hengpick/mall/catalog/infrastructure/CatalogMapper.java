@@ -66,4 +66,28 @@ public interface CatalogMapper {
             ORDER BY p.created_at DESC, p.id, s.created_at, s.id
             """)
     List<SearchCandidateRow> findSearchCandidates(@Param("categoryId") String categoryId);
+
+    @Select("""
+            <script>
+            SELECT p.id AS productId, s.id AS skuId,
+                   CONCAT(p.display_name, ' ', s.display_name) AS displayName,
+                   p.category_id AS categoryId, p.canonical_specs_json AS canonicalSpecsJson,
+                   s.attributes_json AS attributesJson
+            FROM skus s
+            JOIN products p ON p.id = s.product_id AND p.status = 'ACTIVE'
+            JOIN categories c ON c.id = p.category_id AND c.status = 'ACTIVE'
+            WHERE s.status = 'ACTIVE' AND s.id IN
+            <foreach collection="skuIds" item="skuId" open="(" separator="," close=")">
+                #{skuId}
+            </foreach>
+            </script>
+            """)
+    List<ComparisonCandidateRow> findComparisonCandidates(@Param("skuIds") List<String> skuIds);
+
+    @Select("""
+            SELECT id AS categoryId, schema_version AS schemaVersion, schema_json AS schemaJson
+            FROM categories
+            WHERE id = #{categoryId} AND status = 'ACTIVE'
+            """)
+    CategorySchemaRow findCategorySchema(@Param("categoryId") String categoryId);
 }

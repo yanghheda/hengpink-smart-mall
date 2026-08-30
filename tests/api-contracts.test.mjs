@@ -30,6 +30,7 @@ test("OpenAPI 3.1 defines auth, health, catalog, and valid offer slices", async 
     "/api/v1/health",
     "/api/v1/products",
     "/api/v1/products/search",
+    "/api/v1/products/compare",
     "/api/v1/products/{productId}/facts",
     "/api/v1/products/{productId}",
     "/api/v1/skus/{skuId}/offers",
@@ -59,6 +60,8 @@ test("OpenAPI 3.1 defines auth, health, catalog, and valid offer slices", async 
     "ProductDetailResponse",
     "CatalogSearchRequest",
     "CatalogSearchResponse",
+    "ProductComparisonRequest",
+    "ProductComparisonResponse",
     "CatalogFactListResponse",
     "OfferListResponse",
   ]) {

@@ -16,6 +16,7 @@ import java.time.ZoneOffset;
 
 public final class CommerceDatasetImporter {
     private static final String DEFAULT_DATASET_RELATIVE_PATH = "packages/commerce-dataset/fixtures/curated/commerce-demo-2026.08.1.json";
+    private static final String CATEGORY_SCHEMA_DIRECTORY = "packages/commerce-dataset/schemas";
 
     private CommerceDatasetImporter() {}
 
@@ -60,7 +61,13 @@ public final class CommerceDatasetImporter {
                 statement.setString(2, category.path("category_id").asText());
                 statement.setString(3, category.path("name").asText());
                 statement.setString(4, category.path("schema_version").asText());
-                statement.setString(5, mapper.writeValueAsString(category));
+                var schemaPath = locateProjectFile(CATEGORY_SCHEMA_DIRECTORY + "/"
+                        + category.path("category_id").asText().toLowerCase(java.util.Locale.ROOT) + ".schema.json");
+                var categorySchema = mapper.readTree(schemaPath.toFile());
+                if (!category.path("schema_version").asText().equals(categorySchema.path("schemaVersion").asText())) {
+                    throw new IllegalStateException("Dataset 与类目 Schema 版本不一致：" + category.path("category_id").asText());
+                }
+                statement.setString(5, mapper.writeValueAsString(categorySchema));
                 statement.setTimestamp(6, time);
                 statement.setTimestamp(7, time);
                 statement.addBatch();
@@ -264,12 +271,16 @@ public final class CommerceDatasetImporter {
     }
 
     private static Path locateDefaultDataset() {
+        return locateProjectFile(DEFAULT_DATASET_RELATIVE_PATH);
+    }
+
+    private static Path locateProjectFile(String relativePath) {
         var workingDirectory = Path.of("").toAbsolutePath();
         for (var directory = workingDirectory; directory != null; directory = directory.getParent()) {
-            var candidate = directory.resolve(DEFAULT_DATASET_RELATIVE_PATH);
+            var candidate = directory.resolve(relativePath);
             if (candidate.toFile().isFile()) return candidate;
         }
-        throw new IllegalStateException("找不到固定 Dataset：" + DEFAULT_DATASET_RELATIVE_PATH);
+        throw new IllegalStateException("找不到项目文件：" + relativePath);
     }
 
     private static String requiredEnvironment(String key) {

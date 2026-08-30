@@ -1,5 +1,5 @@
 // 由 packages/api-contracts/openapi.yaml 生成，请勿手工修改。
-// 契约源摘要：2412e4df78c37947f265256c8e7e4d87fe2e74e8c5d29e3fa869a585246f618b
+// 契约源摘要：6f7ae9a92954c9ce9d57b6a49158896fa48533686e73a0d9b88ba290671755cd
 
 export interface LoginRequest {
   account: string;
@@ -94,7 +94,15 @@ export interface DecisionSessionSnapshot {
   sessionId: string;
   currentRunId?: string | null;
   currentRunVersion: number;
-  status: "DRAFT" | "RUNNING" | "WAITING_CLARIFICATION" | "COMPLETED" | "PARTIAL" | "FAILED" | "SUPERSEDED" | "CANCELLED";
+  status:
+    | "DRAFT"
+    | "RUNNING"
+    | "WAITING_CLARIFICATION"
+    | "COMPLETED"
+    | "PARTIAL"
+    | "FAILED"
+    | "SUPERSEDED"
+    | "CANCELLED";
   currentReportVersion?: number | null;
 }
 
@@ -215,6 +223,39 @@ export interface CatalogSearchResult {
 export interface CatalogSearchResponse {
   requestId: string;
   data: CatalogSearchResult;
+  meta: ResponseMeta;
+}
+
+export interface ProductComparisonRequest {
+  skuIds: Array<string>;
+  mode: "DIFFERENCES" | "ALL";
+  relevantAttributeKeys?: Array<string>;
+}
+
+export interface ComparedProduct {
+  productId: string;
+  skuId: string;
+  displayName: string;
+}
+
+export interface ComparisonRow {
+  attributeKey: string;
+  label: string;
+  unit?: string | null;
+  values: Array<unknown>;
+}
+
+export interface ProductComparison {
+  categoryId: string;
+  schemaVersion: string;
+  mode: "DIFFERENCES" | "ALL";
+  products: Array<ComparedProduct>;
+  rows: Array<ComparisonRow>;
+}
+
+export interface ProductComparisonResponse {
+  requestId: string;
+  data: ProductComparison;
   meta: ResponseMeta;
 }
 

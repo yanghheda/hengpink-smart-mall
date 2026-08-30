@@ -8,6 +8,9 @@ import com.hengpick.mall.catalog.domain.CatalogSearchCandidatePort;
 import com.hengpick.mall.catalog.domain.ProductDetail;
 import com.hengpick.mall.catalog.domain.ProductPage;
 import com.hengpick.mall.catalog.domain.ProductSummary;
+import com.hengpick.mall.catalog.domain.ProductComparisonPort;
+import com.hengpick.mall.catalog.domain.ComparisonCandidate;
+import com.hengpick.mall.catalog.domain.CategoryComparisonSchema;
 import com.hengpick.mall.catalog.domain.SkuDetail;
 import java.util.List;
 import java.util.Map;
@@ -17,7 +20,7 @@ import org.springframework.context.annotation.Profile;
 
 @Repository
 @Profile("database")
-public class MyBatisCatalogQueryAdapter implements CatalogQueryPort, CatalogSearchCandidatePort {
+public class MyBatisCatalogQueryAdapter implements CatalogQueryPort, CatalogSearchCandidatePort, ProductComparisonPort {
     private final CatalogMapper mapper;
     private final ObjectMapper objectMapper;
 
@@ -59,6 +62,39 @@ public class MyBatisCatalogQueryAdapter implements CatalogQueryPort, CatalogSear
             return new CatalogSearchCandidate(row.productId(), row.skuId(), row.displayName(), row.categoryId(),
                     row.price(), row.stockStatus(), row.stockQuantity(), Map.copyOf(attributes));
         }).toList();
+    }
+
+    @Override
+    public List<ComparisonCandidate> findCandidates(List<String> skuIds) {
+        return mapper.findComparisonCandidates(skuIds).stream().map(row -> {
+            var attributes = new java.util.HashMap<>(readMap(row.canonicalSpecsJson()));
+            attributes.putAll(readMap(row.attributesJson()));
+            return new ComparisonCandidate(
+                    row.productId(), row.skuId(), row.displayName(), row.categoryId(), Map.copyOf(attributes));
+        }).toList();
+    }
+
+    @Override
+    public CategoryComparisonSchema findSchema(String categoryId) {
+        var row = mapper.findCategorySchema(categoryId);
+        if (row == null) throw new IllegalArgumentException("类目 Schema 不存在");
+        try {
+            var root = objectMapper.readTree(row.schemaJson());
+            var attributes = new java.util.ArrayList<CategoryComparisonSchema.Attribute>();
+            for (var node : root.withArray("attributes")) {
+                if (!node.isObject()) continue;
+                attributes.add(new CategoryComparisonSchema.Attribute(
+                        node.path("key").asText(), node.path("label").asText(),
+                        node.path("unit").isNull() ? null : node.path("unit").asText(),
+                        node.path("comparable").asBoolean(false)));
+            }
+            if (attributes.isEmpty()) throw new IllegalArgumentException("类目 Schema 缺少可比较属性定义");
+            return new CategoryComparisonSchema(row.categoryId(), row.schemaVersion(), List.copyOf(attributes));
+        } catch (IllegalArgumentException exception) {
+            throw exception;
+        } catch (Exception exception) {
+            throw new IllegalStateException("类目 Schema 无法解析", exception);
+        }
     }
 
     private ProductSummary toSummary(ProductRow row) {

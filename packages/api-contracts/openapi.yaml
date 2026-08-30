@@ -236,6 +236,31 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+  /api/v1/products/compare:
+    post:
+      operationId: compareProducts
+      summary: 按类目 Schema 对比 2 至 4 个 SKU
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProductComparisonRequest" }
+      responses:
+        "200":
+          description: 返回只看差异或全部可比较参数
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProductComparisonResponse" }
+        "400":
+          description: 数量、重复 SKU、模式、类目或 Schema 非法
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+        "404":
+          description: 任一 SKU 不存在
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorEnvelope" }
   /api/v1/products/{productId}/facts:
     get:
       operationId: getProductFacts
@@ -710,6 +735,63 @@ components:
         - type: object
           properties:
             data: { $ref: "#/components/schemas/CatalogSearchResult" }
+    ProductComparisonRequest:
+      type: object
+      additionalProperties: false
+      required: [skuIds, mode]
+      properties:
+        skuIds:
+          type: array
+          minItems: 2
+          maxItems: 4
+          uniqueItems: true
+          items: { type: string, minLength: 1 }
+        mode: { type: string, enum: [DIFFERENCES, ALL] }
+        relevantAttributeKeys:
+          type: array
+          uniqueItems: true
+          items: { type: string, minLength: 1 }
+    ComparedProduct:
+      type: object
+      additionalProperties: false
+      required: [productId, skuId, displayName]
+      properties:
+        productId: { type: string }
+        skuId: { type: string }
+        displayName: { type: string }
+    ComparisonRow:
+      type: object
+      additionalProperties: false
+      required: [attributeKey, label, values]
+      properties:
+        attributeKey: { type: string }
+        label: { type: string }
+        unit: { type: [string, "null"] }
+        values:
+          type: array
+          items: {}
+    ProductComparison:
+      type: object
+      additionalProperties: false
+      required: [categoryId, schemaVersion, mode, products, rows]
+      properties:
+        categoryId: { type: string }
+        schemaVersion: { type: string }
+        mode: { type: string, enum: [DIFFERENCES, ALL] }
+        products:
+          type: array
+          minItems: 2
+          maxItems: 4
+          items: { $ref: "#/components/schemas/ComparedProduct" }
+        rows:
+          type: array
+          items: { $ref: "#/components/schemas/ComparisonRow" }
+    ProductComparisonResponse:
+      allOf:
+        - $ref: "#/components/schemas/SuccessEnvelope"
+        - type: object
+          properties:
+            data: { $ref: "#/components/schemas/ProductComparison" }
     CatalogFact:
       type: object
       additionalProperties: false

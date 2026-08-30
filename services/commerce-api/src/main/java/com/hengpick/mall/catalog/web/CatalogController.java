@@ -2,12 +2,15 @@ package com.hengpick.mall.catalog.web;
 
 import com.hengpick.mall.catalog.application.CatalogQueryService;
 import com.hengpick.mall.catalog.application.CatalogSearchService;
+import com.hengpick.mall.catalog.application.ProductComparisonService;
 import com.hengpick.mall.catalog.domain.AttributeConstraint;
 import com.hengpick.mall.catalog.domain.CatalogSearchCriteria;
 import com.hengpick.mall.catalog.domain.CatalogSearchResult;
 import com.hengpick.mall.catalog.domain.CatalogFact;
 import com.hengpick.mall.catalog.domain.ProductDetail;
 import com.hengpick.mall.catalog.domain.ProductPage;
+import com.hengpick.mall.catalog.domain.ComparisonMode;
+import com.hengpick.mall.catalog.domain.ProductComparison;
 import java.time.Clock;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -33,11 +36,21 @@ public class CatalogController {
     private final CatalogQueryService queryService;
     private final Clock clock;
     private final CatalogSearchService searchService;
+    private final ProductComparisonService comparisonService;
 
-    public CatalogController(CatalogQueryService queryService, CatalogSearchService searchService, Clock clock) {
+    public CatalogController(CatalogQueryService queryService, CatalogSearchService searchService,
+            ProductComparisonService comparisonService, Clock clock) {
         this.queryService = queryService;
         this.searchService = searchService;
+        this.comparisonService = comparisonService;
         this.clock = clock;
+    }
+
+    @PostMapping("/compare")
+    @Operation(summary = "对比同类目商品", description = "按类目 Schema 对比 2 至 4 个 SKU，可返回差异或全部参数。")
+    public ApiEnvelope<ProductComparison> compare(@RequestBody CompareRequest request) {
+        return ApiEnvelope.success(comparisonService.compare(
+                request.skuIds(), request.mode(), request.relevantAttributeKeys()), clock.instant());
     }
 
     @PostMapping("/search")
@@ -100,4 +113,9 @@ public class CatalogController {
 
     public record SearchRequest(String categoryId, java.math.BigDecimal minPrice, java.math.BigDecimal maxPrice,
                                 boolean inStockOnly, java.util.List<AttributeConstraint> attributes) {}
+
+    public record CompareRequest(
+            java.util.List<String> skuIds,
+            ComparisonMode mode,
+            java.util.List<String> relevantAttributeKeys) {}
 }

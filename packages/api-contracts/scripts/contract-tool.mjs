@@ -46,6 +46,8 @@ const requiredSchemas = [
   "ProductDetailResponse",
   "CatalogSearchRequest",
   "CatalogSearchResponse",
+  "ProductComparisonRequest",
+  "ProductComparisonResponse",
   "CatalogFactListResponse",
   "OfferListResponse",
 ];
@@ -154,9 +156,15 @@ function generateTypescript(document) {
     lines.push(`export interface ${name} {`);
     for (const [propertyName, propertySchema] of Object.entries(properties)) {
       const optional = required.has(propertyName) ? "" : "?";
-      lines.push(
-        `  ${propertyName}${optional}: ${typescriptType(propertySchema)};`,
-      );
+      const type = typescriptType(propertySchema);
+      const declaration = `  ${propertyName}${optional}: ${type};`;
+      if (declaration.length > 80 && type.includes(" | ")) {
+        lines.push(`  ${propertyName}${optional}:`);
+        for (const member of type.split(" | ")) lines.push(`    | ${member}`);
+        lines[lines.length - 1] += ";";
+      } else {
+        lines.push(declaration);
+      }
     }
     lines.push("}", "");
   }
@@ -180,11 +188,17 @@ function generatePython(document) {
     if (Object.keys(properties).length === 0) lines.push("    pass");
     for (const [propertyName, propertySchema] of Object.entries(properties)) {
       const type = pythonType(propertySchema);
-      lines.push(
-        required.has(propertyName)
-          ? `    ${propertyName}: ${type}`
-          : `    ${propertyName}: NotRequired[${type}]`,
-      );
+      const declaration = required.has(propertyName)
+        ? `    ${propertyName}: ${type}`
+        : `    ${propertyName}: NotRequired[${type}]`;
+      if (declaration.length > 88 && type.startsWith("Literal[")) {
+        const members = type.slice(8, -1).split(", ");
+        lines.push(`    ${propertyName}: Literal[`);
+        for (const member of members) lines.push(`        ${member},`);
+        lines.push("    ]");
+      } else {
+        lines.push(declaration);
+      }
     }
     lines.push("", "");
   }
@@ -212,6 +226,7 @@ export function validateContract(document) {
     "/api/v1/health",
     "/api/v1/products",
     "/api/v1/products/search",
+    "/api/v1/products/compare",
     "/api/v1/products/{productId}/facts",
     "/api/v1/products/{productId}",
     "/api/v1/skus/{skuId}/offers",

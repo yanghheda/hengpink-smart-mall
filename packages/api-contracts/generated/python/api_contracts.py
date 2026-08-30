@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-# 契约源摘要：2412e4df78c37947f265256c8e7e4d87fe2e74e8c5d29e3fa869a585246f618b
+# 契约源摘要：6f7ae9a92954c9ce9d57b6a49158896fa48533686e73a0d9b88ba290671755cd
 from typing import Literal, NotRequired, TypedDict
 
 
@@ -99,7 +99,16 @@ class DecisionSessionSnapshot(TypedDict):
     sessionId: str
     currentRunId: NotRequired[str | None]
     currentRunVersion: int
-    status: Literal["DRAFT", "RUNNING", "WAITING_CLARIFICATION", "COMPLETED", "PARTIAL", "FAILED", "SUPERSEDED", "CANCELLED"]
+    status: Literal[
+        "DRAFT",
+        "RUNNING",
+        "WAITING_CLARIFICATION",
+        "COMPLETED",
+        "PARTIAL",
+        "FAILED",
+        "SUPERSEDED",
+        "CANCELLED",
+    ]
     currentReportVersion: NotRequired[int | None]
 
 
@@ -220,6 +229,39 @@ class CatalogSearchResult(TypedDict):
 class CatalogSearchResponse(TypedDict):
     requestId: str
     data: CatalogSearchResult
+    meta: ResponseMeta
+
+
+class ProductComparisonRequest(TypedDict):
+    skuIds: list[str]
+    mode: Literal["DIFFERENCES", "ALL"]
+    relevantAttributeKeys: NotRequired[list[str]]
+
+
+class ComparedProduct(TypedDict):
+    productId: str
+    skuId: str
+    displayName: str
+
+
+class ComparisonRow(TypedDict):
+    attributeKey: str
+    label: str
+    unit: NotRequired[str | None]
+    values: list[object]
+
+
+class ProductComparison(TypedDict):
+    categoryId: str
+    schemaVersion: str
+    mode: Literal["DIFFERENCES", "ALL"]
+    products: list[ComparedProduct]
+    rows: list[ComparisonRow]
+
+
+class ProductComparisonResponse(TypedDict):
+    requestId: str
+    data: ProductComparison
     meta: ResponseMeta
 
 
