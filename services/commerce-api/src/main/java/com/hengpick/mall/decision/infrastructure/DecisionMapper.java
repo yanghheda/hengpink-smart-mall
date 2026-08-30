@@ -8,10 +8,34 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
+import java.util.List;
 
 /** 将 Decision 仓储操作映射到冻结的数据表。 */
 @Mapper
 public interface DecisionMapper {
+    @Select("""
+            SELECT r.id AS runId, r.session_id AS sessionId, s.user_id AS ownerId,
+                   r.run_version AS runVersion, r.status, r.active_node AS activeNode,
+                   r.failure_code AS failureCode, r.degradation_codes_json AS degradationCodesJson,
+                   r.trace_id AS traceId, r.started_at AS startedAt, r.completed_at AS completedAt,
+                   r.model_config_id AS modelVersion, r.prompt_version AS promptVersion,
+                   s.dataset_version AS datasetVersion, r.scoring_version AS scoringVersion,
+                   r.pricing_rule_version AS pricingRuleVersion, r.embedding_version AS embeddingVersion,
+                   r.token_input AS tokenInput, r.token_output AS tokenOutput, r.estimated_cost AS estimatedCost
+            FROM decision_runs r JOIN decision_sessions s ON s.id = r.session_id
+            WHERE r.id = #{runId} AND s.deleted_at IS NULL
+            """)
+    DecisionTraceRunRow findTraceRun(@Param("runId") String runId);
+
+    @Select("""
+            SELECT sequence_no AS sequence, node_name AS node, status, started_at AS startedAt,
+                   completed_at AS completedAt, duration_ms AS durationMs, NULL AS errorCode,
+                   JSON_ARRAY() AS warningCodesJson, input_summary_json AS inputSummaryJson,
+                   output_summary_json AS outputSummaryJson
+            FROM agent_steps WHERE run_id = #{runId} ORDER BY sequence_no
+            """)
+    List<DecisionTraceStepRow> findTraceSteps(@Param("runId") String runId);
+
     @Select("""
             SELECT s.id AS sessionId, r.id AS currentRunId,
                    s.current_run_version AS currentRunVersion, s.status,

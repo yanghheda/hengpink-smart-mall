@@ -61,6 +61,8 @@ const requiredSchemas = [
   "PurchaseIntentResponse",
   "CatalogFactListResponse",
   "OfferListResponse",
+  "DecisionTraceStep",
+  "DecisionTraceResponse",
 ];
 
 function referenceName(reference) {
@@ -228,6 +230,7 @@ export function validateContract(document) {
   }
   const paths = Object.keys(document.paths ?? {});
   const expectedPaths = [
+    "/api/v1/admin/decision-runs/{runId}/trace",
     "/api/v1/purchase-intents",
     "/api/v1/purchase-intents/{purchaseIntentId}",
     "/api/v1/purchase-intents/{purchaseIntentId}/confirm",

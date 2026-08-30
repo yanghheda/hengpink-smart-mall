@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-# 契约源摘要：44e0ec400a5452bc255ce03a6506cf61aecf1365ddc4fdf998fffe63c570b7cf
+# 契约源摘要：8b187de1281560d47f983120e9f3d7c03658425386a4d7f0baca1f8eb9778afe
 from typing import Literal, NotRequired, TypedDict
 
 
@@ -443,4 +443,46 @@ class OfferList(TypedDict):
 class OfferListResponse(TypedDict):
     requestId: str
     data: OfferList
+    meta: ResponseMeta
+
+
+class DecisionTraceStep(TypedDict):
+    sequence: int
+    node: str
+    status: str
+    startedAt: str
+    completedAt: NotRequired[str | None]
+    durationMs: int
+    errorCode: NotRequired[str | None]
+    warningCodes: list[str]
+    inputSummary: dict[str, object]
+    outputSummary: dict[str, object]
+
+
+class DecisionTrace(TypedDict):
+    runId: str
+    sessionId: str
+    runVersion: int
+    status: str
+    activeNode: NotRequired[str | None]
+    failureCode: NotRequired[str | None]
+    degradationCodes: list[str]
+    traceId: NotRequired[str | None]
+    startedAt: str
+    completedAt: NotRequired[str | None]
+    modelVersion: NotRequired[str | None]
+    promptVersion: NotRequired[str | None]
+    datasetVersion: str
+    scoringVersion: NotRequired[str | None]
+    pricingRuleVersion: NotRequired[str | None]
+    embeddingVersion: NotRequired[str | None]
+    tokenInput: NotRequired[int | None]
+    tokenOutput: NotRequired[int | None]
+    estimatedCost: NotRequired[float | None]
+    steps: list[DecisionTraceStep]
+
+
+class DecisionTraceResponse(TypedDict):
+    requestId: str
+    data: DecisionTrace
     meta: ResponseMeta

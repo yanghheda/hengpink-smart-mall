@@ -3,6 +3,12 @@ import { useEffect, useMemo, useState } from "react";
 import type { HostBridge } from "./bridge/hostBridge";
 import { createHostBridgeReactNative } from "./bridge/hostBridgeReactNative";
 import { createHostBridgeWeb } from "./bridge/hostBridgeWeb";
+import {
+  loadDecisionTrace,
+  readH5AccessToken,
+  rememberH5AccessToken,
+  type DecisionTrace,
+} from "./decision/decisionTrace";
 import "./styles.css";
 
 const quickScenarios = [
@@ -23,6 +29,173 @@ function parsePreview(path: string) {
     productId: decodeURIComponent(match[1]),
     skuId: url.searchParams.get("skuId") ?? "未指定",
   };
+}
+
+function parseTraceRunId(path: string) {
+  const url = new URL(path, "https://standalone.hengpick.local");
+  const match = url.pathname.match(/^\/admin\/decision-runs\/([^/]+)\/trace$/);
+  return match ? decodeURIComponent(match[1]) : undefined;
+}
+
+function Summary({ value }: { value: Record<string, unknown> }) {
+  const entries = Object.entries(value);
+  if (!entries.length) return <span className="muted">无公开摘要</span>;
+  return (
+    <ul className="summary-list">
+      {entries.map(([key, item]) => (
+        <li key={key}>
+          <strong>{key}</strong>: {JSON.stringify(item)}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function TracePage({
+  runId,
+  initialTrace,
+}: {
+  runId: string;
+  initialTrace?: DecisionTrace;
+}) {
+  const [trace, setTrace] = useState(initialTrace);
+  const [error, setError] = useState("");
+  useEffect(() => {
+    if (initialTrace) return;
+    const accessToken = readH5AccessToken();
+    if (!accessToken) {
+      setError("缺少管理员会话，请从测试账号重新进入。");
+      return;
+    }
+    void loadDecisionTrace(runId, accessToken)
+      .then(setTrace)
+      .catch((reason: unknown) =>
+        setError(reason instanceof Error ? reason.message : "Trace 加载失败"),
+      );
+  }, [initialTrace, runId]);
+  if (error)
+    return (
+      <main className="shell">
+        <section className="panel">
+          <h1>开发者 Trace</h1>
+          <p className="error-banner">{error}</p>
+        </section>
+      </main>
+    );
+  if (!trace)
+    return (
+      <main className="shell">
+        <section className="panel">
+          <h1>开发者 Trace</h1>
+          <p>正在读取脱敏快照…</p>
+        </section>
+      </main>
+    );
+  return (
+    <main className="shell trace-shell">
+      <section className="panel">
+        <p className="eyebrow">DEMO_ADMIN · 只读脱敏快照</p>
+        <h1>开发者 Trace</h1>
+        <p className="notice">不展示系统提示词、模型原始响应或私有推理过程</p>
+        <dl className="trace-grid">
+          <div>
+            <dt>Run</dt>
+            <dd>
+              {trace.runId} · v{trace.runVersion}
+            </dd>
+          </div>
+          <div>
+            <dt>状态</dt>
+            <dd>
+              <span
+                className={`trace-status trace-${trace.status.toLowerCase()}`}
+              >
+                {trace.status}
+              </span>
+            </dd>
+          </div>
+          <div>
+            <dt>当前/失败节点</dt>
+            <dd>{trace.activeNode ?? "—"}</dd>
+          </div>
+          <div>
+            <dt>错误码</dt>
+            <dd>{trace.failureCode ?? "—"}</dd>
+          </div>
+          <div>
+            <dt>Token</dt>
+            <dd>
+              {trace.usage.tokenInput ?? 0} 入 / {trace.usage.tokenOutput ?? 0}{" "}
+              出
+            </dd>
+          </div>
+          <div>
+            <dt>估算成本</dt>
+            <dd>{trace.usage.estimatedCost ?? "未记录"}</dd>
+          </div>
+        </dl>
+        <section className="trace-section">
+          <h2>版本</h2>
+          <div className="chip-list">
+            {Object.entries(trace.versions)
+              .filter(([, value]) => value)
+              .map(([key, value]) => (
+                <span className="trace-chip" key={key}>
+                  {key}: {value}
+                </span>
+              ))}
+          </div>
+        </section>
+        <section className="trace-section">
+          <h2>降级</h2>
+          <div className="chip-list">
+            {trace.degradationCodes.length ? (
+              trace.degradationCodes.map((code) => (
+                <span className="trace-chip warning" key={code}>
+                  {code}
+                </span>
+              ))
+            ) : (
+              <span className="muted">无降级</span>
+            )}
+          </div>
+        </section>
+        <section className="trace-section">
+          <h2>节点时间轴</h2>
+          <ol className="timeline">
+            {trace.steps.map((step) => (
+              <li key={step.sequence} className="timeline-item">
+                <div className="timeline-title">
+                  <strong>
+                    {step.sequence}. {step.node}
+                  </strong>
+                  <span>
+                    {step.status} · {step.durationMs} ms
+                  </span>
+                </div>
+                {step.errorCode ? (
+                  <p className="error-banner">{step.errorCode}</p>
+                ) : null}
+                {step.warningCodes.length ? (
+                  <p className="muted">警告：{step.warningCodes.join("、")}</p>
+                ) : null}
+                <div className="trace-summaries">
+                  <div>
+                    <h3>输入摘要 / Tool</h3>
+                    <Summary value={step.inputSummary} />
+                  </div>
+                  <div>
+                    <h3>结果摘要 / Evidence</h3>
+                    <Summary value={step.outputSummary} />
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </section>
+      </section>
+    </main>
+  );
 }
 
 function ProductPreview({ path }: { path: string }) {
@@ -98,6 +271,7 @@ function Home({ onPathChange }: { onPathChange: (path: string) => void }) {
         return payload.data;
       },
       onSnapshot(snapshot) {
+        if (snapshot.accessToken) rememberH5AccessToken(snapshot.accessToken);
         if (snapshot.status === "initialized") setBridgeStatus("App 已连接");
         if (snapshot.status === "standalone")
           setBridgeStatus("当前在独立演示模式");
@@ -203,8 +377,17 @@ function Home({ onPathChange }: { onPathChange: (path: string) => void }) {
   );
 }
 
-export function App({ initialPath }: { initialPath?: string }) {
+export function App({
+  initialPath,
+  initialTrace,
+}: {
+  initialPath?: string;
+  initialTrace?: DecisionTrace;
+}) {
   const [path, setPath] = useState(initialPath ?? currentPath);
+  const traceRunId = parseTraceRunId(path);
+  if (traceRunId)
+    return <TracePage runId={traceRunId} initialTrace={initialTrace} />;
   return parsePreview(path) ? (
     <ProductPreview path={path} />
   ) : (

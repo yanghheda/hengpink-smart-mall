@@ -6,6 +6,32 @@ info:
   description: >-
     Public contract for health, catalog, decision, memory, favorites, historical reports, and mock checkout.
 paths:
+  /api/v1/admin/decision-runs/{runId}/trace:
+    get:
+      operationId: getDecisionRunTrace
+      summary: DEMO_ADMIN 按对象归属读取单 Run 脱敏 Trace
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: runId
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 64 }
+      responses:
+        "200":
+          description: 返回节点、Tool/Evidence 摘要、版本、Token、成本与降级
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DecisionTraceResponse" }
+        "403":
+          description: 非 DEMO_ADMIN 或对象不属于当前用户
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+        "404":
+          description: Run 不存在
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorEnvelope" }
   /api/v1/purchase-intents:
     post:
       operationId: createPurchaseIntent
@@ -1345,3 +1371,75 @@ components:
         - type: object
           properties:
             data: { $ref: "#/components/schemas/OfferList" }
+    DecisionTraceStep:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          sequence,
+          node,
+          status,
+          startedAt,
+          durationMs,
+          warningCodes,
+          inputSummary,
+          outputSummary,
+        ]
+      properties:
+        sequence: { type: integer, minimum: 1 }
+        node: { type: string }
+        status: { type: string }
+        startedAt: { type: string, format: date-time }
+        completedAt: { type: [string, "null"], format: date-time }
+        durationMs: { type: integer, minimum: 0 }
+        errorCode: { type: [string, "null"] }
+        warningCodes:
+          type: array
+          items: { type: string }
+        inputSummary: { type: object }
+        outputSummary: { type: object }
+    DecisionTrace:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          runId,
+          sessionId,
+          runVersion,
+          status,
+          degradationCodes,
+          startedAt,
+          datasetVersion,
+          steps,
+        ]
+      properties:
+        runId: { type: string }
+        sessionId: { type: string }
+        runVersion: { type: integer, minimum: 1 }
+        status: { type: string }
+        activeNode: { type: [string, "null"] }
+        failureCode: { type: [string, "null"] }
+        degradationCodes:
+          type: array
+          items: { type: string }
+        traceId: { type: [string, "null"] }
+        startedAt: { type: string, format: date-time }
+        completedAt: { type: [string, "null"], format: date-time }
+        modelVersion: { type: [string, "null"] }
+        promptVersion: { type: [string, "null"] }
+        datasetVersion: { type: string }
+        scoringVersion: { type: [string, "null"] }
+        pricingRuleVersion: { type: [string, "null"] }
+        embeddingVersion: { type: [string, "null"] }
+        tokenInput: { type: [integer, "null"], minimum: 0 }
+        tokenOutput: { type: [integer, "null"], minimum: 0 }
+        estimatedCost: { type: [number, "null"], minimum: 0 }
+        steps:
+          type: array
+          items: { $ref: "#/components/schemas/DecisionTraceStep" }
+    DecisionTraceResponse:
+      allOf:
+        - $ref: "#/components/schemas/SuccessEnvelope"
+        - type: object
+          properties:
+            data: { $ref: "#/components/schemas/DecisionTrace" }

@@ -1,5 +1,5 @@
 // 由 packages/api-contracts/openapi.yaml 生成，请勿手工修改。
-// 契约源摘要：44e0ec400a5452bc255ce03a6506cf61aecf1365ddc4fdf998fffe63c570b7cf
+// 契约源摘要：8b187de1281560d47f983120e9f3d7c03658425386a4d7f0baca1f8eb9778afe
 
 export interface LoginRequest {
   account: string;
@@ -437,5 +437,47 @@ export interface OfferList {
 export interface OfferListResponse {
   requestId: string;
   data: OfferList;
+  meta: ResponseMeta;
+}
+
+export interface DecisionTraceStep {
+  sequence: number;
+  node: string;
+  status: string;
+  startedAt: string;
+  completedAt?: string | null;
+  durationMs: number;
+  errorCode?: string | null;
+  warningCodes: Array<string>;
+  inputSummary: Record<string, unknown>;
+  outputSummary: Record<string, unknown>;
+}
+
+export interface DecisionTrace {
+  runId: string;
+  sessionId: string;
+  runVersion: number;
+  status: string;
+  activeNode?: string | null;
+  failureCode?: string | null;
+  degradationCodes: Array<string>;
+  traceId?: string | null;
+  startedAt: string;
+  completedAt?: string | null;
+  modelVersion?: string | null;
+  promptVersion?: string | null;
+  datasetVersion: string;
+  scoringVersion?: string | null;
+  pricingRuleVersion?: string | null;
+  embeddingVersion?: string | null;
+  tokenInput?: number | null;
+  tokenOutput?: number | null;
+  estimatedCost?: number | null;
+  steps: Array<DecisionTraceStep>;
+}
+
+export interface DecisionTraceResponse {
+  requestId: string;
+  data: DecisionTrace;
   meta: ResponseMeta;
 }

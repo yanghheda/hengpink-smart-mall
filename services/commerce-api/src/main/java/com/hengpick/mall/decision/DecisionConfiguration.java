@@ -4,9 +4,12 @@ import com.hengpick.mall.decision.application.DecisionRunCoordinator;
 import com.hengpick.mall.decision.application.DecisionRunService;
 import com.hengpick.mall.decision.application.DecisionSessionQueryService;
 import com.hengpick.mall.decision.application.DecisionStreamQueryService;
+import com.hengpick.mall.decision.application.DecisionTraceService;
 import com.hengpick.mall.decision.domain.DecisionRunRepository;
 import com.hengpick.mall.decision.domain.DecisionSessionSnapshotRepository;
 import com.hengpick.mall.decision.domain.DecisionStreamAccessRepository;
+import com.hengpick.mall.decision.domain.DecisionTraceRepository;
+import com.hengpick.mall.identity.application.ObjectAccessGuard;
 import com.hengpick.mall.decision.event.DecisionEventPublisher;
 import com.hengpick.mall.decision.event.DecisionStreamStore;
 import com.hengpick.mall.decision.infrastructure.RedisDecisionStreamStore;
@@ -27,6 +30,10 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 @Configuration
 @Profile("database")
 public class DecisionConfiguration {
+    @Bean
+    DecisionTraceService decisionTraceService(DecisionTraceRepository repository, ObjectAccessGuard accessGuard) {
+        return new DecisionTraceService(repository, accessGuard);
+    }
     @Bean
     DecisionStreamStore decisionStreamStore(StringRedisTemplate redis, ObjectMapper objectMapper) {
         return new RedisDecisionStreamStore(redis, objectMapper);
