@@ -3,7 +3,7 @@
     "caseId": "GC-PHONE-001",
     "versions": {
       "datasetVersion": "commerce-demo-2026.08.1",
-      "promptVersion": "intent-v1",
+      "promptVersion": "intent-v0",
       "pricingRuleVersion": "pricing-v1",
       "scoringVersion": "scoring-v1"
     },
@@ -22,9 +22,7 @@
         "finalPrice": "2699.00",
         "promotionIds": ["PROMO-PHONE-001"]
       },
-      "citation": {
-        "requiredReasonIds": ["R-EASY-USE", "R-BATTERY"]
-      }
+      "citation": { "requiredReasonIds": ["R-EASY-USE", "R-BATTERY"] }
     },
     "actual": {
       "datasetVersion": "commerce-demo-2026.08.1",
@@ -33,9 +31,7 @@
         "recipient": "PARENTS",
         "budgetMax": "3000.00"
       },
-      "product": {
-        "topProductIds": ["P-LUMEN-14", "P-CEDAR-S", "P-PIXEL-9A"]
-      },
+      "product": { "topProductIds": ["P-LUMEN-14", "P-CEDAR-S", "P-PIXEL-9A"] },
       "pricing": {
         "finalPrice": "2699.00",
         "promotionIds": ["PROMO-PHONE-001"]
@@ -55,7 +51,7 @@
         ]
       },
       "qualityJudge": {
-        "readabilityScore": 4,
+        "readabilityScore": 3,
         "judgePromptVersion": "readability-judge-v1",
         "judgeModelVersion": "judge-model-v1"
       }
@@ -65,7 +61,7 @@
     "caseId": "GC-PHONE-002",
     "versions": {
       "datasetVersion": "commerce-demo-2026.08.1",
-      "promptVersion": "intent-v1",
+      "promptVersion": "intent-v0",
       "pricingRuleVersion": "pricing-v1",
       "scoringVersion": "scoring-v1"
     },
@@ -88,11 +84,9 @@
         "budgetMax": "2000.00",
         "hardConstraints": ["storage_gb:GTE:256"]
       },
-      "product": {
-        "topProductIds": ["P-ASTER-3"]
-      },
+      "product": { "topProductIds": ["P-ASTER-3"] },
       "qualityJudge": {
-        "readabilityScore": 4,
+        "readabilityScore": 3,
         "judgePromptVersion": "readability-judge-v1",
         "judgeModelVersion": "judge-model-v1"
       }
@@ -102,25 +96,19 @@
     "caseId": "GC-PHONE-003",
     "versions": {
       "datasetVersion": "commerce-demo-2026.08.1",
-      "promptVersion": "intent-v1",
+      "promptVersion": "intent-v0",
       "pricingRuleVersion": "pricing-v1",
       "scoringVersion": "scoring-v1"
     },
     "input": "没有会员，给我最省步骤的手机价格方案",
     "expected": {
-      "pricing": {
-        "finalPrice": "2919.00",
-        "promotionIds": ["FULL"]
-      }
+      "pricing": { "finalPrice": "2919.00", "promotionIds": ["FULL"] }
     },
     "actual": {
       "datasetVersion": "commerce-demo-2026.08.1",
-      "pricing": {
-        "finalPrice": "2919.00",
-        "promotionIds": ["FULL"]
-      },
+      "pricing": { "finalPrice": "2919.00", "promotionIds": ["FULL"] },
       "qualityJudge": {
-        "readabilityScore": 3,
+        "readabilityScore": 2,
         "judgePromptVersion": "readability-judge-v1",
         "judgeModelVersion": "judge-model-v1"
       }

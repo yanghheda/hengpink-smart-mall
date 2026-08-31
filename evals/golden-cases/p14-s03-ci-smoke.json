@@ -1,0 +1,60 @@
+[
+  {
+    "caseId": "GC-PHONE-001",
+    "versions": {
+      "datasetVersion": "commerce-demo-2026.08.1",
+      "promptVersion": "intent-v1",
+      "pricingRuleVersion": "pricing-v1",
+      "scoringVersion": "scoring-v1"
+    },
+    "input": "给爸妈买 3000 元以内手机，续航好，系统简单",
+    "expected": {
+      "intent": {
+        "category": "PHONE",
+        "recipient": "PARENTS",
+        "budgetMax": "3000.00"
+      },
+      "product": {
+        "relevantProductIds": ["P-LUMEN-14", "P-CEDAR-S"],
+        "forbiddenProductIds": ["P-ORBIT-X5"]
+      },
+      "pricing": {
+        "finalPrice": "2699.00",
+        "promotionIds": ["PROMO-PHONE-001"]
+      },
+      "citation": { "requiredReasonIds": ["R-EASY-USE", "R-BATTERY"] }
+    },
+    "actual": {
+      "datasetVersion": "commerce-demo-2026.08.1",
+      "intent": {
+        "category": "PHONE",
+        "recipient": "PARENTS",
+        "budgetMax": "3000.00"
+      },
+      "product": { "topProductIds": ["P-LUMEN-14", "P-CEDAR-S", "P-PIXEL-9A"] },
+      "pricing": {
+        "finalPrice": "2699.00",
+        "promotionIds": ["PROMO-PHONE-001"]
+      },
+      "citation": {
+        "reasons": [
+          {
+            "reasonId": "R-EASY-USE",
+            "evidenceIds": ["EV-P1001-EASY-USE"],
+            "factIds": []
+          },
+          {
+            "reasonId": "R-BATTERY",
+            "evidenceIds": [],
+            "factIds": ["FACT-P1001-BATTERY"]
+          }
+        ]
+      },
+      "qualityJudge": {
+        "readabilityScore": 4,
+        "judgePromptVersion": "readability-judge-v1",
+        "judgeModelVersion": "judge-model-v1"
+      }
+    }
+  }
+]

@@ -28,6 +28,8 @@
     "tokens:check": "node packages/design-tokens/scripts/token-tool.mjs check && npm run tokens:typecheck",
     "dataset:check": "node packages/commerce-dataset/scripts/dataset-tool.mjs && node --test tests/commerce-dataset.test.mjs",
     "eval:golden": "services/agent-service/.venv/bin/python -m evals.golden_runner --cases evals/golden-cases/p14-s02-smoke.json",
+    "eval:smoke": "services/agent-service/.venv/bin/python -m evals.golden_runner --cases evals/golden-cases/p14-s03-ci-smoke.json --gate",
+    "eval:demo": "services/agent-service/.venv/bin/python -m evals.golden_runner --baseline evals/golden-cases/p14-s03-baseline.json --cases evals/golden-cases/p14-s02-smoke.json --gate",
     "build:js": "npm run build --workspace @hengpick/smart-mall-h5 && npx tsc --noEmit -p apps/commerce-app/tsconfig.json",
     "test": "node --test tests/*.test.mjs && npm run test:js",
     "test:js": "npm run test --workspaces",
@@ -35,7 +37,7 @@
     "test:agent-service": "services/agent-service/.venv/bin/python -m pytest services/agent-service evals/tests",
     "test:services": "npm run test:commerce-api && npm run test:agent-service",
     "format:check": "npm run format:check --workspaces && prettier --check package.json packages/api-contracts packages/commerce-dataset packages/host-bridge/README.md packages/host-bridge/schemas packages/host-bridge/scripts packages/host-bridge/src packages/design-tokens/README.md packages/design-tokens/tokens.json packages/design-tokens/scripts tests && services/agent-service/.venv/bin/ruff check services/agent-service packages/api-contracts/generated/python && services/agent-service/.venv/bin/ruff format --check services/agent-service packages/api-contracts/generated/python",
-    "check": "npm run contract:check && npm run bridge:check && npm run tokens:check && npm run dataset:check && npm run format:check && npm run build:js && npm test && npm run test:services"
+    "check": "npm run contract:check && npm run bridge:check && npm run tokens:check && npm run dataset:check && npm run eval:smoke && npm run format:check && npm run build:js && npm test && npm run test:services"
   },
   "devDependencies": {
     "prettier": "3.9.6",

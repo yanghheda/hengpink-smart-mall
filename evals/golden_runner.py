@@ -85,6 +85,12 @@ class ActualCitation(StrictModel):
     reasons: list[CitationReason] = Field(default_factory=list)
 
 
+class QualityJudgeSnapshot(StrictModel):
+    readability_score: int = Field(ge=1, le=5)
+    judge_prompt_version: str = Field(min_length=1)
+    judge_model_version: str = Field(min_length=1)
+
+
 class ExpectedSnapshot(StrictModel):
     intent: IntentSnapshot | None = None
     product: ExpectedProduct | None = None
@@ -98,6 +104,7 @@ class ActualSnapshot(StrictModel):
     product: ActualProduct | None = None
     pricing: PricingSnapshot | None = None
     citation: ActualCitation | None = None
+    quality_judge: QualityJudgeSnapshot | None = None
 
 
 class GoldenCase(StrictModel):
@@ -128,11 +135,47 @@ class ReportVersions(StrictModel):
     scoring_versions: list[str]
 
 
+class AuxiliaryQuality(StrictModel):
+    auxiliary_only: bool = True
+    denominator: int = Field(ge=0)
+    average_readability: str | None
+    judge_prompt_versions: list[str]
+    judge_model_versions: list[str]
+
+
 class GoldenReport(StrictModel):
     case_count: int
+    case_ids: list[str]
     versions: ReportVersions
     metrics: dict[str, MetricResult]
+    auxiliary_quality: AuxiliaryQuality
     failures: list[FailureSample]
+
+
+class GateFailure(StrictModel):
+    metric: str
+    requirement: str
+    actual: str
+
+
+class GateResult(StrictModel):
+    passed: bool
+    failures: list[GateFailure]
+
+
+class PromptComparison(StrictModel):
+    comparable: bool
+    reasons: list[str]
+    baseline_prompt_versions: list[str]
+    candidate_prompt_versions: list[str]
+    metric_deltas: dict[str, str | None]
+    readability_delta: str | None
+
+
+class EvaluationOutput(StrictModel):
+    report: GoldenReport
+    gate: GateResult
+    comparison: PromptComparison | None = None
 
 
 class _Counter:
@@ -200,10 +243,104 @@ def evaluate_cases(cases: Iterable[GoldenCase]) -> GoldenReport:
 
     return GoldenReport(
         case_count=len(case_list),
+        case_ids=sorted(case.case_id for case in case_list),
         versions=_collect_versions(case_list),
         metrics={name: counter.result() for name, counter in counters.items()},
+        auxiliary_quality=_evaluate_auxiliary_quality(case_list),
         failures=failures,
     )
+
+
+def _evaluate_auxiliary_quality(cases: list[GoldenCase]) -> AuxiliaryQuality:
+    """汇总外部 Judge 快照；该结果不参与发布门禁。"""
+    snapshots = [
+        case.actual.quality_judge
+        for case in cases
+        if case.actual.quality_judge is not None
+    ]
+    average = None
+    if snapshots:
+        total = sum(item.readability_score for item in snapshots)
+        average = f"{Decimal(total) / Decimal(len(snapshots)):.4f}"
+    return AuxiliaryQuality(
+        denominator=len(snapshots),
+        average_readability=average,
+        judge_prompt_versions=sorted({item.judge_prompt_version for item in snapshots}),
+        judge_model_versions=sorted({item.judge_model_version for item in snapshots}),
+    )
+
+
+def evaluate_gate(report: GoldenReport) -> GateResult:
+    """只用确定性指标执行 Demo 回归门禁，缺少样本时关闭放行。"""
+    requirements = {
+        "hard_constraint_violation_rate": ("0.0000", "必须等于 0"),
+        "pricing_accuracy": ("1.0000", "必须等于 1"),
+        "citation_completeness": ("1.0000", "必须等于 1"),
+    }
+    failures: list[GateFailure] = []
+    for metric_name, (expected_value, description) in requirements.items():
+        metric = report.metrics[metric_name]
+        if metric.denominator == 0 or metric.value != expected_value:
+            failures.append(
+                GateFailure(
+                    metric=metric_name,
+                    requirement=f"{description} 且分母大于 0",
+                    actual=metric.value if metric.value is not None else "不可计算",
+                )
+            )
+    if any(item.metric == "dataset_version_match" for item in report.failures):
+        failures.append(
+            GateFailure(
+                metric="dataset_version_match",
+                requirement="所有 Case 的数据版本必须一致",
+                actual="存在版本不匹配",
+            )
+        )
+    return GateResult(passed=not failures, failures=failures)
+
+
+def compare_reports(
+    baseline: GoldenReport, candidate: GoldenReport
+) -> PromptComparison:
+    """在固定 Case 和确定性版本上比较 Prompt 候选，防止换题比较。"""
+    reasons: list[str] = []
+    if baseline.case_ids != candidate.case_ids:
+        reasons.append("Case 集不一致")
+    deterministic_versions = (
+        "dataset_versions",
+        "pricing_rule_versions",
+        "scoring_versions",
+    )
+    for field in deterministic_versions:
+        if getattr(baseline.versions, field) != getattr(candidate.versions, field):
+            reasons.append(f"确定性版本不一致：{field}")
+    comparable = not reasons
+    metric_deltas = {
+        name: _decimal_delta(baseline.metrics[name].value, metric.value)
+        if comparable
+        else None
+        for name, metric in candidate.metrics.items()
+    }
+    readability_delta = None
+    if comparable:
+        readability_delta = _decimal_delta(
+            baseline.auxiliary_quality.average_readability,
+            candidate.auxiliary_quality.average_readability,
+        )
+    return PromptComparison(
+        comparable=comparable,
+        reasons=reasons,
+        baseline_prompt_versions=baseline.versions.prompt_versions,
+        candidate_prompt_versions=candidate.versions.prompt_versions,
+        metric_deltas=metric_deltas,
+        readability_delta=readability_delta,
+    )
+
+
+def _decimal_delta(baseline: str | None, candidate: str | None) -> str | None:
+    if baseline is None or candidate is None:
+        return None
+    return f"{Decimal(candidate) - Decimal(baseline):.4f}"
 
 
 def _evaluate_intent(
@@ -326,12 +463,21 @@ def main() -> int:
         description="运行 HengPick Golden Dataset 确定性评测"
     )
     parser.add_argument("--cases", type=Path, required=True)
+    parser.add_argument("--baseline", type=Path)
+    parser.add_argument("--gate", action="store_true")
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
 
     report = evaluate_cases(load_cases(args.cases))
+    comparison = None
+    if args.baseline:
+        comparison = compare_reports(evaluate_cases(load_cases(args.baseline)), report)
+    gate = evaluate_gate(report)
+    result: GoldenReport | EvaluationOutput = report
+    if args.gate or comparison is not None:
+        result = EvaluationOutput(report=report, gate=gate, comparison=comparison)
     content = (
-        json.dumps(report.model_dump(by_alias=True), ensure_ascii=False, indent=2)
+        json.dumps(result.model_dump(by_alias=True), ensure_ascii=False, indent=2)
         + "\n"
     )
     if args.output:
@@ -339,6 +485,8 @@ def main() -> int:
         args.output.write_text(content, encoding="utf-8")
     else:
         print(content, end="")
+    if args.gate and (not gate.passed or (comparison and not comparison.comparable)):
+        return 1
     return 0
 
 

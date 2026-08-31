@@ -85,6 +85,24 @@
               "items": { "type": "string" }
             }
           }
+        },
+        "qualityJudge": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "readabilityScore",
+            "judgePromptVersion",
+            "judgeModelVersion"
+          ],
+          "properties": {
+            "readabilityScore": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 5
+            },
+            "judgePromptVersion": { "type": "string", "minLength": 1 },
+            "judgeModelVersion": { "type": "string", "minLength": 1 }
+          }
         }
       }
     },

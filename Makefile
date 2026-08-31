@@ -1,4 +1,4 @@
-.PHONY: install start-commerce-app start-smart-mall-h5 start-commerce-api start-agent-service infra-up infra-down infra-status db-migrate db-seed rag-index eval-golden test-db-integration test check
+.PHONY: install start-commerce-app start-smart-mall-h5 start-commerce-api start-agent-service infra-up infra-down infra-status db-migrate db-seed rag-index eval-golden eval-smoke eval-demo test-db-integration test check
 
 install:
 	npm ci
@@ -40,6 +40,12 @@ rag-index:
 
 eval-golden:
 	npm run eval:golden
+
+eval-smoke:
+	npm run eval:smoke
+
+eval-demo:
+	npm run eval:demo
 
 test-db-integration:
 	./scripts/test-vm-database.sh

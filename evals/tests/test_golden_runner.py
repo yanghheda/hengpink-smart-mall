@@ -5,7 +5,13 @@ from typing import Any
 import pytest
 from pydantic import ValidationError
 
-from evals.golden_runner import GoldenCase, evaluate_cases, load_cases
+from evals.golden_runner import (
+    GoldenCase,
+    compare_reports,
+    evaluate_cases,
+    evaluate_gate,
+    load_cases,
+)
 
 
 def _case(**overrides: object) -> dict[str, object]:
@@ -37,6 +43,11 @@ def _case(**overrides: object) -> dict[str, object]:
                     {"reasonId": "R-1", "evidenceIds": ["EV-1"], "factIds": []},
                     {"reasonId": "R-2", "evidenceIds": [], "factIds": ["FACT-2"]},
                 ]
+            },
+            "qualityJudge": {
+                "readabilityScore": 4,
+                "judgePromptVersion": "readability-judge-v1",
+                "judgeModelVersion": "judge-model-v1",
             },
         },
     }
@@ -123,3 +134,55 @@ def test_loader_rejects_duplicate_ids_and_non_decimal_money(tmp_path: Path) -> N
 
     with pytest.raises(ValueError, match="Case ID 重复"):
         load_cases(duplicate_path)
+
+
+def test_gate_fails_closed_for_zero_denominator_and_blocking_regressions() -> None:
+    raw: Any = _case()
+    raw["actual"]["product"]["topProductIds"] = ["P-1", "P-X"]
+    raw["actual"]["pricing"] = None
+    raw["expected"]["citation"] = None
+
+    gate = evaluate_gate(evaluate_cases([GoldenCase.model_validate(raw)]))
+
+    assert gate.passed is False
+    assert {failure.metric for failure in gate.failures} == {
+        "hard_constraint_violation_rate",
+        "pricing_accuracy",
+        "citation_completeness",
+    }
+
+
+def test_readability_judge_is_auxiliary_and_never_changes_gate_result() -> None:
+    high = _case()
+    low: Any = _case()
+    low["actual"]["qualityJudge"]["readabilityScore"] = 1
+
+    high_report = evaluate_cases([GoldenCase.model_validate(high)])
+    low_report = evaluate_cases([GoldenCase.model_validate(low)])
+
+    assert high_report.auxiliary_quality.average_readability == "4.0000"
+    assert low_report.auxiliary_quality.average_readability == "1.0000"
+    assert evaluate_gate(high_report).passed is True
+    assert evaluate_gate(low_report).passed is True
+
+
+def test_prompt_comparison_requires_same_cases_and_deterministic_versions() -> None:
+    baseline = evaluate_cases([GoldenCase.model_validate(_case())])
+    candidate_raw: Any = _case()
+    candidate_raw["versions"]["promptVersion"] = "intent-v2"
+    candidate = evaluate_cases([GoldenCase.model_validate(candidate_raw)])
+
+    comparison = compare_reports(baseline, candidate)
+
+    assert comparison.comparable is True
+    assert comparison.baseline_prompt_versions == ["intent-v1"]
+    assert comparison.candidate_prompt_versions == ["intent-v2"]
+    assert comparison.metric_deltas["pricing_accuracy"] == "0.0000"
+
+    different_case: Any = _case()
+    different_case["caseId"] = "GC-PHONE-OTHER"
+    not_comparable = compare_reports(
+        baseline, evaluate_cases([GoldenCase.model_validate(different_case)])
+    )
+    assert not_comparable.comparable is False
+    assert "Case 集不一致" in not_comparable.reasons
