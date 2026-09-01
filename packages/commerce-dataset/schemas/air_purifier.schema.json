@@ -1,0 +1,150 @@
+{
+  "categoryId": "AIR_PURIFIER",
+  "schemaVersion": "air-purifier-1.0",
+  "attributes": [
+    {
+      "key": "cadrM3h",
+      "label": "颗粒物 CADR",
+      "type": "number",
+      "unit": "m³/h",
+      "filterable": true,
+      "comparable": true,
+      "skuSpecific": false
+    },
+    {
+      "key": "recommendedAreaM2",
+      "label": "建议面积",
+      "type": "number",
+      "unit": "m²",
+      "filterable": true,
+      "comparable": true,
+      "skuSpecific": false
+    },
+    {
+      "key": "sleepNoiseDb",
+      "label": "睡眠档噪音",
+      "type": "number",
+      "unit": "dB",
+      "filterable": true,
+      "comparable": true,
+      "skuSpecific": false
+    },
+    {
+      "key": "powerW",
+      "label": "额定功率",
+      "type": "number",
+      "unit": "W",
+      "filterable": true,
+      "comparable": true,
+      "skuSpecific": false
+    },
+    {
+      "key": "filterLifeMonths",
+      "label": "滤芯寿命",
+      "type": "number",
+      "unit": "month",
+      "filterable": true,
+      "comparable": true,
+      "skuSpecific": false
+    },
+    {
+      "key": "formaldehydeRemoval",
+      "label": "甲醛净化",
+      "type": "boolean",
+      "unit": null,
+      "filterable": true,
+      "comparable": true,
+      "skuSpecific": false
+    },
+    {
+      "key": "pm25Sensor",
+      "label": "PM2.5 传感器",
+      "type": "boolean",
+      "unit": null,
+      "filterable": true,
+      "comparable": true,
+      "skuSpecific": false
+    },
+    {
+      "key": "appControl",
+      "label": "App 控制",
+      "type": "boolean",
+      "unit": null,
+      "filterable": true,
+      "comparable": true,
+      "skuSpecific": false
+    },
+    {
+      "key": "filterPack",
+      "label": "滤芯套装",
+      "type": "enum",
+      "enumValues": ["STANDARD", "FORMALDEHYDE"],
+      "unit": null,
+      "filterable": false,
+      "comparable": true,
+      "skuSpecific": true
+    }
+  ],
+  "hardConstraintOperators": {
+    "cadrM3h": [">="],
+    "recommendedAreaM2": [">="],
+    "sleepNoiseDb": ["<="],
+    "powerW": ["<="],
+    "filterLifeMonths": [">="],
+    "formaldehydeRemoval": ["="],
+    "pm25Sensor": ["="],
+    "appControl": ["="]
+  },
+  "comparisonGroups": [
+    {
+      "key": "purification",
+      "label": "净化",
+      "attributes": ["cadrM3h", "recommendedAreaM2", "formaldehydeRemoval"]
+    },
+    {
+      "key": "quiet_energy",
+      "label": "静音节能",
+      "attributes": ["sleepNoiseDb", "powerW"]
+    },
+    {
+      "key": "maintenance",
+      "label": "维护智能",
+      "attributes": [
+        "filterLifeMonths",
+        "pm25Sensor",
+        "appControl",
+        "filterPack"
+      ]
+    }
+  ],
+  "capabilities": [
+    {
+      "key": "purification",
+      "label": "净化能力",
+      "inputAttributes": [
+        "cadrM3h",
+        "recommendedAreaM2",
+        "formaldehydeRemoval"
+      ],
+      "evidenceTopics": ["purification", "formaldehyde"],
+      "formulaVersion": "air-purifier-capability-v1",
+      "missingDataPolicy": "RENORMALIZE_AND_LOWER_COMPLETENESS"
+    },
+    {
+      "key": "sleep",
+      "label": "睡眠适配",
+      "inputAttributes": ["sleepNoiseDb", "pm25Sensor"],
+      "evidenceTopics": ["noise", "sleep"],
+      "formulaVersion": "air-purifier-capability-v1",
+      "missingDataPolicy": "RENORMALIZE_AND_LOWER_COMPLETENESS"
+    },
+    {
+      "key": "maintenance",
+      "label": "维护成本",
+      "inputAttributes": ["filterLifeMonths", "powerW", "appControl"],
+      "evidenceTopics": ["filter", "energy"],
+      "formulaVersion": "air-purifier-capability-v1",
+      "missingDataPolicy": "RENORMALIZE_AND_LOWER_COMPLETENESS"
+    }
+  ]
+}

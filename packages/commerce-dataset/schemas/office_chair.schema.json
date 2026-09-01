@@ -1,0 +1,160 @@
+{
+  "categoryId": "OFFICE_CHAIR",
+  "schemaVersion": "office-chair-1.0",
+  "attributes": [
+    {
+      "key": "lumbarSupportAdjustable",
+      "label": "腰托可调",
+      "type": "boolean",
+      "unit": null,
+      "filterable": true,
+      "comparable": true,
+      "skuSpecific": false
+    },
+    {
+      "key": "armrestDimensions",
+      "label": "扶手调节维度",
+      "type": "number",
+      "unit": "D",
+      "filterable": true,
+      "comparable": true,
+      "skuSpecific": false
+    },
+    {
+      "key": "seatDepthAdjustable",
+      "label": "座深可调",
+      "type": "boolean",
+      "unit": null,
+      "filterable": true,
+      "comparable": true,
+      "skuSpecific": false
+    },
+    {
+      "key": "headrestAdjustable",
+      "label": "头枕可调",
+      "type": "boolean",
+      "unit": null,
+      "filterable": true,
+      "comparable": true,
+      "skuSpecific": false
+    },
+    {
+      "key": "maxLoadKg",
+      "label": "最大承重",
+      "type": "number",
+      "unit": "kg",
+      "filterable": true,
+      "comparable": true,
+      "skuSpecific": false
+    },
+    {
+      "key": "recommendedHeightMinCm",
+      "label": "建议身高下限",
+      "type": "number",
+      "unit": "cm",
+      "filterable": true,
+      "comparable": true,
+      "skuSpecific": false
+    },
+    {
+      "key": "recommendedHeightMaxCm",
+      "label": "建议身高上限",
+      "type": "number",
+      "unit": "cm",
+      "filterable": true,
+      "comparable": true,
+      "skuSpecific": false
+    },
+    {
+      "key": "material",
+      "label": "坐面材质",
+      "type": "enum",
+      "enumValues": ["MESH", "FABRIC", "LEATHER"],
+      "unit": null,
+      "filterable": true,
+      "comparable": true,
+      "skuSpecific": false
+    },
+    {
+      "key": "footrest",
+      "label": "脚托",
+      "type": "boolean",
+      "unit": null,
+      "filterable": true,
+      "comparable": true,
+      "skuSpecific": true
+    }
+  ],
+  "hardConstraintOperators": {
+    "lumbarSupportAdjustable": ["="],
+    "armrestDimensions": [">="],
+    "seatDepthAdjustable": ["="],
+    "headrestAdjustable": ["="],
+    "maxLoadKg": [">="],
+    "recommendedHeightMinCm": ["<="],
+    "recommendedHeightMaxCm": [">="],
+    "material": ["="],
+    "footrest": ["="]
+  },
+  "comparisonGroups": [
+    {
+      "key": "ergonomics",
+      "label": "人体工学",
+      "attributes": [
+        "lumbarSupportAdjustable",
+        "armrestDimensions",
+        "seatDepthAdjustable",
+        "headrestAdjustable"
+      ]
+    },
+    {
+      "key": "fit",
+      "label": "体型适配",
+      "attributes": [
+        "maxLoadKg",
+        "recommendedHeightMinCm",
+        "recommendedHeightMaxCm"
+      ]
+    },
+    {
+      "key": "comfort",
+      "label": "材质功能",
+      "attributes": ["material", "footrest"]
+    }
+  ],
+  "capabilities": [
+    {
+      "key": "ergonomics",
+      "label": "人体工学能力",
+      "inputAttributes": [
+        "lumbarSupportAdjustable",
+        "armrestDimensions",
+        "seatDepthAdjustable",
+        "headrestAdjustable"
+      ],
+      "evidenceTopics": ["ergonomics", "lumbar"],
+      "formulaVersion": "office-chair-capability-v1",
+      "missingDataPolicy": "RENORMALIZE_AND_LOWER_COMPLETENESS"
+    },
+    {
+      "key": "body_fit",
+      "label": "体型适配",
+      "inputAttributes": [
+        "maxLoadKg",
+        "recommendedHeightMinCm",
+        "recommendedHeightMaxCm"
+      ],
+      "evidenceTopics": ["fit", "height"],
+      "formulaVersion": "office-chair-capability-v1",
+      "missingDataPolicy": "RENORMALIZE_AND_LOWER_COMPLETENESS"
+    },
+    {
+      "key": "long_sitting",
+      "label": "久坐舒适",
+      "inputAttributes": ["material", "footrest", "seatDepthAdjustable"],
+      "evidenceTopics": ["long-sitting", "comfort"],
+      "formulaVersion": "office-chair-capability-v1",
+      "missingDataPolicy": "RENORMALIZE_AND_LOWER_COMPLETENESS"
+    }
+  ]
+}

@@ -9,7 +9,7 @@ import {
 
 test("curated dataset has the minimum P03 phone slice", async () => {
   const dataset = await loadCuratedDataset();
-  assert.equal(dataset.dataset_version, "commerce-demo-2026.09.1");
+  assert.equal(dataset.dataset_version, "commerce-demo-2026.09.2");
   assert.ok(dataset.categories.some((item) => item.category_id === "PHONE"));
   const phoneProductIds = new Set(
     dataset.products
@@ -39,7 +39,7 @@ test("curated dataset adds a monitor slice without changing the phone slice", as
     monitorProductIds.has(item.product_id),
   );
 
-  assert.deepEqual(categoryIds, ["PHONE", "MONITOR"]);
+  assert.deepEqual(categoryIds.slice(0, 2), ["PHONE", "MONITOR"]);
   assert.equal(
     dataset.products.filter((item) => item.category_id === "PHONE").length,
     6,

@@ -5,10 +5,89 @@ import { fileURLToPath } from "node:url";
 const fixturePath = fileURLToPath(
   new URL("../fixtures/curated/commerce-demo-2026.09.1.json", import.meta.url),
 );
+const rangeClosurePath = fileURLToPath(
+  new URL("../fixtures/curated/p15-s02-range-closure.json", import.meta.url),
+);
 const schemaDirectory = new URL("../schemas/", import.meta.url);
 
 export async function loadCuratedDataset() {
-  return JSON.parse(await readFile(fixturePath, "utf8"));
+  const base = JSON.parse(await readFile(fixturePath, "utf8"));
+  const expansion = JSON.parse(await readFile(rangeClosurePath, "utf8"));
+  return mergeRangeClosure(base, expansion);
+}
+
+function mergeRangeClosure(base, expansion) {
+  const dataset = structuredClone(base);
+  dataset.dataset_version = expansion.dataset_version;
+  dataset.updated_at = expansion.updated_at;
+  for (const name of ["categories", "products", "skus"]) {
+    dataset[name].push(...structuredClone(expansion[name]));
+  }
+  dataset.categories.forEach((category) => {
+    category.schema_coverage = "DEEP";
+    category.confidence_policy = {
+      strategy: "SCHEMA_COVERAGE",
+      deep_threshold: 0.6,
+      deep_max_level: "HIGH",
+      fallback_max_level: "MEDIUM",
+    };
+  });
+  for (const product of expansion.products) {
+    const content = expansion.product_content[product.product_id];
+    const skus = expansion.skus.filter(
+      (sku) => sku.product_id === product.product_id,
+    );
+    skus.forEach((sku, index) => {
+      dataset.offers.push({
+        offer_id: `O-${sku.sku_id.slice(2)}`,
+        sku_id: sku.sku_id,
+        shop_id: index === 0 ? "SHOP-DIRECT" : "SHOP-CARE",
+        list_price: content.base_price,
+        price: content.base_price,
+        additional_fee: "0.00",
+        currency: "CNY",
+        stock_status: "IN_STOCK",
+        valid_from: "2026-09-01T00:00:00Z",
+        valid_to: "2027-09-01T00:00:00Z",
+        version: 0,
+      });
+    });
+    dataset.reviews.push({
+      review_id: `R-${product.product_id.slice(2)}-001`,
+      product_id: product.product_id,
+      sku_id: skus[0].sku_id,
+      rating: 4,
+      text: content.review,
+    });
+    dataset.knowledge_documents.push({
+      evidence_id: `EV-${product.product_id.slice(2)}-001`,
+      product_id: product.product_id,
+      sku_id: null,
+      category_id: product.category_id,
+      source_type: "EXPERT_SUMMARY",
+      topic: content.topic,
+      sentiment: "MIXED",
+      trust_level: 0.82,
+      published_at: "2026-08-20T00:00:00Z",
+      content: content.evidence,
+      is_simulated: true,
+    });
+  }
+  for (const name of [
+    "categories",
+    "products",
+    "skus",
+    "shops",
+    "offers",
+    "reviews",
+    "knowledge_documents",
+  ]) {
+    dataset[name].forEach((entity) => {
+      entity.dataset_version = dataset.dataset_version;
+      entity.updated_at = dataset.updated_at;
+    });
+  }
+  return dataset;
 }
 
 export async function loadPhoneSchema() {

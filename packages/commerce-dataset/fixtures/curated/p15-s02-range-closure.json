@@ -1,0 +1,567 @@
+{
+  "dataset_version": "commerce-demo-2026.09.2",
+  "updated_at": "2026-09-01T00:00:00Z",
+  "categories": [
+    {
+      "category_id": "HEADPHONE",
+      "schema_version": "headphone-1.0",
+      "schema_coverage": "DEEP",
+      "name": "耳机",
+      "attributes": [
+        "wearingStyle",
+        "noiseCancellationDb",
+        "batteryHours",
+        "totalBatteryHours",
+        "weightG",
+        "multipoint",
+        "waterResistance",
+        "codecTier",
+        "color"
+      ]
+    },
+    {
+      "category_id": "AIR_PURIFIER",
+      "schema_version": "air-purifier-1.0",
+      "schema_coverage": "DEEP",
+      "name": "空气净化器",
+      "attributes": [
+        "cadrM3h",
+        "recommendedAreaM2",
+        "sleepNoiseDb",
+        "powerW",
+        "filterLifeMonths",
+        "formaldehydeRemoval",
+        "pm25Sensor",
+        "appControl",
+        "filterPack"
+      ]
+    },
+    {
+      "category_id": "OFFICE_CHAIR",
+      "schema_version": "office-chair-1.0",
+      "schema_coverage": "DEEP",
+      "name": "办公椅",
+      "attributes": [
+        "lumbarSupportAdjustable",
+        "armrestDimensions",
+        "seatDepthAdjustable",
+        "headrestAdjustable",
+        "maxLoadKg",
+        "recommendedHeightMinCm",
+        "recommendedHeightMaxCm",
+        "material",
+        "footrest"
+      ]
+    }
+  ],
+  "products": [
+    {
+      "product_id": "P-SONORA-BUDS",
+      "category_id": "HEADPHONE",
+      "brand": "Sonora",
+      "model": "Buds Pro"
+    },
+    {
+      "product_id": "P-AURALINK-FLOW",
+      "category_id": "HEADPHONE",
+      "brand": "Auralink",
+      "model": "Flow NC"
+    },
+    {
+      "product_id": "P-QUIETARC-H7",
+      "category_id": "HEADPHONE",
+      "brand": "QuietArc",
+      "model": "H7"
+    },
+    {
+      "product_id": "P-TRAVELTONE-M2",
+      "category_id": "HEADPHONE",
+      "brand": "TravelTone",
+      "model": "M2"
+    },
+    {
+      "product_id": "P-CLEARAIR-S20",
+      "category_id": "AIR_PURIFIER",
+      "brand": "ClearAir",
+      "model": "S20"
+    },
+    {
+      "product_id": "P-BREEZE-MAX",
+      "category_id": "AIR_PURIFIER",
+      "brand": "Breeze",
+      "model": "Max 500"
+    },
+    {
+      "product_id": "P-NIGHTPURE-N1",
+      "category_id": "AIR_PURIFIER",
+      "brand": "NightPure",
+      "model": "N1"
+    },
+    {
+      "product_id": "P-HOMEGUARD-F6",
+      "category_id": "AIR_PURIFIER",
+      "brand": "HomeGuard",
+      "model": "F6"
+    },
+    {
+      "product_id": "P-ERGOFIT-E3",
+      "category_id": "OFFICE_CHAIR",
+      "brand": "ErgoFit",
+      "model": "E3"
+    },
+    {
+      "product_id": "P-MESHWORK-M5",
+      "category_id": "OFFICE_CHAIR",
+      "brand": "MeshWork",
+      "model": "M5"
+    },
+    {
+      "product_id": "P-SITWELL-L2",
+      "category_id": "OFFICE_CHAIR",
+      "brand": "SitWell",
+      "model": "L2"
+    },
+    {
+      "product_id": "P-FLEXSEAT-X7",
+      "category_id": "OFFICE_CHAIR",
+      "brand": "FlexSeat",
+      "model": "X7"
+    }
+  ],
+  "skus": [
+    {
+      "sku_id": "S-SONORA-BUDS-B",
+      "product_id": "P-SONORA-BUDS",
+      "attributes": {
+        "wearingStyle": "IN_EAR",
+        "noiseCancellationDb": 42,
+        "batteryHours": 8,
+        "totalBatteryHours": 32,
+        "weightG": 5,
+        "multipoint": true,
+        "waterResistance": "IP54",
+        "codecTier": 3,
+        "color": "black"
+      }
+    },
+    {
+      "sku_id": "S-SONORA-BUDS-W",
+      "product_id": "P-SONORA-BUDS",
+      "attributes": {
+        "wearingStyle": "IN_EAR",
+        "noiseCancellationDb": 42,
+        "batteryHours": 8,
+        "totalBatteryHours": 32,
+        "weightG": 5,
+        "multipoint": true,
+        "waterResistance": "IP54",
+        "codecTier": 3,
+        "color": "white"
+      }
+    },
+    {
+      "sku_id": "S-AURALINK-FLOW-B",
+      "product_id": "P-AURALINK-FLOW",
+      "attributes": {
+        "wearingStyle": "IN_EAR",
+        "noiseCancellationDb": 36,
+        "batteryHours": 10,
+        "totalBatteryHours": 40,
+        "weightG": 6,
+        "multipoint": true,
+        "waterResistance": "IPX4",
+        "codecTier": 2,
+        "color": "black"
+      }
+    },
+    {
+      "sku_id": "S-AURALINK-FLOW-U",
+      "product_id": "P-AURALINK-FLOW",
+      "attributes": {
+        "wearingStyle": "IN_EAR",
+        "noiseCancellationDb": 36,
+        "batteryHours": 10,
+        "totalBatteryHours": 40,
+        "weightG": 6,
+        "multipoint": true,
+        "waterResistance": "IPX4",
+        "codecTier": 2,
+        "color": "blue"
+      }
+    },
+    {
+      "sku_id": "S-QUIETARC-H7-B",
+      "product_id": "P-QUIETARC-H7",
+      "attributes": {
+        "wearingStyle": "OVER_EAR",
+        "noiseCancellationDb": 48,
+        "batteryHours": 45,
+        "totalBatteryHours": 45,
+        "weightG": 248,
+        "multipoint": true,
+        "waterResistance": "NONE",
+        "codecTier": 4,
+        "color": "black"
+      }
+    },
+    {
+      "sku_id": "S-QUIETARC-H7-W",
+      "product_id": "P-QUIETARC-H7",
+      "attributes": {
+        "wearingStyle": "OVER_EAR",
+        "noiseCancellationDb": 48,
+        "batteryHours": 45,
+        "totalBatteryHours": 45,
+        "weightG": 248,
+        "multipoint": true,
+        "waterResistance": "NONE",
+        "codecTier": 4,
+        "color": "white"
+      }
+    },
+    {
+      "sku_id": "S-TRAVELTONE-M2-B",
+      "product_id": "P-TRAVELTONE-M2",
+      "attributes": {
+        "wearingStyle": "OVER_EAR",
+        "noiseCancellationDb": 40,
+        "batteryHours": 60,
+        "totalBatteryHours": 60,
+        "weightG": 220,
+        "multipoint": true,
+        "waterResistance": "NONE",
+        "codecTier": 3,
+        "color": "black"
+      }
+    },
+    {
+      "sku_id": "S-TRAVELTONE-M2-U",
+      "product_id": "P-TRAVELTONE-M2",
+      "attributes": {
+        "wearingStyle": "OVER_EAR",
+        "noiseCancellationDb": 40,
+        "batteryHours": 60,
+        "totalBatteryHours": 60,
+        "weightG": 220,
+        "multipoint": true,
+        "waterResistance": "NONE",
+        "codecTier": 3,
+        "color": "blue"
+      }
+    },
+    {
+      "sku_id": "S-CLEARAIR-S20-STD",
+      "product_id": "P-CLEARAIR-S20",
+      "attributes": {
+        "cadrM3h": 320,
+        "recommendedAreaM2": 35,
+        "sleepNoiseDb": 24,
+        "powerW": 38,
+        "filterLifeMonths": 8,
+        "formaldehydeRemoval": false,
+        "pm25Sensor": true,
+        "appControl": true,
+        "filterPack": "STANDARD"
+      }
+    },
+    {
+      "sku_id": "S-CLEARAIR-S20-F",
+      "product_id": "P-CLEARAIR-S20",
+      "attributes": {
+        "cadrM3h": 300,
+        "recommendedAreaM2": 32,
+        "sleepNoiseDb": 24,
+        "powerW": 38,
+        "filterLifeMonths": 8,
+        "formaldehydeRemoval": true,
+        "pm25Sensor": true,
+        "appControl": true,
+        "filterPack": "FORMALDEHYDE"
+      }
+    },
+    {
+      "sku_id": "S-BREEZE-MAX-STD",
+      "product_id": "P-BREEZE-MAX",
+      "attributes": {
+        "cadrM3h": 520,
+        "recommendedAreaM2": 60,
+        "sleepNoiseDb": 28,
+        "powerW": 55,
+        "filterLifeMonths": 12,
+        "formaldehydeRemoval": false,
+        "pm25Sensor": true,
+        "appControl": true,
+        "filterPack": "STANDARD"
+      }
+    },
+    {
+      "sku_id": "S-BREEZE-MAX-F",
+      "product_id": "P-BREEZE-MAX",
+      "attributes": {
+        "cadrM3h": 480,
+        "recommendedAreaM2": 55,
+        "sleepNoiseDb": 28,
+        "powerW": 55,
+        "filterLifeMonths": 10,
+        "formaldehydeRemoval": true,
+        "pm25Sensor": true,
+        "appControl": true,
+        "filterPack": "FORMALDEHYDE"
+      }
+    },
+    {
+      "sku_id": "S-NIGHTPURE-N1-STD",
+      "product_id": "P-NIGHTPURE-N1",
+      "attributes": {
+        "cadrM3h": 260,
+        "recommendedAreaM2": 28,
+        "sleepNoiseDb": 18,
+        "powerW": 28,
+        "filterLifeMonths": 10,
+        "formaldehydeRemoval": false,
+        "pm25Sensor": true,
+        "appControl": false,
+        "filterPack": "STANDARD"
+      }
+    },
+    {
+      "sku_id": "S-NIGHTPURE-N1-F",
+      "product_id": "P-NIGHTPURE-N1",
+      "attributes": {
+        "cadrM3h": 240,
+        "recommendedAreaM2": 25,
+        "sleepNoiseDb": 18,
+        "powerW": 28,
+        "filterLifeMonths": 9,
+        "formaldehydeRemoval": true,
+        "pm25Sensor": true,
+        "appControl": false,
+        "filterPack": "FORMALDEHYDE"
+      }
+    },
+    {
+      "sku_id": "S-HOMEGUARD-F6-STD",
+      "product_id": "P-HOMEGUARD-F6",
+      "attributes": {
+        "cadrM3h": 420,
+        "recommendedAreaM2": 48,
+        "sleepNoiseDb": 22,
+        "powerW": 45,
+        "filterLifeMonths": 15,
+        "formaldehydeRemoval": false,
+        "pm25Sensor": true,
+        "appControl": true,
+        "filterPack": "STANDARD"
+      }
+    },
+    {
+      "sku_id": "S-HOMEGUARD-F6-F",
+      "product_id": "P-HOMEGUARD-F6",
+      "attributes": {
+        "cadrM3h": 400,
+        "recommendedAreaM2": 45,
+        "sleepNoiseDb": 22,
+        "powerW": 45,
+        "filterLifeMonths": 12,
+        "formaldehydeRemoval": true,
+        "pm25Sensor": true,
+        "appControl": true,
+        "filterPack": "FORMALDEHYDE"
+      }
+    },
+    {
+      "sku_id": "S-ERGOFIT-E3-B",
+      "product_id": "P-ERGOFIT-E3",
+      "attributes": {
+        "lumbarSupportAdjustable": true,
+        "armrestDimensions": 3,
+        "seatDepthAdjustable": true,
+        "headrestAdjustable": true,
+        "maxLoadKg": 120,
+        "recommendedHeightMinCm": 160,
+        "recommendedHeightMaxCm": 188,
+        "material": "MESH",
+        "footrest": false
+      }
+    },
+    {
+      "sku_id": "S-ERGOFIT-E3-F",
+      "product_id": "P-ERGOFIT-E3",
+      "attributes": {
+        "lumbarSupportAdjustable": true,
+        "armrestDimensions": 3,
+        "seatDepthAdjustable": true,
+        "headrestAdjustable": true,
+        "maxLoadKg": 120,
+        "recommendedHeightMinCm": 160,
+        "recommendedHeightMaxCm": 188,
+        "material": "MESH",
+        "footrest": true
+      }
+    },
+    {
+      "sku_id": "S-MESHWORK-M5-B",
+      "product_id": "P-MESHWORK-M5",
+      "attributes": {
+        "lumbarSupportAdjustable": true,
+        "armrestDimensions": 4,
+        "seatDepthAdjustable": true,
+        "headrestAdjustable": false,
+        "maxLoadKg": 135,
+        "recommendedHeightMinCm": 165,
+        "recommendedHeightMaxCm": 195,
+        "material": "MESH",
+        "footrest": false
+      }
+    },
+    {
+      "sku_id": "S-MESHWORK-M5-F",
+      "product_id": "P-MESHWORK-M5",
+      "attributes": {
+        "lumbarSupportAdjustable": true,
+        "armrestDimensions": 4,
+        "seatDepthAdjustable": true,
+        "headrestAdjustable": true,
+        "maxLoadKg": 135,
+        "recommendedHeightMinCm": 165,
+        "recommendedHeightMaxCm": 195,
+        "material": "MESH",
+        "footrest": true
+      }
+    },
+    {
+      "sku_id": "S-SITWELL-L2-B",
+      "product_id": "P-SITWELL-L2",
+      "attributes": {
+        "lumbarSupportAdjustable": false,
+        "armrestDimensions": 2,
+        "seatDepthAdjustable": false,
+        "headrestAdjustable": true,
+        "maxLoadKg": 110,
+        "recommendedHeightMinCm": 155,
+        "recommendedHeightMaxCm": 182,
+        "material": "FABRIC",
+        "footrest": false
+      }
+    },
+    {
+      "sku_id": "S-SITWELL-L2-F",
+      "product_id": "P-SITWELL-L2",
+      "attributes": {
+        "lumbarSupportAdjustable": false,
+        "armrestDimensions": 2,
+        "seatDepthAdjustable": false,
+        "headrestAdjustable": true,
+        "maxLoadKg": 110,
+        "recommendedHeightMinCm": 155,
+        "recommendedHeightMaxCm": 182,
+        "material": "FABRIC",
+        "footrest": true
+      }
+    },
+    {
+      "sku_id": "S-FLEXSEAT-X7-B",
+      "product_id": "P-FLEXSEAT-X7",
+      "attributes": {
+        "lumbarSupportAdjustable": true,
+        "armrestDimensions": 4,
+        "seatDepthAdjustable": true,
+        "headrestAdjustable": true,
+        "maxLoadKg": 150,
+        "recommendedHeightMinCm": 158,
+        "recommendedHeightMaxCm": 200,
+        "material": "MESH",
+        "footrest": false
+      }
+    },
+    {
+      "sku_id": "S-FLEXSEAT-X7-F",
+      "product_id": "P-FLEXSEAT-X7",
+      "attributes": {
+        "lumbarSupportAdjustable": true,
+        "armrestDimensions": 4,
+        "seatDepthAdjustable": true,
+        "headrestAdjustable": true,
+        "maxLoadKg": 150,
+        "recommendedHeightMinCm": 158,
+        "recommendedHeightMaxCm": 200,
+        "material": "MESH",
+        "footrest": true
+      }
+    }
+  ],
+  "product_content": {
+    "P-SONORA-BUDS": {
+      "base_price": "1299.00",
+      "topic": "noise-cancellation",
+      "review": "通勤降噪明显，入耳佩戴稳定。",
+      "evidence": "模拟测试显示主动降噪对地铁低频噪声抑制较好，双设备切换稳定。"
+    },
+    "P-AURALINK-FLOW": {
+      "base_price": "899.00",
+      "topic": "battery",
+      "review": "续航充足，长时间佩戴压力较小。",
+      "evidence": "模拟规格记录单次续航十小时，充电盒综合续航四十小时。"
+    },
+    "P-QUIETARC-H7": {
+      "base_price": "1899.00",
+      "topic": "comfort",
+      "review": "包耳隔音和降噪强，但夏季佩戴偏热。",
+      "evidence": "模拟评测确认其降噪深度较高，同时二百四十八克重量需考虑长时佩戴。"
+    },
+    "P-TRAVELTONE-M2": {
+      "base_price": "1499.00",
+      "topic": "travel",
+      "review": "续航很长，折叠收纳适合出差。",
+      "evidence": "模拟差旅测试连续播放可达六十小时，支持双设备连接。"
+    },
+    "P-CLEARAIR-S20": {
+      "base_price": "1099.00",
+      "topic": "purification",
+      "review": "卧室净化速度够用，睡眠档较安静。",
+      "evidence": "模拟规格的颗粒物 CADR 为三百二十立方米每小时，适合中小卧室。"
+    },
+    "P-BREEZE-MAX": {
+      "base_price": "1699.00",
+      "topic": "purification",
+      "review": "大空间净化快，高档风量声音明显。",
+      "evidence": "模拟测试表明大风量适合客厅，但睡眠档噪音高于静音型产品。"
+    },
+    "P-NIGHTPURE-N1": {
+      "base_price": "1299.00",
+      "topic": "sleep",
+      "review": "夜间运行安静，按键灯可关闭。",
+      "evidence": "模拟声学测试睡眠档为十八分贝，适合对夜间噪音敏感的场景。"
+    },
+    "P-HOMEGUARD-F6": {
+      "base_price": "1999.00",
+      "topic": "filter",
+      "review": "滤芯周期长，甲醛版更适合新房。",
+      "evidence": "模拟维护数据表明标准滤芯寿命可达十五个月，实际寿命受污染水平影响。"
+    },
+    "P-ERGOFIT-E3": {
+      "base_price": "1399.00",
+      "topic": "ergonomics",
+      "review": "腰托和座深调节实用，适合日常办公。",
+      "evidence": "模拟人体工学测评确认腰托、座深和头枕均可调，覆盖常见身高区间。"
+    },
+    "P-MESHWORK-M5": {
+      "base_price": "1899.00",
+      "topic": "fit",
+      "review": "承重和调节范围大，高个用户更容易适配。",
+      "evidence": "模拟规格给出一百三十五公斤承重和一百六十五至一百九十五厘米建议身高。"
+    },
+    "P-SITWELL-L2": {
+      "base_price": "899.00",
+      "topic": "comfort",
+      "review": "坐垫柔软，但腰托和座深不可调。",
+      "evidence": "模拟体验记录其基础舒适度尚可，调节能力少，不宜宣称专业人体工学。"
+    },
+    "P-FLEXSEAT-X7": {
+      "base_price": "2399.00",
+      "topic": "long-sitting",
+      "review": "调节完整、承重高，价格也更高。",
+      "evidence": "模拟久坐测评覆盖腰托、四维扶手、座深与头枕调节，适合需要精细适配的用户。"
+    }
+  }
+}

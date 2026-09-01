@@ -1,0 +1,147 @@
+{
+  "categoryId": "HEADPHONE",
+  "schemaVersion": "headphone-1.0",
+  "attributes": [
+    {
+      "key": "wearingStyle",
+      "label": "佩戴方式",
+      "type": "enum",
+      "enumValues": ["IN_EAR", "OVER_EAR"],
+      "unit": null,
+      "filterable": true,
+      "comparable": true,
+      "skuSpecific": false
+    },
+    {
+      "key": "noiseCancellationDb",
+      "label": "降噪深度",
+      "type": "number",
+      "unit": "dB",
+      "filterable": true,
+      "comparable": true,
+      "skuSpecific": false
+    },
+    {
+      "key": "batteryHours",
+      "label": "单次续航",
+      "type": "number",
+      "unit": "hour",
+      "filterable": true,
+      "comparable": true,
+      "skuSpecific": false
+    },
+    {
+      "key": "totalBatteryHours",
+      "label": "综合续航",
+      "type": "number",
+      "unit": "hour",
+      "filterable": true,
+      "comparable": true,
+      "skuSpecific": false
+    },
+    {
+      "key": "weightG",
+      "label": "重量",
+      "type": "number",
+      "unit": "g",
+      "filterable": true,
+      "comparable": true,
+      "skuSpecific": false
+    },
+    {
+      "key": "multipoint",
+      "label": "双设备连接",
+      "type": "boolean",
+      "unit": null,
+      "filterable": true,
+      "comparable": true,
+      "skuSpecific": false
+    },
+    {
+      "key": "waterResistance",
+      "label": "防水等级",
+      "type": "enum",
+      "enumValues": ["IPX4", "IP54", "NONE"],
+      "unit": null,
+      "filterable": true,
+      "comparable": true,
+      "skuSpecific": false
+    },
+    {
+      "key": "codecTier",
+      "label": "音频编码等级",
+      "type": "number",
+      "unit": "tier",
+      "filterable": true,
+      "comparable": true,
+      "skuSpecific": false
+    },
+    {
+      "key": "color",
+      "label": "颜色",
+      "type": "enum",
+      "enumValues": ["black", "white", "blue"],
+      "unit": null,
+      "filterable": false,
+      "comparable": true,
+      "skuSpecific": true
+    }
+  ],
+  "hardConstraintOperators": {
+    "wearingStyle": ["="],
+    "noiseCancellationDb": [">="],
+    "batteryHours": [">="],
+    "weightG": ["<="],
+    "multipoint": ["="],
+    "waterResistance": ["="],
+    "codecTier": [">="]
+  },
+  "comparisonGroups": [
+    {
+      "key": "sound",
+      "label": "声音与降噪",
+      "attributes": ["noiseCancellationDb", "codecTier"]
+    },
+    {
+      "key": "comfort",
+      "label": "佩戴",
+      "attributes": ["wearingStyle", "weightG", "waterResistance"]
+    },
+    {
+      "key": "battery",
+      "label": "续航连接",
+      "attributes": ["batteryHours", "totalBatteryHours", "multipoint"]
+    }
+  ],
+  "capabilities": [
+    {
+      "key": "noise_cancellation",
+      "label": "降噪能力",
+      "inputAttributes": ["noiseCancellationDb", "wearingStyle"],
+      "evidenceTopics": ["noise-cancellation", "commute"],
+      "formulaVersion": "headphone-capability-v1",
+      "missingDataPolicy": "RENORMALIZE_AND_LOWER_COMPLETENESS"
+    },
+    {
+      "key": "wearing_comfort",
+      "label": "长时佩戴能力",
+      "inputAttributes": ["wearingStyle", "weightG"],
+      "evidenceTopics": ["comfort", "fit"],
+      "formulaVersion": "headphone-capability-v1",
+      "missingDataPolicy": "RENORMALIZE_AND_LOWER_COMPLETENESS"
+    },
+    {
+      "key": "travel",
+      "label": "差旅能力",
+      "inputAttributes": [
+        "batteryHours",
+        "totalBatteryHours",
+        "multipoint",
+        "waterResistance"
+      ],
+      "evidenceTopics": ["battery", "travel"],
+      "formulaVersion": "headphone-capability-v1",
+      "missingDataPolicy": "RENORMALIZE_AND_LOWER_COMPLETENESS"
+    }
+  ]
+}

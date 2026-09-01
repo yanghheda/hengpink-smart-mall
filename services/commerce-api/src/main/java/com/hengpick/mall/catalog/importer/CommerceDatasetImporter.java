@@ -2,6 +2,7 @@ package com.hengpick.mall.catalog.importer;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -16,6 +17,8 @@ import java.time.ZoneOffset;
 
 public final class CommerceDatasetImporter {
     private static final String DEFAULT_DATASET_RELATIVE_PATH = "packages/commerce-dataset/fixtures/curated/commerce-demo-2026.09.1.json";
+    private static final String RANGE_CLOSURE_RELATIVE_PATH =
+            "packages/commerce-dataset/fixtures/curated/p15-s02-range-closure.json";
     private static final String CATEGORY_SCHEMA_DIRECTORY = "packages/commerce-dataset/schemas";
 
     private CommerceDatasetImporter() {}
@@ -26,7 +29,8 @@ public final class CommerceDatasetImporter {
         var username = requiredEnvironment("MYSQL_USERNAME");
         var password = requiredEnvironment("MYSQL_PASSWORD");
         var mapper = new ObjectMapper();
-        var dataset = mapper.readTree(datasetPath.toFile());
+        var dataset = mergeRangeClosure(
+                mapper, mapper.readTree(datasetPath.toFile()), mapper.readTree(locateProjectFile(RANGE_CLOSURE_RELATIVE_PATH).toFile()));
 
         try (var connection = DriverManager.getConnection(url, username, password)) {
             connection.setAutoCommit(false);
@@ -45,6 +49,80 @@ public final class CommerceDatasetImporter {
             }
         }
         System.out.printf("已导入 Dataset：%s（%s）%n", dataset.path("dataset_version").asText(), datasetPath);
+    }
+
+    /** 将 P15-S02 的类目扩展片段组合成同一个可发布数据版本。 */
+    static JsonNode mergeRangeClosure(ObjectMapper mapper, JsonNode base, JsonNode expansion) {
+        var dataset = (ObjectNode) base.deepCopy();
+        var datasetVersion = expansion.path("dataset_version").asText();
+        var updatedAt = expansion.path("updated_at").asText();
+        dataset.put("dataset_version", datasetVersion);
+        dataset.put("updated_at", updatedAt);
+        for (var collection : new String[] {"categories", "products", "skus"}) {
+            expansion.withArray(collection).forEach(entity -> dataset.withArray(collection).add(entity.deepCopy()));
+        }
+        dataset.withArray("categories").forEach(category -> {
+            ((ObjectNode) category).put("schema_coverage", "DEEP");
+            var policy = ((ObjectNode) category).putObject("confidence_policy");
+            policy.put("strategy", "SCHEMA_COVERAGE");
+            policy.put("deep_threshold", 0.6);
+            policy.put("deep_max_level", "HIGH");
+            policy.put("fallback_max_level", "MEDIUM");
+        });
+        for (var product : expansion.withArray("products")) {
+            var productId = product.path("product_id").asText();
+            var content = expansion.path("product_content").path(productId);
+            var productSkus = new java.util.ArrayList<JsonNode>();
+            expansion.withArray("skus").forEach(sku -> {
+                if (productId.equals(sku.path("product_id").asText())) productSkus.add(sku);
+            });
+            for (var index = 0; index < productSkus.size(); index++) {
+                var skuId = productSkus.get(index).path("sku_id").asText();
+                var offer = mapper.createObjectNode();
+                offer.put("offer_id", "O-" + skuId.substring(2));
+                offer.put("sku_id", skuId);
+                offer.put("shop_id", index == 0 ? "SHOP-DIRECT" : "SHOP-CARE");
+                offer.put("list_price", content.path("base_price").asText());
+                offer.put("price", content.path("base_price").asText());
+                offer.put("additional_fee", "0.00");
+                offer.put("currency", "CNY");
+                offer.put("stock_status", "IN_STOCK");
+                offer.put("valid_from", "2026-09-01T00:00:00Z");
+                offer.put("valid_to", "2027-09-01T00:00:00Z");
+                offer.put("version", 0);
+                dataset.withArray("offers").add(offer);
+            }
+            var review = mapper.createObjectNode();
+            review.put("review_id", "R-" + productId.substring(2) + "-001");
+            review.put("product_id", productId);
+            review.put("sku_id", productSkus.getFirst().path("sku_id").asText());
+            review.put("rating", 4);
+            review.put("text", content.path("review").asText());
+            dataset.withArray("reviews").add(review);
+
+            var evidence = mapper.createObjectNode();
+            evidence.put("evidence_id", "EV-" + productId.substring(2) + "-001");
+            evidence.put("product_id", productId);
+            evidence.putNull("sku_id");
+            evidence.put("category_id", product.path("category_id").asText());
+            evidence.put("source_type", "EXPERT_SUMMARY");
+            evidence.put("topic", content.path("topic").asText());
+            evidence.put("sentiment", "MIXED");
+            evidence.put("trust_level", 0.82);
+            evidence.put("published_at", "2026-08-20T00:00:00Z");
+            evidence.put("content", content.path("evidence").asText());
+            evidence.put("is_simulated", true);
+            dataset.withArray("knowledge_documents").add(evidence);
+        }
+        for (var collection : new String[] {
+            "categories", "products", "skus", "shops", "offers", "reviews", "knowledge_documents"
+        }) {
+            dataset.withArray(collection).forEach(entity -> {
+                ((ObjectNode) entity).put("dataset_version", datasetVersion);
+                ((ObjectNode) entity).put("updated_at", updatedAt);
+            });
+        }
+        return dataset;
     }
 
     private static void importCategories(Connection connection, JsonNode dataset, ObjectMapper mapper) throws Exception {
