@@ -31,7 +31,19 @@ export type DecisionTrace = {
   steps: DecisionTraceStep[];
 };
 
+export type DecisionTraceListItem = {
+  runId: string;
+  sessionId: string;
+  runVersion: number;
+  status: string;
+  activeNode?: string;
+  failureCode?: string;
+  startedAt: string;
+  completedAt?: string;
+};
+
 let currentAccessToken: string | undefined;
+const ADMIN_TOKEN_KEY = "hengpick.admin.access-token";
 
 export function rememberH5AccessToken(accessToken: string) {
   currentAccessToken = accessToken;
@@ -39,6 +51,39 @@ export function rememberH5AccessToken(accessToken: string) {
 
 export function readH5AccessToken() {
   return currentAccessToken;
+}
+
+export function rememberAdminAccessToken(accessToken: string) {
+  if (typeof sessionStorage !== "undefined") sessionStorage.setItem(ADMIN_TOKEN_KEY, accessToken);
+}
+
+export function readAdminAccessToken() {
+  return typeof sessionStorage === "undefined"
+    ? undefined
+    : sessionStorage.getItem(ADMIN_TOKEN_KEY) ?? undefined;
+}
+
+export function clearAdminAccessToken() {
+  if (typeof sessionStorage !== "undefined") sessionStorage.removeItem(ADMIN_TOKEN_KEY);
+}
+
+export async function loginDemoAdmin(account: string, password: string) {
+  const response = await fetch(
+    `${import.meta.env.VITE_API_BASE_URL ?? "http://127.0.0.1:8080"}/api/v1/auth/login`,
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        account,
+        password,
+        deviceSessionId: `trace-admin-${crypto.randomUUID()}`,
+      }),
+    },
+  );
+  const payload = await response.json() as { data?: { accessToken: string }; error?: { message?: string } };
+  if (!response.ok || !payload.data) throw new Error(payload.error?.message ?? "管理员登录失败");
+  rememberAdminAccessToken(payload.data.accessToken);
+  return payload.data.accessToken;
 }
 
 type ApiTrace = Omit<DecisionTrace, "versions" | "usage"> & {
@@ -80,4 +125,14 @@ export async function loadDecisionTrace(runId: string, accessToken: string) {
           : String(value.estimatedCost),
     },
   } satisfies DecisionTrace;
+}
+
+export async function loadDecisionTraceList(accessToken: string) {
+  const response = await fetch(
+    `${import.meta.env.VITE_API_BASE_URL ?? "http://127.0.0.1:8080"}/api/v1/admin/decision-runs?limit=50`,
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  );
+  const payload = await response.json() as { data?: DecisionTraceListItem[]; error?: { message?: string } };
+  if (!response.ok || !payload.data) throw new Error(payload.error?.message ?? "Trace 列表加载失败");
+  return payload.data;
 }

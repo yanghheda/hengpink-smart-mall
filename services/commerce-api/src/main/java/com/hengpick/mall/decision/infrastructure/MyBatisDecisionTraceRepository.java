@@ -37,6 +37,11 @@ public class MyBatisDecisionTraceRepository implements DecisionTraceRepository {
                 run.tokenOutput(), run.estimatedCost(), steps));
     }
 
+    @Override
+    public List<com.hengpick.mall.decision.domain.DecisionTraceListItem> findRecent(int limit) {
+        return mapper.findRecentTraceRuns(limit);
+    }
+
     private List<String> strings(String json) {
         if (json == null) return List.of();
         try { return objectMapper.readValue(json, new TypeReference<>() {}); }

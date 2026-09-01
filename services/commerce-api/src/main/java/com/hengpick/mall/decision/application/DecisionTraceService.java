@@ -12,10 +12,11 @@ import java.util.Set;
 
 /** 校验管理员与对象归属，并输出字段白名单内的 Trace。 */
 public class DecisionTraceService {
-    private static final Set<String> INPUT_KEYS = Set.of("categoryId", "candidateCount", "toolName", "toolCallId",
+    private static final Set<String> INPUT_KEYS = Set.of("categoryId", "candidateCount", "messageCount", "toolName", "toolCallId",
             "sourceVersion", "requestHash", "topic", "skuId", "productId");
     private static final Set<String> OUTPUT_KEYS = Set.of("resultCount", "evidenceIds", "factIds", "toolName",
-            "toolCallId", "sourceVersion", "status", "retryCount", "errorCode", "recallScores");
+            "toolCallId", "sourceVersion", "status", "retryCount", "errorCode", "recallScores",
+            "categoryId", "candidateCount", "questionCount", "generationType");
     private final DecisionTraceRepository repository;
     private final ObjectAccessGuard accessGuard;
 
@@ -37,6 +38,12 @@ public class DecisionTraceService {
                 snapshot.completedAt(), snapshot.modelVersion(), snapshot.promptVersion(), snapshot.datasetVersion(),
                 snapshot.scoringVersion(), snapshot.pricingRuleVersion(), snapshot.embeddingVersion(),
                 snapshot.tokenInput(), snapshot.tokenOutput(), snapshot.estimatedCost(), steps);
+    }
+
+    public List<com.hengpick.mall.decision.domain.DecisionTraceListItem> listRecent(
+            RequestSubject subject, int limit) {
+        accessGuard.requireTraceAdmin(subject);
+        return repository.findRecent(Math.max(1, Math.min(limit, 100)));
     }
 
     private Map<String, Object> allow(Map<String, Object> source, Set<String> keys) {

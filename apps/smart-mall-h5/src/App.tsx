@@ -5,11 +5,16 @@ import { createHostBridgeReactNative } from "./bridge/hostBridgeReactNative";
 import { createHostBridgeWeb } from "./bridge/hostBridgeWeb";
 import {
   loadDecisionTrace,
+  loadDecisionTraceList,
+  clearAdminAccessToken,
+  loginDemoAdmin,
+  readAdminAccessToken,
   readH5AccessToken,
   rememberH5AccessToken,
   type DecisionTrace,
+  type DecisionTraceListItem,
 } from "./decision/decisionTrace";
-import { startDecision } from "./decision/startDecision";
+import { continueDecision, startDecision } from "./decision/startDecision";
 import { createStandaloneH5Session } from "./decision/standaloneSession";
 import {
   loadDecisionReport,
@@ -30,6 +35,25 @@ const quickScenarios = [
   "宿舍用空气净化器，晚上安静，预算 1500 元",
   "程序员办公显示器，写代码为主，偶尔修图",
 ] as const;
+
+const weightLabels: Record<string, string> = {
+  NEED_MATCH: "需求匹配度",
+  PRICE_VALUE: "价格与性价比",
+  REVIEW_QUALITY: "用户口碑",
+  PROMOTION_VALUE: "优惠力度",
+  RELIABILITY: "商品可靠性",
+};
+
+function reportGenerationLabel(generationType: string) {
+  if (generationType === "VALIDATED_REPORT") return "AI 生成 · 事实已核验";
+  if (generationType === "DETERMINISTIC_REWEIGHT") return "已按偏好重新排序";
+  return "基础分析结果";
+}
+
+function formatScore(value: string | number) {
+  const score = Number(value);
+  return Number.isFinite(score) ? score.toFixed(2) : value;
+}
 
 function currentPath() {
   return `${window.location.pathname}${window.location.search}`;
@@ -74,19 +98,48 @@ function TracePage({
 }) {
   const [trace, setTrace] = useState(initialTrace);
   const [error, setError] = useState("");
+  const [adminToken, setAdminToken] = useState(() => readAdminAccessToken());
+  const [adminAccount, setAdminAccount] = useState("demo_admin");
+  const [adminPassword, setAdminPassword] = useState("demo123456");
+  const [loggingIn, setLoggingIn] = useState(false);
   useEffect(() => {
     if (initialTrace) return;
-    const accessToken = readH5AccessToken();
-    if (!accessToken) {
-      setError("缺少管理员会话，请从测试账号重新进入。");
-      return;
-    }
-    void loadDecisionTrace(runId, accessToken)
+    if (!adminToken) return;
+    setError("");
+    void loadDecisionTrace(runId, adminToken)
       .then(setTrace)
-      .catch((reason: unknown) =>
-        setError(reason instanceof Error ? reason.message : "Trace 加载失败"),
-      );
-  }, [initialTrace, runId]);
+      .catch((reason: unknown) => {
+        clearAdminAccessToken();
+        setAdminToken(undefined);
+        setError(reason instanceof Error ? reason.message : "Trace 加载失败");
+      });
+  }, [adminToken, initialTrace, runId]);
+  if (!adminToken)
+    return (
+      <main className="shell">
+        <section className="panel trace-login-panel">
+          <p className="eyebrow">DEMO_ADMIN · 开发调试</p>
+          <h1>登录后查看 Trace</h1>
+          <p className="muted">Trace 只展示脱敏执行摘要，不包含提示词和模型私有推理。</p>
+          <form className="trace-login-form" onSubmit={(event) => {
+            event.preventDefault();
+            setLoggingIn(true);
+            setError("");
+            void loginDemoAdmin(adminAccount, adminPassword)
+              .then(setAdminToken)
+              .catch((reason: unknown) => setError(reason instanceof Error ? reason.message : "管理员登录失败"))
+              .finally(() => setLoggingIn(false));
+          }}>
+            <label>管理员账号<input value={adminAccount} onChange={(event) => setAdminAccount(event.target.value)} /></label>
+            <label>密码<input type="password" value={adminPassword} onChange={(event) => setAdminPassword(event.target.value)} /></label>
+            {error ? <p className="error-banner">{error}</p> : null}
+            <button className="secondary-action" disabled={loggingIn} type="submit">
+              {loggingIn ? "正在登录…" : "登录并查看"}
+            </button>
+          </form>
+        </section>
+      </main>
+    );
   if (error)
     return (
       <main className="shell">
@@ -212,6 +265,75 @@ function TracePage({
   );
 }
 
+function TraceListPage() {
+  const [items, setItems] = useState<DecisionTraceListItem[]>();
+  const [error, setError] = useState("");
+  const [adminToken, setAdminToken] = useState(() => readAdminAccessToken());
+  const [loggingIn, setLoggingIn] = useState(false);
+  useEffect(() => {
+    if (!adminToken) return;
+    setError("");
+    void loadDecisionTraceList(adminToken).then(setItems).catch((reason: unknown) => {
+      clearAdminAccessToken();
+      setAdminToken(undefined);
+      setError(reason instanceof Error ? reason.message : "Trace 列表加载失败");
+    });
+  }, [adminToken]);
+  if (!adminToken) {
+    return (
+      <main className="shell">
+        <section className="panel trace-login-panel">
+          <p className="eyebrow">DEMO_ADMIN · 开发调试</p>
+          <h1>登录后查看 Trace</h1>
+          <form className="trace-login-form" onSubmit={(event) => {
+            event.preventDefault();
+            setLoggingIn(true);
+            void loginDemoAdmin("demo_admin", "demo123456")
+              .then(setAdminToken)
+              .catch((reason: unknown) => setError(reason instanceof Error ? reason.message : "管理员登录失败"))
+              .finally(() => setLoggingIn(false));
+          }}>
+            {error ? <p className="error-banner">{error}</p> : null}
+            <button className="secondary-action" disabled={loggingIn} type="submit">
+              {loggingIn ? "正在登录…" : "使用演示管理员登录"}
+            </button>
+          </form>
+        </section>
+      </main>
+    );
+  }
+  return (
+    <main className="shell trace-shell">
+      <section className="panel">
+        <div className="trace-list-heading">
+          <div><p className="eyebrow">DEMO_ADMIN · 最近 50 条</p><h1>Trace 列表</h1></div>
+          <button className="secondary-action" type="button" onClick={() => {
+            clearAdminAccessToken();
+            setAdminToken(undefined);
+          }}>退出管理员</button>
+        </div>
+        {!items ? <p className="muted">正在读取 Trace…</p> : items.length ? (
+          <div className="trace-list">
+            {items.map((item) => (
+              <a className="trace-list-item" href={`/admin/decision-runs/${encodeURIComponent(item.runId)}/trace`} key={item.runId}>
+                <div>
+                  <strong>{item.runId}</strong>
+                  <span>Session {item.sessionId} · Run v{item.runVersion}</span>
+                </div>
+                <div className="trace-list-meta">
+                  <span className={`trace-status trace-${item.status.toLowerCase()}`}>{item.status}</span>
+                  <time>{new Date(item.startedAt).toLocaleString("zh-CN")}</time>
+                  <small>{item.failureCode ?? item.activeNode ?? "—"}</small>
+                </div>
+              </a>
+            ))}
+          </div>
+        ) : <p className="muted">暂无决策 Run</p>}
+      </section>
+    </main>
+  );
+}
+
 function ProductPreview({ path }: { path: string }) {
   const product = parsePreview(path);
   if (!product) return null;
@@ -248,12 +370,20 @@ type NativeWindow = Window & {
 
 function Home({ onPathChange }: { onPathChange: (path: string) => void }) {
   const [draft, setDraft] = useState("");
+  const [submittedRequirement, setSubmittedRequirement] = useState("");
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [snapshot, setSnapshot] = useState<DecisionSessionSnapshot>();
-  const [progress, setProgress] = useState(0);
+  const [, setProgress] = useState(0);
   const [stageText, setStageText] = useState("");
-  const [transportState, setTransportState] =
+  const [chatMessages, setChatMessages] = useState<Array<{
+    id: string;
+    role: "assistant" | "user";
+    text: string;
+    options?: string[];
+  }>>([]);
+  const [activeQuestionId, setActiveQuestionId] = useState<string>();
+  const [, setTransportState] =
     useState<DecisionTransportState>("STOPPED");
   const [report, setReport] = useState<DecisionReport>();
   const [weights, setWeights] = useState({
@@ -386,231 +516,380 @@ function Home({ onPathChange }: { onPathChange: (path: string) => void }) {
     } else if (completed.status === "FAILED") {
       setStageText("分析失败，请稍后重试");
     } else if (completed.status === "WAITING_CLARIFICATION") {
-      setStageText("需要补充信息后才能继续分析");
+      let question = "还需要补充一点信息，请直接在下方回复。";
+      let options: string[] = [];
+      try {
+        const clarification = JSON.parse(completed.clarificationJson ?? "null") as { questions?: Array<{ text?: string; options?: string[] }> } | null;
+        const first = clarification?.questions?.[0];
+        if (first?.text) question = first.text;
+        options = first?.options ?? [];
+      } catch { /* 后端旧数据没有追问摘要时使用兜底文案。 */ }
+      const questionId = `${completed.sessionId}-${completed.currentRunVersion}`;
+      setChatMessages((current) => current.some((item) => item.id === questionId)
+        ? current
+        : [...current, { id: questionId, role: "assistant", text: question, options }]);
+      setActiveQuestionId(questionId);
+      setStageText("等待你选择");
     }
   };
+
+  const sendContent = (content: string) => {
+    const requirement = content.trim();
+    if (!requirement || submitting) return;
+    const isClarification = snapshot?.status === "WAITING_CLARIFICATION";
+    setSubmitting(true);
+    setReport(undefined);
+    setProgress(0);
+    if (isClarification) {
+      setChatMessages((current) => [...current, {
+        id: `user-${Date.now()}`,
+        role: "user",
+        text: requirement,
+      }]);
+      setActiveQuestionId(undefined);
+      setStageText("正在结合你的选择继续分析");
+    } else {
+      setSubmittedRequirement(requirement);
+      setChatMessages([]);
+    }
+    setDraft("");
+    setMessage(isClarification ? "正在根据你的选择继续分析…" : "正在创建决策会话…");
+    const existingToken = readH5AccessToken();
+    const accessTokenPromise = existingToken
+      ? Promise.resolve(existingToken)
+      : window.location.pathname.startsWith("/standalone")
+        ? createStandaloneH5Session()
+        : Promise.reject(new Error("当前没有 H5 会话，请从已登录的商城 App 进入智能商城。"));
+    void accessTokenPromise
+      .then((accessToken) => isClarification && snapshot
+        ? continueDecision({ sessionId: snapshot.sessionId, content: requirement, accessToken })
+        : startDecision({ requirement, accessToken }))
+      .then((started) => accessTokenPromise.then((accessToken) => followDecision(started, accessToken)))
+      .catch((error: unknown) => setMessage(error instanceof Error ? error.message : "分析启动失败"))
+      .finally(() => setSubmitting(false));
+  };
   return (
-    <main className="shell">
-      <section className="panel">
-        <div className="topline">
-          <p className="eyebrow">HENGPICK SMART MALL</p>
+    <main className="shell chat-shell">
+      <section className="panel chat-panel">
+        <header className="chat-header">
+          <div className="ai-avatar" aria-hidden="true">
+            ✦
+          </div>
+          <div className="chat-heading">
+            <h1>衡选 AI 导购</h1>
+            <p>
+              <span className="online-dot" /> 在线 · 为你认真挑选
+            </p>
+          </div>
           <span className="mode-badge">{bridgeStatus}</span>
+        </header>
+
+        <div className="conversation" aria-live="polite">
+          <div className="message-row assistant-row">
+            <div className="message-avatar" aria-hidden="true">
+              ✦
+            </div>
+            <div className="message-content">
+              <span className="speaker">衡选 AI</span>
+              <div className="message-bubble assistant-bubble">
+                <h2>你好，我是你的 AI 导购</h2>
+                <p>
+                  告诉我为谁买、预算多少、最看重什么，我会结合商品参数和价格帮你认真比较。
+                </p>
+                <span className="data-notice">
+                  商品、价格与评价均为项目模拟数据
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {!submittedRequirement ? (
+            <section aria-labelledby="quick-title" className="quick-section">
+              <h2 id="quick-title">你可以这样问</h2>
+              <div className="quick-list">
+                {quickScenarios.map((scenario, index) => (
+                  <button
+                    className="quick-button"
+                    key={scenario}
+                    onClick={() => setDraft(scenario)}
+                    type="button"
+                  >
+                    <span>
+                      {index === 0 ? "手机" : index === 1 ? "净化器" : "显示器"}
+                    </span>
+                    {scenario}
+                  </button>
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          {submittedRequirement ? (
+            <div className="message-row user-row">
+              <div className="message-content">
+                <span className="speaker">你</span>
+                <div className="message-bubble user-bubble">
+                  {submittedRequirement}
+                </div>
+              </div>
+              <div className="user-avatar" aria-hidden="true">
+                我
+              </div>
+            </div>
+          ) : null}
+
+          {chatMessages.map((item) => (
+            <div className={`message-row ${item.role === "user" ? "user-row" : "assistant-row"}`} key={item.id}>
+              {item.role === "assistant" ? <div className="message-avatar" aria-hidden="true">✦</div> : null}
+              <div className="message-content">
+                <span className="speaker">{item.role === "user" ? "你" : "衡选 AI"}</span>
+                <div className={`message-bubble ${item.role === "user" ? "user-bubble" : "assistant-bubble"}`}>
+                  <p>{item.text}</p>
+                  {item.role === "assistant" && item.id === activeQuestionId && item.options?.length ? (
+                    <div className="clarification-options">
+                      {item.options.map((option) => (
+                        <button disabled={submitting} key={option} onClick={() => sendContent(option)} type="button">
+                          {option}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+              {item.role === "user" ? <div className="user-avatar" aria-hidden="true">我</div> : null}
+            </div>
+          ))}
+
+          {message && !snapshot ? (
+            <div className="message-row assistant-row">
+              <div className="message-avatar" aria-hidden="true">
+                ✦
+              </div>
+              <div className="message-content">
+                <span className="speaker">衡选 AI</span>
+                <div className="message-bubble assistant-bubble status-message">
+                  {submitting ? (
+                    <span className="typing-dots">
+                      <i />
+                      <i />
+                      <i />
+                    </span>
+                  ) : null}
+                  {message}
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          {snapshot && snapshot.status === "RUNNING" ? (
+            <div className="message-row assistant-row">
+              <div className="message-avatar" aria-hidden="true">
+                ✦
+              </div>
+              <div className="message-content">
+                <span className="speaker">衡选 AI</span>
+                <div className="analysis-status" role="status">
+                  <span className="analysis-spark" aria-hidden="true">✦</span>
+                  <span className="shimmer-text">{stageText || "正在理解你的需求"}</span>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          {snapshot?.status === "FAILED" ? (
+            <div className="message-row assistant-row">
+              <div className="message-avatar" aria-hidden="true">✦</div>
+              <div className="message-content">
+                <span className="speaker">衡选 AI</span>
+                <div className="analysis-failed" role="alert">
+                  <span aria-hidden="true">!</span>
+                  分析没有完成，请重新发起一次
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          {report ? (
+            <div className="message-row assistant-row report-message">
+              <div className="message-avatar" aria-hidden="true">
+                ✦
+              </div>
+              <div className="message-content wide-message">
+                <span className="speaker">衡选 AI</span>
+                <section
+                  className="message-bubble assistant-bubble report-section"
+                  aria-labelledby="report-title"
+                >
+                  <div className="report-heading">
+                    <div>
+                      <p className="eyebrow">
+                        已为你比较完成 · REPORT V{report.version}
+                      </p>
+                      <h2 id="report-title">这几款更适合你</h2>
+                    </div>
+                    <span className="mode-badge">
+                      {reportGenerationLabel(report.report.generationType)}
+                    </span>
+                  </div>
+                  <p className="report-summary">{report.report.summary}</p>
+                  <ol className="recommendation-list">
+                    {report.report.recommendations.map((item) => (
+                      <li className="recommendation-card" key={item.skuId}>
+                        <div className="product-visual">
+                          <span>{item.rank}</span>
+                          <strong>HENGPICK</strong>
+                        </div>
+                        <div className="recommendation-body">
+                          <div className="recommendation-title">
+                            <strong>{item.productId}</strong>
+                            <span className="score-badge">
+                              匹配 {formatScore(item.finalScore)} 分
+                            </span>
+                          </div>
+                          <p className="price">
+                            <small>¥</small>
+                            {item.finalPrice}
+                          </p>
+                          <p className="sku-line">{item.skuId}</p>
+                          <div className="reason-heading">
+                            <span className="reason-spark">✦</span>
+                            <strong>AI 推荐理由</strong>
+                          </div>
+                          <ul className="reason-list">
+                            {item.reasons.map((reason) => (
+                              <li key={`${item.skuId}-${reason.text}`}>
+                                <span className="reason-check">✓</span>
+                                <span>{reason.text}</span>
+                              </li>
+                            ))}
+                          </ul>
+                          <button
+                            className="product-action"
+                            type="button"
+                            onClick={() =>
+                              void bridge
+                                .openProduct({
+                                  productId: item.productId,
+                                  skuId: item.skuId,
+                                })
+                                .catch((error: unknown) =>
+                                  setMessage(
+                                    error instanceof Error
+                                      ? error.message
+                                      : "商品打开失败",
+                                  ),
+                                )
+                            }
+                          >
+                            查看商品
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                  {report.report.overallDataGaps.length ? (
+                    <p className="data-gap">
+                      提示：{report.report.overallDataGaps.join("；")}
+                    </p>
+                  ) : null}
+                  <details className="weights-panel">
+                    <summary>结果不太合适？调整关注重点</summary>
+                    <div className="weight-controls">
+                      {Object.entries(weights).map(([dimension, value]) => (
+                        <label className="weight-row" key={dimension}>
+                          <span className="weight-label">
+                            {weightLabels[dimension] ?? dimension}
+                          </span>
+                          <input
+                            type="range"
+                            min="0"
+                            max="10"
+                            step="1"
+                            value={value}
+                            onChange={(event) =>
+                              setWeights((current) => ({
+                                ...current,
+                                [dimension]: Number(event.target.value),
+                              }))
+                            }
+                          />
+                          <output>{value}</output>
+                        </label>
+                      ))}
+                      <button
+                        className="secondary-action"
+                        disabled={reweighting}
+                        type="button"
+                        onClick={() => {
+                          const accessToken = readH5AccessToken();
+                          if (!accessToken) {
+                            setMessage("H5 会话已过期，请重新进入页面。");
+                            return;
+                          }
+                          setReweighting(true);
+                          void reweightDecisionReport(
+                            report.sessionId,
+                            report.version,
+                            weights,
+                            accessToken,
+                          )
+                            .then((result) =>
+                              loadDecisionReport(
+                                report.sessionId,
+                                result.version,
+                                accessToken,
+                              ),
+                            )
+                            .then((updated) => {
+                              setReport(updated);
+                              setMessage(`已生成报告 V${updated.version}`);
+                            })
+                            .catch((error: unknown) =>
+                              setMessage(
+                                error instanceof Error
+                                  ? error.message
+                                  : "调权失败",
+                              ),
+                            )
+                            .finally(() => setReweighting(false));
+                        }}
+                      >
+                        {reweighting ? "正在重排…" : "按新偏好重新推荐"}
+                      </button>
+                    </div>
+                  </details>
+                </section>
+              </div>
+            </div>
+          ) : null}
         </div>
-        <h1>告诉我为谁买、怎么用</h1>
-        <p className="description">
-          我会把购买目标整理成可核对的条件，并启动可追踪的决策分析。
-        </p>
-        <p className="notice">所有商品、价格与评价均为项目模拟数据</p>
+
         <form
-          className="decision-form"
+          className="chat-composer"
           onSubmit={(event) => {
             event.preventDefault();
-            const requirement = draft.trim();
-            if (!requirement) {
+            if (!draft.trim()) {
               setMessage("请先描述你的购买目标。");
               return;
             }
-            setSubmitting(true);
-            setReport(undefined);
-            setSnapshot(undefined);
-            setProgress(0);
-            setMessage("正在创建决策会话…");
-            const existingToken = readH5AccessToken();
-            const accessTokenPromise = existingToken
-              ? Promise.resolve(existingToken)
-              : window.location.pathname.startsWith("/standalone")
-                ? createStandaloneH5Session()
-                : Promise.reject(
-                    new Error(
-                      "当前没有 H5 会话，请从已登录的商城 App 进入智能商城。",
-                    ),
-                  );
-            void accessTokenPromise
-              .then((accessToken) =>
-                startDecision({ requirement, accessToken }),
-              )
-              .then((started) => {
-                setMessage(
-                  `分析已启动：Session ${started.sessionId}，Run v${started.runVersion}`,
-                );
-                return accessTokenPromise.then((accessToken) =>
-                  followDecision(started, accessToken),
-                );
-              })
-              .catch((error: unknown) => {
-                setMessage(
-                  error instanceof Error ? error.message : "分析启动失败",
-                );
-              })
-              .finally(() => setSubmitting(false));
+            sendContent(draft);
           }}
         >
-          <label htmlFor="decision-input">描述你的购买目标</label>
+          <label className="sr-only" htmlFor="decision-input">
+            描述你的购买目标
+          </label>
           <textarea
             id="decision-input"
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
-            placeholder="例如：给爸妈买一台 3000 元内、系统简单、续航好的手机"
+            disabled={snapshot?.status === "WAITING_CLARIFICATION"}
+            placeholder={snapshot?.status === "WAITING_CLARIFICATION" ? "请点击上方选项回复" : "说说你想买什么…"}
+            rows={1}
           />
-          <button disabled={submitting} type="submit">
-            {submitting ? "正在启动…" : "开始分析"}
+          <button aria-label="发送" disabled={submitting || snapshot?.status === "WAITING_CLARIFICATION"} type="submit">
+            {submitting ? "···" : "↑"}
           </button>
         </form>
-        {message ? <p className="status-message">{message}</p> : null}
-        {snapshot ? (
-          <section className="analysis-progress" aria-live="polite">
-            <div className="progress-title">
-              <strong>{stageText || "正在读取决策状态"}</strong>
-              <span>{progress}%</span>
-            </div>
-            <progress max="100" value={progress} />
-            <p className="muted">
-              状态：{snapshot.status} · 传输：{transportState} · Run v
-              {snapshot.currentRunVersion}
-            </p>
-          </section>
-        ) : null}
-        {report ? (
-          <section className="report-section" aria-labelledby="report-title">
-            <div className="report-heading">
-              <div>
-                <p className="eyebrow">REPORT V{report.version}</p>
-                <h2 id="report-title">推荐结果</h2>
-              </div>
-              <span className="mode-badge">{report.report.generationType}</span>
-            </div>
-            <p>{report.report.summary}</p>
-            <ol className="recommendation-list">
-              {report.report.recommendations.map((item) => (
-                <li className="recommendation-card" key={item.skuId}>
-                  <div className="recommendation-title">
-                    <strong>
-                      #{item.rank} · {item.productId}
-                    </strong>
-                    <span>{item.finalScore} 分</span>
-                  </div>
-                  <p className="price">¥{item.finalPrice}</p>
-                  <p className="muted">SKU：{item.skuId}</p>
-                  <ul>
-                    {item.reasons.map((reason) => (
-                      <li key={`${item.skuId}-${reason.text}`}>
-                        {reason.text}
-                        {reason.factIds.length ? (
-                          <small>事实：{reason.factIds.join("、")}</small>
-                        ) : null}
-                      </li>
-                    ))}
-                  </ul>
-                </li>
-              ))}
-            </ol>
-            {report.report.overallDataGaps.length ? (
-              <p className="notice">
-                数据缺口：{report.report.overallDataGaps.join("；")}
-              </p>
-            ) : null}
-            <section className="weights-panel">
-              <h3>调整关注重点</h3>
-              {Object.entries(weights).map(([dimension, value]) => (
-                <label className="weight-row" key={dimension}>
-                  <span>{dimension}</span>
-                  <input
-                    type="range"
-                    min="0"
-                    max="10"
-                    step="1"
-                    value={value}
-                    onChange={(event) =>
-                      setWeights((current) => ({
-                        ...current,
-                        [dimension]: Number(event.target.value),
-                      }))
-                    }
-                  />
-                  <output>{value}</output>
-                </label>
-              ))}
-              <button
-                className="secondary-action"
-                disabled={reweighting}
-                type="button"
-                onClick={() => {
-                  const accessToken = readH5AccessToken();
-                  if (!accessToken) {
-                    setMessage("H5 会话已过期，请重新进入页面。");
-                    return;
-                  }
-                  setReweighting(true);
-                  void reweightDecisionReport(
-                    report.sessionId,
-                    report.version,
-                    weights,
-                    accessToken,
-                  )
-                    .then((result) =>
-                      loadDecisionReport(
-                        report.sessionId,
-                        result.version,
-                        accessToken,
-                      ),
-                    )
-                    .then((updated) => {
-                      setReport(updated);
-                      setMessage(`已生成报告 V${updated.version}`);
-                    })
-                    .catch((error: unknown) =>
-                      setMessage(
-                        error instanceof Error ? error.message : "调权失败",
-                      ),
-                    )
-                    .finally(() => setReweighting(false));
-                }}
-              >
-                {reweighting ? "正在重排…" : "按新权重重排"}
-              </button>
-            </section>
-          </section>
-        ) : null}
-        <section aria-labelledby="quick-title" className="quick-section">
-          <h2 id="quick-title">快捷场景</h2>
-          <div className="quick-list">
-            {quickScenarios.map((scenario, index) => (
-              <button
-                className="quick-button"
-                key={scenario}
-                onClick={() => setDraft(scenario)}
-                type="button"
-              >
-                {index === 0 ? "给父母买手机" : scenario}
-              </button>
-            ))}
-          </div>
-        </section>
-        <section className="preview-card">
-          <div>
-            <p className="eyebrow">ADAPTER CHECK</p>
-            <h2>商品打开闭环</h2>
-            <p className="muted">只传资源 ID，不在前端伪造商品事实。</p>
-          </div>
-          <button
-            className="secondary-action"
-            type="button"
-            onClick={() => {
-              void bridge
-                .openProduct({
-                  productId: "P-PIXEL-9A",
-                  skuId: "S-PIXEL-9A-256-W",
-                })
-                .catch((error: unknown) =>
-                  setMessage(
-                    error instanceof Error ? error.message : "商品打开失败",
-                  ),
-                );
-            }}
-          >
-            打开预览
-          </button>
-        </section>
       </section>
     </main>
   );
@@ -624,6 +903,7 @@ export function App({
   initialTrace?: DecisionTrace;
 }) {
   const [path, setPath] = useState(initialPath ?? currentPath);
+  if (path.split("?")[0] === "/admin/decision-runs") return <TraceListPage />;
   const traceRunId = parseTraceRunId(path);
   if (traceRunId)
     return <TracePage runId={traceRunId} initialTrace={initialTrace} />;

@@ -50,6 +50,14 @@ class RecommendationCallbackReportPublisherTest {
                         "skuId", "SKU-1", "finalPrice", "2999.00", "scoreCard", scored.scoreCard())),
                 "pricePlans", Map.of("SKU-1", List.of(Map.of(
                         "pricePlanId", "PLAN-1", "finalPrice", "2999.00"))),
+                "evidence", Map.of("SKU-1", List.of(Map.of("evidence_id", "EV-SKU-1"))),
+                "reportNarrative", Map.of(
+                        "summary", "这款商品更符合你的核心需求。",
+                        "recommendations", List.of(Map.of(
+                                "reasons", List.of(Map.of(
+                                        "text", "价格与需求匹配度较好。",
+                                        "fact_ids", List.of(),
+                                        "evidence_ids", List.of("EV-SKU-1")))))),
                 "versions", Map.of(
                         "dataset", "DATASET-1", "scoring", "scoring-v1", "pricing", "pricing-v1",
                         "prompt", "intent-v1", "embedding", "stub-embedding-v1"));
@@ -62,6 +70,8 @@ class RecommendationCallbackReportPublisherTest {
         assertThat(repository.current.selectedSkuId()).isEqualTo("SKU-1");
         assertThat(repository.current.snapshot().recommendation().candidates().getFirst().finalPrice())
                 .isEqualByComparingTo("2999.00");
+        assertThat(repository.current.snapshot().presentation("SKU-1").reasons().getFirst().text())
+                .isEqualTo("价格与需求匹配度较好。");
     }
 
     private RecommendationCandidate candidate() {

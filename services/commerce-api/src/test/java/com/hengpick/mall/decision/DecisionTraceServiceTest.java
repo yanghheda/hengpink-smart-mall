@@ -32,9 +32,11 @@ class DecisionTraceServiceTest {
     }
 
     @Test
-    void adminStillCannotReadAnotherUsersTrace() {
-        assertThatThrownBy(() -> service.getTrace(new RequestSubject("USER-2", "DEMO_ADMIN"), "RUN-1"))
-                .isInstanceOf(ObjectAccessDeniedException.class);
+    void adminCanReadAnotherUsersSanitizedTrace() {
+        var trace = service.getTrace(new RequestSubject("ADMIN-1", "DEMO_ADMIN"), "RUN-1");
+
+        assertThat(trace.runId()).isEqualTo("RUN-1");
+        assertThat(trace.ownerId()).isEqualTo("USER-1");
     }
 
     @Test

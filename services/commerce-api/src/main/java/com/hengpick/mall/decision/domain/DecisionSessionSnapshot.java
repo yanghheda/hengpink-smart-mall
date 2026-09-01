@@ -6,4 +6,11 @@ public record DecisionSessionSnapshot(
         String currentRunId,
         int currentRunVersion,
         String status,
-        Integer currentReportVersion) {}
+        Integer currentReportVersion,
+        String clarificationJson) {
+    public DecisionSessionSnapshot(
+            String sessionId, String currentRunId, int currentRunVersion,
+            String status, Integer currentReportVersion) {
+        this(sessionId, currentRunId, currentRunVersion, status, currentReportVersion, null);
+    }
+}

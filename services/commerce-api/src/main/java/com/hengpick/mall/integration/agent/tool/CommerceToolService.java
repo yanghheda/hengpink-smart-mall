@@ -78,11 +78,24 @@ public final class CommerceToolService {
         var constraints = new ArrayList<AttributeConstraint>();
         for (var item : input.path("hardConstraints")) {
             constraints.add(new AttributeConstraint(
-                    requiredText(item, "field"), requiredText(item, "operator"), scalar(item.get("value"))));
+                    requiredTextAlias(item, "field", "name"), requiredText(item, "operator"), scalar(item.get("value"))));
         }
-        var result = catalogSearchService.search(new CatalogSearchCriteria(
-                requiredText(input, "categoryId"), decimalOrNull(budget.get("min")),
-                decimalOrNull(budget.get("max")), true, constraints));
+        var categoryId = requiredText(input, "categoryId");
+        var minPrice = decimalOrNull(budget.get("min"));
+        var maxPrice = decimalOrNull(budget.get("max"));
+        com.hengpick.mall.catalog.domain.CatalogSearchResult result;
+        var ignoredConstraints = List.<Map<String, Object>>of();
+        try {
+            result = catalogSearchService.search(new CatalogSearchCriteria(
+                    categoryId, minPrice, maxPrice, true, constraints));
+        } catch (IllegalArgumentException exception) {
+            if (!"属性或操作符不受当前类目 Schema 支持".equals(exception.getMessage())) throw exception;
+            ignoredConstraints = constraints.stream().map(constraint -> Map.<String, Object>of(
+                    "field", constraint.attribute(), "operator", constraint.operator(),
+                    "value", constraint.value() == null ? "" : constraint.value())).toList();
+            result = catalogSearchService.search(new CatalogSearchCriteria(
+                    categoryId, minPrice, maxPrice, true, List.of()));
+        }
         var matched = result.matched().stream().map(candidate -> Map.of(
                 "productId", candidate.productId(), "skuId", candidate.skuId(),
                 "displayName", candidate.displayName(), "price", candidate.price().toPlainString()))
@@ -90,7 +103,8 @@ public final class CommerceToolService {
         var rejected = result.rejected().stream().map(item -> Map.of(
                 "productId", item.candidate().productId(), "skuId", item.candidate().skuId(),
                 "reasonCodes", item.reasonCodes())).toList();
-        return Map.of("matchedCandidates", matched, "rejectedCandidates", rejected);
+        return Map.of("matchedCandidates", matched, "rejectedCandidates", rejected,
+                "ignoredHardConstraints", ignoredConstraints);
     }
 
     private Object getProductSpecs(JsonNode input) {
@@ -209,6 +223,15 @@ public final class CommerceToolService {
 
     private String requiredText(JsonNode node, String field) {
         var value = node.get(field);
+        if (value == null || value.isNull() || value.asText().isBlank()) {
+            throw new IllegalArgumentException(field + " 不能为空");
+        }
+        return value.asText();
+    }
+
+    private String requiredTextAlias(JsonNode node, String field, String alias) {
+        var value = node.get(field);
+        if (value == null || value.isNull() || value.asText().isBlank()) value = node.get(alias);
         if (value == null || value.isNull() || value.asText().isBlank()) {
             throw new IllegalArgumentException(field + " 不能为空");
         }

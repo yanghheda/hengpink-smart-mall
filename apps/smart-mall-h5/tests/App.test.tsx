@@ -7,7 +7,8 @@ describe("H5 首页", () => {
   it("展示输入框、快捷场景和醒目的模拟数据声明", () => {
     const html = renderToStaticMarkup(<App initialPath="/standalone" />);
 
-    expect(html).toContain("告诉我为谁买、怎么用");
+    expect(html).toContain("你好，我是你的 AI 导购");
+    expect(html).toContain("说说你想买什么");
     expect(html).toContain("描述你的购买目标");
     expect(html).toContain("给父母买手机");
     expect(html).toContain("Standalone Demo");

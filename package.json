@@ -13,7 +13,7 @@
     "start:commerce-app": "npm run start --workspace @hengpick/commerce-app --",
     "start:smart-mall-h5": "npm run start --workspace @hengpick/smart-mall-h5 --",
     "start:commerce-api": "mvn -f services/commerce-api/pom.xml spring-boot:run",
-    "start:agent-service": "services/agent-service/.venv/bin/uvicorn app.main:app --app-dir services/agent-service --reload --reload-dir services/agent-service --port ${AGENT_PORT:-8000}",
+    "start:agent-service": "set -a; . ./.env; set +a; services/agent-service/.venv/bin/uvicorn app.main:app --app-dir services/agent-service --reload --reload-dir services/agent-service --port ${AGENT_PORT:-8000}",
     "contract:validate": "node packages/api-contracts/scripts/contract-tool.mjs validate",
     "contract:generate": "node packages/api-contracts/scripts/contract-tool.mjs generate",
     "contract:typecheck": "tsc --noEmit --strict --skipLibCheck --target ES2022 packages/api-contracts/generated/typescript/api-contracts.ts && services/agent-service/.venv/bin/python -c \"import runpy; runpy.run_path('packages/api-contracts/generated/python/api_contracts.py')\"",

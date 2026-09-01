@@ -19,6 +19,7 @@ export type DecisionSessionSnapshot = {
     | "SUPERSEDED"
     | "CANCELLED";
   currentReportVersion: number | null;
+  clarificationJson: string | null;
 };
 
 export type DecisionTransportState =

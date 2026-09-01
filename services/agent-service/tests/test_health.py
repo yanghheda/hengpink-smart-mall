@@ -64,3 +64,22 @@ def test_missing_required_agent_configuration_fails_fast(monkeypatch) -> None:
 
     with pytest.raises(ConfigurationError, match="AGENT_TOOL_API_BASE_URL"):
         AgentSettings.from_environment()
+
+
+def test_bailian_reasoning_effort_defaults_to_low(monkeypatch) -> None:
+    monkeypatch.setenv("APP_ENV", "test")
+    monkeypatch.setenv("AGENT_TOOL_API_BASE_URL", "http://commerce-api:8080")
+    monkeypatch.setenv("QDRANT_URL", "http://qdrant:6333")
+    monkeypatch.setenv("AGENT_MODEL_PROVIDER", "aliyun_bailian")
+    monkeypatch.setenv("AGENT_MODEL_NAME", "qwen3.8-flash")
+    monkeypatch.setenv("AGENT_MODEL_API_KEY", "test-key")
+    monkeypatch.setenv(
+        "AGENT_MODEL_BASE_URL",
+        "https://workspace.cn-beijing.maas.aliyuncs.com/compatible-mode/v1",
+    )
+    monkeypatch.delenv("AGENT_MODEL_REASONING_EFFORT", raising=False)
+
+    settings = AgentSettings.from_environment()
+
+    assert settings.model_name == "qwen3.8-flash"
+    assert settings.model_reasoning_effort == "low"

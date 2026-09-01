@@ -35,8 +35,12 @@ class StubGraphModel:
             "inferences": [],
         }
 
-    def compose_report(self, candidate_ids: list[str]) -> str:
-        return self.report_text
+    def compose_report(self, state: ShoppingDecisionState) -> dict[str, object]:
+        return {
+            "generation_type": "STUB",
+            "summary": self.report_text,
+            "recommendations": [],
+        }
 
 
 def build_shopping_decision_graph(

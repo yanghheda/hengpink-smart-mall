@@ -14,6 +14,7 @@ from typing import Any, Protocol
 from urllib.error import URLError
 from urllib.request import ProxyHandler, build_opener
 from urllib.request import Request as UrlRequest
+from urllib.error import HTTPError
 
 from fastapi import FastAPI, Request, Response, status
 from fastapi.responses import JSONResponse
@@ -21,6 +22,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from app.graph.state import InitialGraphState
 from app.graph.workflow import StubGraphModel, build_shopping_decision_graph
+from app.model.bailian import BailianModel
 from app.tools.client import CommerceToolClient, UrlLibToolTransport
 
 logger = logging.getLogger("hengpick.agent")
@@ -41,6 +43,9 @@ class AgentSettings:
     model_provider: str
     model_name: str
     model_api_key: str | None
+    model_base_url: str | None = None
+    model_reasoning_effort: str = "low"
+    model_timeout_seconds: float = 60
     tool_api_token: str | None = None
 
     @classmethod
@@ -57,9 +62,25 @@ class AgentSettings:
             raise ConfigurationError(f"Missing required configuration: {', '.join(missing)}")
 
         provider = required["AGENT_MODEL_PROVIDER"]
+        if provider not in {"stub", "aliyun_bailian"}:
+            raise ConfigurationError("AGENT_MODEL_PROVIDER must be one of: stub, aliyun_bailian")
         api_key = os.getenv("AGENT_MODEL_API_KEY")
         if provider != "stub" and not api_key:
             raise ConfigurationError("Missing required configuration: AGENT_MODEL_API_KEY")
+        base_url = os.getenv("AGENT_MODEL_BASE_URL")
+        if provider != "stub" and not base_url:
+            raise ConfigurationError("Missing required configuration: AGENT_MODEL_BASE_URL")
+        reasoning_effort = os.getenv("AGENT_MODEL_REASONING_EFFORT", "low")
+        if reasoning_effort not in {"low", "medium", "xhigh"}:
+            raise ConfigurationError(
+                "AGENT_MODEL_REASONING_EFFORT must be one of: low, medium, xhigh"
+            )
+        try:
+            model_timeout_seconds = float(os.getenv("AGENT_MODEL_TIMEOUT_SECONDS", "60"))
+        except ValueError as error:
+            raise ConfigurationError("AGENT_MODEL_TIMEOUT_SECONDS must be a number") from error
+        if not 5 <= model_timeout_seconds <= 120:
+            raise ConfigurationError("AGENT_MODEL_TIMEOUT_SECONDS must be between 5 and 120")
         return cls(
             environment=required["APP_ENV"],
             tool_api_base_url=required["AGENT_TOOL_API_BASE_URL"],
@@ -67,6 +88,9 @@ class AgentSettings:
             model_provider=provider,
             model_name=required["AGENT_MODEL_NAME"],
             model_api_key=api_key,
+            model_base_url=base_url,
+            model_reasoning_effort=reasoning_effort,
+            model_timeout_seconds=model_timeout_seconds,
             tool_api_token=os.getenv("COMMERCE_INTERNAL_SERVICE_TOKEN"),
         )
 
@@ -130,9 +154,15 @@ class HttpCallbackSender:
             headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
             method="POST",
         )
-        with INTERNAL_HTTP_OPENER.open(request, timeout=2) as response:
-            if not 200 <= response.status < 300:
-                raise RuntimeError(f"回调返回非成功状态: {response.status}")
+        try:
+            with INTERNAL_HTTP_OPENER.open(request, timeout=5) as response:
+                if not 200 <= response.status < 300:
+                    raise RuntimeError(f"回调返回非成功状态: {response.status}")
+        except HTTPError as error:
+            response_body = error.read().decode("utf-8", errors="replace")[:1000]
+            raise RuntimeError(
+                f"回调返回非成功状态: {error.code}, body={response_body}"
+            ) from error
 
 
 class StubRunExecutor:
@@ -213,43 +243,43 @@ class GraphRunExecutor:
             previous_intent=request.input.get("previousIntent"),
             clarification_round=int(request.input.get("clarificationRound", 0)),
         ).to_graph_state()
-        graph = build_shopping_decision_graph(StubGraphModel(), client)
-        result = await asyncio.to_thread(graph.invoke, state)
-        now = datetime.now(UTC).isoformat().replace("+00:00", "Z")
-        step_without_hash: dict[str, Any] = {
-            "runVersion": request.runVersion,
-            "sequence": 1,
-            "node": "PRODUCT_MAIN_CHAIN",
-            "status": "COMPLETED",
-            "startedAt": now,
-            "completedAt": now,
-            "inputSummary": {"messageCount": len(request.input.get("messages", []))},
-            "outputSummary": {
-                "candidateCount": len(result["candidates"]),
-                "toolCallCount": len(result["tool_calls"]),
-            },
-        }
-        await self._callback_sender.post(
-            f"/internal/v1/decision-runs/{request.runId}/steps",
-            request.callback.callbackToken,
-            {**step_without_hash, "contentHash": callback_body_hash(step_without_hash)},
+        model = (
+            StubGraphModel()
+            if self._settings.model_provider == "stub"
+            else BailianModel(
+                api_key=self._settings.model_api_key or "",
+                base_url=self._settings.model_base_url or "",
+                model_name=self._settings.model_name,
+                reasoning_effort=self._settings.model_reasoning_effort,
+                timeout_seconds=self._settings.model_timeout_seconds,
+            )
         )
+        graph = build_shopping_decision_graph(model, client)
+        graph_started_at = datetime.now(UTC)
+        result = await asyncio.to_thread(graph.invoke, state)
+        graph_completed_at = datetime.now(UTC)
+        now = graph_completed_at.isoformat().replace("+00:00", "Z")
+        for sequence, trace_step in enumerate(
+            graph_trace_steps(result, request, graph_started_at, graph_completed_at), start=1
+        ):
+            step_without_hash = {"runVersion": request.runVersion, "sequence": sequence, **trace_step}
+            await self._callback_sender.post(
+                f"/internal/v1/decision-runs/{request.runId}/steps",
+                request.callback.callbackToken,
+                {**step_without_hash, "contentHash": callback_body_hash(step_without_hash)},
+            )
         completion_type = (
             "CLARIFICATION_REQUIRED"
             if (result.get("clarification") or {}).get("questions")
             else ("NO_RESULT" if not result["candidates"] else "REPORT_READY")
         )
+        result_summary = graph_result_summary(
+            result, {**request.versions, "model": self._settings.model_name}
+        )
         completion_without_hash: dict[str, Any] = {
             "runVersion": request.runVersion,
             "completionType": completion_type,
-            "resultSummary": {
-                "generationType": "TOOL_BACKED_REVIEW_STUB",
-                "candidates": result["candidates"][:3],
-                "scoreCards": result["score_cards"][:3],
-                "pricePlans": result["price_plans"],
-                "versions": request.versions,
-                "warnings": result["warnings"],
-            },
+            "resultSummary": result_summary,
             "completedAt": now,
         }
         await self._callback_sender.post(
@@ -260,6 +290,80 @@ class GraphRunExecutor:
                 "contentHash": callback_body_hash(completion_without_hash),
             },
         )
+
+
+def graph_result_summary(result: dict[str, Any], versions: dict[str, str]) -> dict[str, Any]:
+    ranked_sku_ids = {
+        str(card.get("skuId")) for card in result["score_cards"][:3] if card.get("skuId")
+    }
+    ranked_candidates = [
+        candidate
+        for candidate in result["candidates"]
+        if str(candidate.get("skuId")) in ranked_sku_ids
+    ]
+    summary: dict[str, Any] = {
+        "generationType": "TOOL_BACKED_REVIEW_STUB",
+        "candidates": ranked_candidates,
+        "scoreCards": result["score_cards"][:3],
+        "pricePlans": result["price_plans"],
+        "evidence": result.get("evidence", {}),
+        "versions": versions,
+        "warnings": result["warnings"],
+    }
+    if result.get("report") is not None:
+        summary["reportNarrative"] = result["report"]
+    if result.get("clarification") is not None:
+        summary["clarification"] = result["clarification"]
+    return summary
+
+
+def graph_trace_steps(
+    result: dict[str, Any], request: AgentRunRequest, started_at: datetime, completed_at: datetime
+) -> list[dict[str, Any]]:
+    """把公开 Graph 节点和 Tool 信封摘要投影为可观察调用链。"""
+
+    tools_by_node = {
+        "product": {"search_products", "get_product_specs"},
+        "price": {"get_price_offers", "calculate_final_price"},
+        "score": {"score_candidates"},
+    }
+    node_labels = {
+        "load_context": "LOAD_CONTEXT", "intent": "INTENT_PARSE",
+        "clarification": "CLARIFICATION", "product": "PRODUCT_SEARCH",
+        "review_stub": "EVIDENCE_REVIEW", "price": "PRICE_CALCULATION",
+        "score": "CANDIDATE_SCORING", "report_stub": "REPORT_GENERATION",
+        "validate": "REPORT_VALIDATION", "no_result": "NO_RESULT",
+    }
+    started = started_at.isoformat().replace("+00:00", "Z")
+    completed = completed_at.isoformat().replace("+00:00", "Z")
+    traces = list(result.get("tool_calls", []))
+    steps: list[dict[str, Any]] = []
+    for node in result.get("completed_nodes", []):
+        output: dict[str, Any] = {"status": "COMPLETED"}
+        if node == "intent": output["categoryId"] = (result.get("intent") or {}).get("category")
+        if node == "clarification": output["questionCount"] = len((result.get("clarification") or {}).get("questions", []))
+        if node == "product": output["candidateCount"] = len(result.get("candidates", []))
+        if node == "report_stub": output["generationType"] = (result.get("report") or {}).get("generation_type", "MODEL")
+        steps.append({
+            "node": node_labels.get(node, node.upper()), "status": "COMPLETED",
+            "startedAt": started, "completedAt": completed,
+            "inputSummary": {"messageCount": len(request.input.get("messages", []))} if node == "intent" else {},
+            "outputSummary": output,
+        })
+        for tool in [item for item in traces if item.get("tool_name") in tools_by_node.get(node, set())]:
+            tool_output = {"status": tool.get("status")}
+            if tool.get("source_version") is not None:
+                tool_output["sourceVersion"] = tool.get("source_version")
+            if tool.get("error_code") is not None:
+                tool_output["errorCode"] = tool.get("error_code")
+            steps.append({
+                "node": f"TOOL:{tool.get('tool_name')}",
+                "status": "COMPLETED" if tool.get("status") == "SUCCESS" else "FAILED",
+                "startedAt": started, "completedAt": completed,
+                "inputSummary": {"toolName": tool.get("tool_name"), "toolCallId": tool.get("tool_call_id")},
+                "outputSummary": tool_output,
+            })
+    return steps
 
 
 def callback_body_hash(body: dict[str, Any]) -> str:

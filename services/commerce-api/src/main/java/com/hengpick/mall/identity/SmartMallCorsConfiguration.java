@@ -13,16 +13,23 @@ import org.springframework.web.filter.CorsFilter;
 public class SmartMallCorsConfiguration {
     @Bean
     CorsFilter smartMallCorsFilter(
-            @Value("${hengpick.identity.smart-mall-h5-origin:http://127.0.0.1:5173}") String h5Origin) {
+            @Value("${hengpick.identity.smart-mall-h5-origin:http://127.0.0.1:5173,http://localhost:5173}")
+            String h5Origins) {
         var source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/api/v1/**", forH5Api(h5Origin));
+        source.registerCorsConfiguration("/api/v1/**", forH5Api(h5Origins));
         return new CorsFilter(source);
     }
 
-    static CorsConfiguration forH5Api(String h5Origin) {
-        requireSafeOrigin(h5Origin);
+    static CorsConfiguration forH5Api(String h5Origins) {
+        var allowedOrigins = java.util.Arrays.stream(h5Origins.split(","))
+                .map(String::trim)
+                .filter(origin -> !origin.isBlank())
+                .peek(SmartMallCorsConfiguration::requireSafeOrigin)
+                .distinct()
+                .toList();
+        if (allowedOrigins.isEmpty()) throw new IllegalArgumentException("至少配置一个 Smart Mall H5 Origin");
         var configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of(h5Origin));
+        configuration.setAllowedOrigins(allowedOrigins);
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of(
                 "Authorization", "Content-Type", "Last-Event-ID", "Idempotency-Key", "X-Request-Id"));

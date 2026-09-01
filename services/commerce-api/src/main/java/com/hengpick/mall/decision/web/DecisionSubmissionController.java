@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
 /** 接收 H5 的原始购买需求，并启动由服务端控制的首次分析。 */
@@ -39,7 +40,18 @@ public class DecisionSubmissionController {
                 started.run().runVersion(), started.session().status().name()), clock.instant());
     }
 
+    @PostMapping("/{sessionId}/messages")
+    public ApiEnvelope<StartedResponse> reply(
+            @PathVariable String sessionId, @RequestHeader("Authorization") String authorization,
+            @Valid @RequestBody ReplyRequest request) {
+        var subject = tokenVerifier.verify(authorization);
+        var started = coordinator.continueAfterClarification(subject.userId(), sessionId, request.content().trim());
+        return ApiEnvelope.success(new StartedResponse(started.session().id(), started.run().id(),
+                started.run().runVersion(), started.session().status().name()), clock.instant());
+    }
+
     public record StartRequest(@NotBlank @Size(max = 2000) String requirement) {}
+    public record ReplyRequest(@NotBlank @Size(max = 2000) String content) {}
 
     public record StartedResponse(String sessionId, String runId, int runVersion, String status) {}
 }

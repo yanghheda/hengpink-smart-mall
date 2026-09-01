@@ -3,12 +3,14 @@ package com.hengpick.mall.decision.web;
 import com.hengpick.mall.catalog.web.ApiEnvelope;
 import com.hengpick.mall.decision.application.DecisionTraceService;
 import com.hengpick.mall.decision.domain.DecisionTraceSnapshot;
-import com.hengpick.mall.identity.infrastructure.JwtH5AccessTokenVerifier;
+import com.hengpick.mall.identity.domain.RequestSubject;
+import com.hengpick.mall.identity.infrastructure.JwtRnAccessTokenVerifier;
 import java.time.Clock;
 import org.springframework.context.annotation.Profile;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -18,18 +20,29 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/admin/decision-runs")
 public class DecisionTraceController {
     private final DecisionTraceService service;
-    private final JwtH5AccessTokenVerifier tokenVerifier;
+    private final JwtRnAccessTokenVerifier tokenVerifier;
     private final Clock clock;
 
-    public DecisionTraceController(DecisionTraceService service, JwtH5AccessTokenVerifier tokenVerifier, Clock clock) {
+    public DecisionTraceController(DecisionTraceService service, JwtRnAccessTokenVerifier tokenVerifier, Clock clock) {
         this.service = service;
         this.tokenVerifier = tokenVerifier;
         this.clock = clock;
     }
 
+    @GetMapping
+    public ApiEnvelope<java.util.List<com.hengpick.mall.decision.domain.DecisionTraceListItem>> list(
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @RequestParam(defaultValue = "50") int limit) {
+        var admin = tokenVerifier.verify(authorization);
+        return ApiEnvelope.success(service.listRecent(new RequestSubject(admin.userId(), admin.role()), limit),
+                clock.instant());
+    }
+
     @GetMapping("/{runId}/trace")
     public ApiEnvelope<DecisionTraceSnapshot> getTrace(@PathVariable String runId,
             @RequestHeader(value = "Authorization", required = false) String authorization) {
-        return ApiEnvelope.success(service.getTrace(tokenVerifier.verify(authorization), runId), clock.instant());
+        var admin = tokenVerifier.verify(authorization);
+        return ApiEnvelope.success(service.getTrace(new RequestSubject(admin.userId(), admin.role()), runId),
+                clock.instant());
     }
 }

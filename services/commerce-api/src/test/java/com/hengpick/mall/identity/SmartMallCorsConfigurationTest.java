@@ -25,9 +25,11 @@ class SmartMallCorsConfigurationTest {
 
     @Test
     void localDevelopmentAllowsOnlyLoopbackHttpOrigin() {
-        var configuration = SmartMallCorsConfiguration.forH5Api("http://127.0.0.1:5173");
+        var configuration = SmartMallCorsConfiguration.forH5Api(
+                "http://127.0.0.1:5173,http://localhost:5173");
 
         assertThat(configuration.checkOrigin("http://127.0.0.1:5173")).isEqualTo("http://127.0.0.1:5173");
+        assertThat(configuration.checkOrigin("http://localhost:5173")).isEqualTo("http://localhost:5173");
         org.assertj.core.api.Assertions.assertThatThrownBy(
                 () -> SmartMallCorsConfiguration.forH5Api("http://smart.example"))
                 .isInstanceOf(IllegalArgumentException.class);

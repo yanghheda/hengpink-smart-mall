@@ -38,12 +38,12 @@ class ObjectAccessGuardTest {
     }
 
     @Test
-    void traceRequiresAdminRoleAfterOwnerCheck() {
+    void traceRequiresAdminRoleAndAllowsReadOnlyCrossUserInspection() {
         assertThatThrownBy(() -> guard.requireTraceAccess(new RequestSubject("USER-ALICE", "DEMO_USER"), aliceSession))
                 .isInstanceOf(ObjectAccessDeniedException.class)
                 .extracting("code").isEqualTo("TRACE_ACCESS_DENIED");
 
-        guard.requireTraceAccess(new RequestSubject("USER-ALICE", "DEMO_ADMIN"), aliceSession);
+        guard.requireTraceAccess(new RequestSubject("ADMIN-1", "DEMO_ADMIN"), aliceSession);
     }
 
     @Test

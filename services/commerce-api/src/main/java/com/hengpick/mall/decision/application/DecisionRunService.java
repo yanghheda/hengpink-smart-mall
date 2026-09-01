@@ -41,6 +41,27 @@ public final class DecisionRunService {
         return new StartedDecisionRun(nextSession, run);
     }
 
+    public StartedDecisionRun startClarificationRun(DecisionSession currentSession, String answer) {
+        if (repository.hasActiveRun(currentSession.id())) throw activeRunExists();
+        requireAllowedTrigger(currentSession, RunTriggerType.MESSAGE_APPENDED);
+        var nextVersion = Math.addExact(currentSession.currentRunVersion(), 1);
+        var nextSession = currentSession.advanceToRunningRun(nextVersion);
+        var now = clock.instant();
+        var run = new DecisionRun(idGenerator.get(), currentSession.id(), nextVersion, RunStatus.RUNNING,
+                RunTriggerType.MESSAGE_APPENDED, now, null);
+        repository.createRunWithMessageAndAdvanceSession(run, nextSession, idGenerator.get(), answer, now);
+        return new StartedDecisionRun(nextSession, run);
+    }
+
+    public DecisionSession requireOwnedSession(String sessionId, String userId) {
+        return repository.findOwnedSession(sessionId, userId)
+                .orElseThrow(() -> new DecisionStreamNotFoundException("决策会话不存在或无权访问"));
+    }
+
+    public java.util.List<String> userMessages(String sessionId) {
+        return repository.findUserMessages(sessionId);
+    }
+
     public StartedDecisionRun startInitialRun(
             String userId, String requirement, String datasetVersion, String categorySchemaVersion) {
         var now = clock.instant();

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Any, Protocol
 
 from app.clarification.service import ClarificationPlanner, merge_intents
 from app.graph.state import ShoppingDecisionState
@@ -18,7 +18,7 @@ class GraphModel(Protocol):
         repair_context: dict[str, object] | None = None,
     ) -> dict[str, object]: ...
 
-    def compose_report(self, candidate_ids: list[str]) -> str: ...
+    def compose_report(self, state: ShoppingDecisionState) -> dict[str, Any]: ...
 
 
 @dataclass(frozen=True)
@@ -62,6 +62,14 @@ class ShoppingDecisionNodes:
 
     def product(self, state: ShoppingDecisionState) -> dict[str, object]:
         intent = state["intent"] or {}
+        tool_constraints = [
+            {
+                "field": constraint.get("field") or constraint.get("name"),
+                "operator": constraint.get("operator"),
+                "value": constraint.get("value"),
+            }
+            for constraint in intent.get("hard_constraints", [])
+        ]
         search = self._call(
             state,
             "search_products",
@@ -69,7 +77,7 @@ class ShoppingDecisionNodes:
             {
                 "categoryId": intent.get("category"),
                 "budget": intent.get("budget"),
-                "hardConstraints": intent.get("hard_constraints", []),
+                "hardConstraints": tool_constraints,
                 "limit": 30,
             },
         )
@@ -130,10 +138,10 @@ class ShoppingDecisionNodes:
 
     def report_stub(self, state: ShoppingDecisionState) -> dict[str, object]:
         candidate_ids = [card["skuId"] for card in state["score_cards"]]
+        narrative = self.model.compose_report(state)
         return {
             "report": {
-                "generation_type": "STUB",
-                "summary": self.model.compose_report(candidate_ids),
+                **narrative,
                 "candidate_ids": candidate_ids,
             },
             "completed_nodes": ["report_stub"],

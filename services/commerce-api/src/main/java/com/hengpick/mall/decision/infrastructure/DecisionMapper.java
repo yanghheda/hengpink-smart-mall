@@ -9,6 +9,7 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 import java.util.List;
+import com.hengpick.mall.decision.domain.DecisionTraceListItem;
 
 /** 将 Decision 仓储操作映射到冻结的数据表。 */
 @Mapper
@@ -43,23 +44,64 @@ public interface DecisionMapper {
             @Param("content") String content,
             @Param("createdAt") java.time.Instant createdAt);
 
+    @Insert("""
+            INSERT INTO decision_messages
+              (id, session_id, run_version, role, message_type, content, created_at)
+            VALUES (#{messageId}, #{sessionId}, #{runVersion}, 'USER', 'TEXT', #{content}, #{createdAt})
+            """)
+    void insertUserMessage(@Param("messageId") String messageId, @Param("sessionId") String sessionId,
+            @Param("runVersion") int runVersion, @Param("content") String content,
+            @Param("createdAt") java.time.Instant createdAt);
+
+    @Select("""
+            SELECT id, user_id AS userId, status, current_run_version AS currentRunVersion,
+                   COALESCE(current_report_version, 0) AS currentReportVersion, version
+            FROM decision_sessions
+            WHERE id = #{sessionId} AND user_id = #{userId} AND deleted_at IS NULL
+            """)
+    DecisionSession findOwnedSession(@Param("sessionId") String sessionId, @Param("userId") String userId);
+
+    @Select("""
+            SELECT content FROM decision_messages
+            WHERE session_id = #{sessionId} AND role = 'USER' AND content IS NOT NULL
+            ORDER BY run_version, created_at, id
+            """)
+    List<String> findUserMessages(@Param("sessionId") String sessionId);
+
     @Select("""
             SELECT r.id AS runId, r.session_id AS sessionId, s.user_id AS ownerId,
                    r.run_version AS runVersion, r.status, r.active_node AS activeNode,
                    r.failure_code AS failureCode, r.degradation_codes_json AS degradationCodesJson,
                    r.trace_id AS traceId, r.started_at AS startedAt, r.completed_at AS completedAt,
-                   r.model_config_id AS modelVersion, r.prompt_version AS promptVersion,
-                   s.dataset_version AS datasetVersion, r.scoring_version AS scoringVersion,
-                   r.pricing_rule_version AS pricingRuleVersion, r.embedding_version AS embeddingVersion,
+                   COALESCE(r.model_config_id, JSON_UNQUOTE(JSON_EXTRACT(rr.result_summary_json, '$.versions.model'))) AS modelVersion,
+                   COALESCE(r.prompt_version, JSON_UNQUOTE(JSON_EXTRACT(rr.result_summary_json, '$.versions.prompt'))) AS promptVersion,
+                   s.dataset_version AS datasetVersion,
+                   COALESCE(r.scoring_version, JSON_UNQUOTE(JSON_EXTRACT(rr.result_summary_json, '$.versions.scoring'))) AS scoringVersion,
+                   COALESCE(r.pricing_rule_version, JSON_UNQUOTE(JSON_EXTRACT(rr.result_summary_json, '$.versions.pricing'))) AS pricingRuleVersion,
+                   COALESCE(r.embedding_version, JSON_UNQUOTE(JSON_EXTRACT(rr.result_summary_json, '$.versions.embedding'))) AS embeddingVersion,
                    r.token_input AS tokenInput, r.token_output AS tokenOutput, r.estimated_cost AS estimatedCost
             FROM decision_runs r JOIN decision_sessions s ON s.id = r.session_id
+            LEFT JOIN decision_run_results rr ON rr.run_id = r.id
             WHERE r.id = #{runId} AND s.deleted_at IS NULL
             """)
     DecisionTraceRunRow findTraceRun(@Param("runId") String runId);
 
     @Select("""
+            SELECT r.id AS runId, r.session_id AS sessionId, r.run_version AS runVersion,
+                   r.status, r.active_node AS activeNode, r.failure_code AS failureCode,
+                   r.started_at AS startedAt, r.completed_at AS completedAt
+            FROM decision_runs r
+            JOIN decision_sessions s ON s.id = r.session_id
+            WHERE s.deleted_at IS NULL
+            ORDER BY r.started_at DESC, r.id DESC
+            LIMIT #{limit}
+            """)
+    List<DecisionTraceListItem> findRecentTraceRuns(@Param("limit") int limit);
+
+    @Select("""
             SELECT sequence_no AS sequence, node_name AS node, status, started_at AS startedAt,
-                   completed_at AS completedAt, duration_ms AS durationMs, NULL AS errorCode,
+                   completed_at AS completedAt, duration_ms AS durationMs,
+                   JSON_UNQUOTE(JSON_EXTRACT(output_summary_json, '$.errorCode')) AS errorCode,
                    JSON_ARRAY() AS warningCodesJson, input_summary_json AS inputSummaryJson,
                    output_summary_json AS outputSummaryJson
             FROM agent_steps WHERE run_id = #{runId} ORDER BY sequence_no
@@ -69,10 +111,12 @@ public interface DecisionMapper {
     @Select("""
             SELECT s.id AS sessionId, r.id AS currentRunId,
                    s.current_run_version AS currentRunVersion, s.status,
-                   s.current_report_version AS currentReportVersion
+                   s.current_report_version AS currentReportVersion,
+                   JSON_UNQUOTE(JSON_EXTRACT(rr.result_summary_json, '$.clarification')) AS clarificationJson
             FROM decision_sessions s
             LEFT JOIN decision_runs r
               ON r.session_id = s.id AND r.run_version = s.current_run_version
+            LEFT JOIN decision_run_results rr ON rr.run_id = r.id
             WHERE s.id = #{sessionId} AND s.user_id = #{userId} AND s.deleted_at IS NULL
             """)
     DecisionSessionSnapshot findSessionSnapshot(

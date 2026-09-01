@@ -2,7 +2,13 @@ import asyncio
 
 from httpx import ASGITransport, AsyncClient
 
-from app.main import AgentRunRequest, AgentSettings, StubRunExecutor, create_app
+from app.main import (
+    AgentRunRequest,
+    AgentSettings,
+    StubRunExecutor,
+    create_app,
+    graph_result_summary,
+)
 
 
 def settings() -> AgentSettings:
@@ -85,3 +91,17 @@ def test_stub_calls_step_before_complete_with_same_run_token() -> None:
         assert all(len(str(call[2]["contentHash"])) == 64 for call in sender.calls)
 
     asyncio.run(scenario())
+
+
+def test_clarification_summary_omits_null_report_narrative() -> None:
+    result = {
+        "candidates": [],
+        "score_cards": [],
+        "price_plans": {},
+        "warnings": [],
+        "report": None,
+    }
+
+    summary = graph_result_summary(result, {"dataset": "dataset-v1"})
+
+    assert "reportNarrative" not in summary

@@ -50,9 +50,14 @@ def rule_fallback(messages: list[dict[str, str]]) -> StructuredIntent:
             break
 
     budget = None
-    match = re.search(r"(\d+(?:\.\d{1,2})?)\s*元?\s*(?:以内|以下|内)", text)
-    if match:
-        budget = IntentBudget(max=match.group(1), currency="CNY")
+    range_match = re.search(
+        r"(\d+(?:\.\d{1,2})?)\s*(?:元)?\s*[-—~至到]\s*(\d+(?:\.\d{1,2})?)\s*元?", text
+    )
+    max_match = re.search(r"(\d+(?:\.\d{1,2})?)\s*元?\s*(?:以内|以下|内)", text)
+    if range_match:
+        budget = IntentBudget(min=range_match.group(1), max=range_match.group(2), currency="CNY")
+    elif max_match:
+        budget = IntentBudget(max=max_match.group(1), currency="CNY")
     recipient = "PARENTS" if any(term in text for term in ("爸妈", "父母", "长辈")) else None
     return StructuredIntent(category=category, recipient=recipient, budget=budget)
 
@@ -66,7 +71,7 @@ class IntentParser:
         errors: list[dict[str, object]] = []
         first_output = self.model.generate_intent(messages, self.prompt)
         try:
-            intent = StructuredIntent.model_validate(first_output)
+            intent = self._preserve_explicit_history(StructuredIntent.model_validate(first_output), messages)
             return IntentParseResult(
                 intent=intent,
                 trace=IntentTrace(attempt_count=1, repair_used=False, fallback_used=False),
@@ -83,7 +88,7 @@ class IntentParser:
             messages, self.prompt, repair_context=repair_context
         )
         try:
-            intent = StructuredIntent.model_validate(repaired_output)
+            intent = self._preserve_explicit_history(StructuredIntent.model_validate(repaired_output), messages)
             return IntentParseResult(
                 intent=intent,
                 trace=IntentTrace(
@@ -109,3 +114,19 @@ class IntentParser:
                     warning_code="INTENT_SCHEMA_FALLBACK",
                 ),
             )
+
+    @staticmethod
+    def _preserve_explicit_history(
+        model_intent: StructuredIntent, messages: list[dict[str, str]]
+    ) -> StructuredIntent:
+        """模型漏读短回复时，保留完整对话中可确定识别的显式事实。"""
+
+        explicit = rule_fallback(messages)
+        values = model_intent.model_dump(mode="json")
+        if values.get("category") is None and explicit.category is not None:
+            values["category"] = explicit.category
+        if values.get("recipient") is None and explicit.recipient is not None:
+            values["recipient"] = explicit.recipient
+        if values.get("budget") is None and explicit.budget is not None:
+            values["budget"] = explicit.budget.model_dump(mode="json")
+        return StructuredIntent.model_validate(values)

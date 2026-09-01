@@ -26,7 +26,7 @@ public record AgentRunRequest(
                         "embedding", "stub-embedding-v1"),
                 Map.of("messages", List.of(), "memorySnapshot", List.of()),
                 new Callback("commerce-api-internal", callbackToken),
-                new Budget(12_000, 20_000, 5));
+                new Budget(60_000, 120_000, 5));
     }
 
     public static AgentRunRequest initial(
@@ -41,6 +41,19 @@ public record AgentRunRequest(
         return new AgentRunRequest(base.runId(), base.sessionId(), base.runVersion(), base.versions(),
                 Map.of("userIdRef", userId,
                         "messages", List.of(Map.of("role", "user", "content", requirement)),
+                        "memorySnapshot", List.of()),
+                base.callback(), base.budget());
+    }
+
+    public static AgentRunRequest continuation(
+            String runId, String sessionId, int runVersion, String datasetVersion,
+            String callbackToken, String userId, List<String> messages) {
+        var base = stub(runId, sessionId, runVersion, datasetVersion, callbackToken);
+        return new AgentRunRequest(base.runId(), base.sessionId(), base.runVersion(), base.versions(),
+                Map.of("userIdRef", userId,
+                        "messages", messages.stream()
+                                .map(content -> Map.of("role", "user", "content", content)).toList(),
+                        "clarificationRound", Math.min(runVersion - 1, 2),
                         "memorySnapshot", List.of()),
                 base.callback(), base.budget());
     }

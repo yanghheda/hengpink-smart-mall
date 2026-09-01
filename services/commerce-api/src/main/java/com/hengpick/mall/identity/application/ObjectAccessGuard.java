@@ -25,7 +25,10 @@ public class ObjectAccessGuard {
     }
 
     public void requireTraceAccess(RequestSubject subject, OwnedObject object) {
-        requireOwner(subject, object);
+        requireTraceAdmin(subject);
+    }
+
+    public void requireTraceAdmin(RequestSubject subject) {
         if (!"DEMO_ADMIN".equals(subject.role())) {
             throw new ObjectAccessDeniedException("TRACE_ACCESS_DENIED", "无权访问该资源");
         }
