@@ -87,6 +87,9 @@ function mergeRangeClosure(base, expansion) {
       entity.updated_at = dataset.updated_at;
     });
   }
+  dataset.offers.forEach((offer) => {
+    offer.valid_to = "2027-09-01T00:00:00Z";
+  });
   return dataset;
 }
 

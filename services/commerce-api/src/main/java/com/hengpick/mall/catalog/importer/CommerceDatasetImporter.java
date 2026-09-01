@@ -122,6 +122,8 @@ public final class CommerceDatasetImporter {
                 ((ObjectNode) entity).put("updated_at", updatedAt);
             });
         }
+        dataset.withArray("offers").forEach(offer ->
+                ((ObjectNode) offer).put("valid_to", "2027-09-01T00:00:00Z"));
         return dataset;
     }
 

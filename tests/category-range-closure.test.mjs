@@ -106,3 +106,17 @@ test("every added product has two SKUs, offers, review, evidence, and simulated 
     dataset.knowledge_documents.every((item) => item.is_simulated === true),
   );
 });
+
+test("every SKU has an active offer throughout the P15 demo window", async () => {
+  const dataset = await loadCuratedDataset();
+  const demoAt = Date.parse("2026-09-01T14:00:00Z");
+  for (const sku of dataset.skus) {
+    const validOffers = dataset.offers.filter(
+      (offer) =>
+        offer.sku_id === sku.sku_id &&
+        Date.parse(offer.valid_from) <= demoAt &&
+        demoAt < Date.parse(offer.valid_to),
+    );
+    assert.ok(validOffers.length > 0, `${sku.sku_id} has no active offer`);
+  }
+});

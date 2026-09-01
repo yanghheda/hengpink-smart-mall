@@ -23,6 +23,8 @@ class CommerceDatasetImporterTest {
         assertThat(dataset.withArray("products").size()).isEqualTo(20);
         assertThat(dataset.withArray("skus").size()).isEqualTo(40);
         assertThat(dataset.withArray("offers").size()).isEqualTo(40);
+        dataset.withArray("offers").forEach(offer ->
+                assertThat(offer.path("valid_to").asText()).isEqualTo("2027-09-01T00:00:00Z"));
         dataset.withArray("categories").forEach(category ->
                 assertThat(category.path("schema_coverage").asText()).isEqualTo("DEEP"));
         dataset.withArray("categories").forEach(category -> {
