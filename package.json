@@ -30,6 +30,8 @@
     "eval:golden": "services/agent-service/.venv/bin/python -m evals.golden_runner --cases evals/golden-cases/p14-s02-smoke.json",
     "eval:smoke": "services/agent-service/.venv/bin/python -m evals.golden_runner --cases evals/golden-cases/p14-s03-ci-smoke.json --gate",
     "eval:demo": "services/agent-service/.venv/bin/python -m evals.golden_runner --baseline evals/golden-cases/p14-s03-baseline.json --cases evals/golden-cases/p14-s02-smoke.json --gate",
+    "perf:benchmark": "python3 scripts/performance_benchmark.py",
+    "drill:failure": "python3 scripts/failure_drill.py",
     "build:js": "npm run build --workspace @hengpick/smart-mall-h5 && npx tsc --noEmit -p apps/commerce-app/tsconfig.json",
     "test": "node --test tests/*.test.mjs && npm run test:js",
     "test:js": "npm run test --workspaces",

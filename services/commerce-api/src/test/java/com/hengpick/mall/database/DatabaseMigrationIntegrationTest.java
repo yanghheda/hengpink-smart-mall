@@ -30,7 +30,7 @@ class DatabaseMigrationIntegrationTest {
                 .dataSource(jdbcUrl, username, password)
                 .locations("classpath:db/migration")
                 .load();
-        assertEquals(10, flyway.migrate().migrationsExecuted);
+        assertEquals(12, flyway.migrate().migrationsExecuted);
     }
 
     @Test
@@ -104,6 +104,22 @@ class DatabaseMigrationIntegrationTest {
                         """)) {
             assertTrue(result.next());
             assertEquals(6, result.getInt(1));
+        }
+    }
+
+    @Test
+    void decisionReportContainsVersionBoundRecommendationSnapshot() throws SQLException {
+        try (var connection = java.sql.DriverManager.getConnection(jdbcUrl, username, password);
+                var statement = connection.createStatement();
+                var result = statement.executeQuery("""
+                        SELECT COUNT(*)
+                        FROM information_schema.columns
+                        WHERE table_schema = DATABASE()
+                          AND table_name = 'decision_reports'
+                          AND column_name = 'recommendation_snapshot_json'
+                        """)) {
+            assertTrue(result.next());
+            assertEquals(1, result.getInt(1));
         }
     }
 

@@ -2,11 +2,13 @@ import json
 from hashlib import sha256
 from typing import Any, ClassVar, Protocol
 from urllib.error import HTTPError, URLError
-from urllib.request import Request, urlopen
+from urllib.request import ProxyHandler, Request, build_opener
 
 from pydantic import ValidationError
 
 from app.tools.models import ToolCallTrace, ToolRequestEnvelope, ToolResponseEnvelope
+
+INTERNAL_HTTP_OPENER = build_opener(ProxyHandler({}))
 
 
 class CommerceToolError(RuntimeError):
@@ -20,7 +22,9 @@ class CommerceToolError(RuntimeError):
 class ToolTransport(Protocol):
     """HTTP 传输边界，测试可替换而不启动真实网络。"""
 
-    def post(self, path: str, payload: dict[str, Any], timeout_seconds: float) -> dict[str, Any]: ...
+    def post(
+        self, path: str, payload: dict[str, Any], timeout_seconds: float
+    ) -> dict[str, Any]: ...
 
 
 class UrlLibToolTransport:
@@ -37,16 +41,20 @@ class UrlLibToolTransport:
             headers["Authorization"] = f"Bearer {self._service_token}"
         request = Request(f"{self._base_url}{path}", data=body, headers=headers, method="POST")
         try:
-            with urlopen(request, timeout=timeout_seconds) as response:
+            with INTERNAL_HTTP_OPENER.open(request, timeout=timeout_seconds) as response:
                 return json.loads(response.read().decode("utf-8"))
         except TimeoutError as error:
             raise CommerceToolError("TOOL_TIMEOUT", "Commerce Tool 调用超时") from error
         except HTTPError as error:
-            raise CommerceToolError("TOOL_HTTP_ERROR", f"Commerce Tool 返回 HTTP {error.code}") from error
+            raise CommerceToolError(
+                "TOOL_HTTP_ERROR", f"Commerce Tool 返回 HTTP {error.code}"
+            ) from error
         except (URLError, OSError) as error:
             raise CommerceToolError("TOOL_UNAVAILABLE", "Commerce Tool 当前不可用") from error
         except (UnicodeDecodeError, json.JSONDecodeError) as error:
-            raise CommerceToolError("TOOL_RESPONSE_INVALID", "Commerce Tool 响应不是合法 JSON") from error
+            raise CommerceToolError(
+                "TOOL_RESPONSE_INVALID", "Commerce Tool 响应不是合法 JSON"
+            ) from error
 
 
 class CommerceToolClient:
@@ -102,12 +110,16 @@ class CommerceToolClient:
             response = ToolResponseEnvelope.model_validate(raw)
         except ValidationError as error:
             self._trace(tool_call_id, tool_name, "FAILED", None, "TOOL_RESPONSE_INVALID")
-            raise CommerceToolError("TOOL_RESPONSE_INVALID", "Commerce Tool 响应不符合信封 Schema") from error
+            raise CommerceToolError(
+                "TOOL_RESPONSE_INVALID", "Commerce Tool 响应不符合信封 Schema"
+            ) from error
         except CommerceToolError as error:
             self._trace(tool_call_id, tool_name, "FAILED", None, error.code)
             raise
         if response.sourceVersion != dataset_version:
-            self._trace(tool_call_id, tool_name, "FAILED", response.sourceVersion, "TOOL_VERSION_MISMATCH")
+            self._trace(
+                tool_call_id, tool_name, "FAILED", response.sourceVersion, "TOOL_VERSION_MISMATCH"
+            )
             raise CommerceToolError("TOOL_VERSION_MISMATCH", "Tool 数据版本与当前 Run 不一致")
         if response.status != "SUCCESS":
             code = response.errorCode or "TOOL_FAILED"

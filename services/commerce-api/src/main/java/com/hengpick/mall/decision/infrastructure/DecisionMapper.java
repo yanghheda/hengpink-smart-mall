@@ -13,6 +13,36 @@ import java.util.List;
 /** 将 Decision 仓储操作映射到冻结的数据表。 */
 @Mapper
 public interface DecisionMapper {
+    @Insert("""
+            INSERT INTO decision_sessions
+              (id, user_id, status, title, intent_json, weights_json, current_run_version,
+               current_report_version, dataset_version, category_schema_version, created_at, updated_at, version)
+            VALUES
+              (#{session.id}, #{session.userId}, #{status}, #{title}, #{intentJson}, #{weightsJson},
+               #{session.currentRunVersion}, NULL, #{datasetVersion}, #{categorySchemaVersion},
+               #{createdAt}, #{createdAt}, #{session.version})
+            """)
+    void insertInitialSession(
+            @Param("session") DecisionSession session,
+            @Param("status") String status,
+            @Param("title") String title,
+            @Param("intentJson") String intentJson,
+            @Param("weightsJson") String weightsJson,
+            @Param("datasetVersion") String datasetVersion,
+            @Param("categorySchemaVersion") String categorySchemaVersion,
+            @Param("createdAt") java.time.Instant createdAt);
+
+    @Insert("""
+            INSERT INTO decision_messages
+              (id, session_id, run_version, role, message_type, content, created_at)
+            VALUES (#{messageId}, #{sessionId}, 1, 'USER', 'TEXT', #{content}, #{createdAt})
+            """)
+    void insertInitialMessage(
+            @Param("messageId") String messageId,
+            @Param("sessionId") String sessionId,
+            @Param("content") String content,
+            @Param("createdAt") java.time.Instant createdAt);
+
     @Select("""
             SELECT r.id AS runId, r.session_id AS sessionId, s.user_id AS ownerId,
                    r.run_version AS runVersion, r.status, r.active_node AS activeNode,
@@ -58,6 +88,13 @@ public interface DecisionMapper {
 
     @Select("SELECT session_id FROM decision_runs WHERE id = #{runId}")
     String findSessionIdByRunId(@Param("runId") String runId);
+
+    @Select("""
+            SELECT s.id AS sessionId, s.user_id AS userId, s.dataset_version AS datasetVersion
+            FROM decision_runs r JOIN decision_sessions s ON s.id = r.session_id
+            WHERE r.id = #{runId} AND s.deleted_at IS NULL
+            """)
+    ReportPublicationContextRow findReportPublicationContext(@Param("runId") String runId);
 
     @Select("""
             SELECT EXISTS(

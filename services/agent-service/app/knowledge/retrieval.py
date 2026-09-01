@@ -76,9 +76,7 @@ def generate_topic_queries(intent: StructuredIntent, product_name: str) -> list[
             break
         _append_unique(ordered_topics, fallback_topic)
 
-    context = " ".join(
-        part for part in (intent.recipient, *intent.usage_scenarios[:2]) if part
-    )
+    context = " ".join(part for part in (intent.recipient, *intent.usage_scenarios[:2]) if part)
     return [
         TopicQuery(
             topic=topic,

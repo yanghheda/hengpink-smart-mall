@@ -99,9 +99,7 @@ def _group_by_topic(
     return grouped
 
 
-def _build_conclusion(
-    topic: str, evidence: Sequence[RetrievedEvidence]
-) -> ReviewConclusion:
+def _build_conclusion(topic: str, evidence: Sequence[RetrievedEvidence]) -> ReviewConclusion:
     ordered = sorted(evidence, key=lambda item: (-item.final_score, item.evidence_id))
     sample_count = len(ordered)
     prefix = "个别反馈提到" if sample_count == 1 else f"{sample_count} 条反馈提到"
@@ -124,8 +122,7 @@ def _build_controversy(
         topic=topic,
         status="CONTROVERSIAL",
         statement=(
-            f"关于「{topic}」存在争议："
-            f"{len(positive)} 条正向、{len(negative)} 条负向反馈。"
+            f"关于「{topic}」存在争议：{len(positive)} 条正向、{len(negative)} 条负向反馈。"
         ),
         positive_sample_count=len(positive),
         negative_sample_count=len(negative),

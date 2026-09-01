@@ -114,7 +114,10 @@ class CommerceToolServiceTest {
                 "P-1", "PHONE", "手机", "衡选", "Care One", "长辈手机", "",
                 Map.of("simpleMode", true), List.of(), List.of(), "两年保修", DATASET, true,
                 List.of(sku), sku);
-        var searchService = new CatalogSearchService(category -> List.of(candidate));
+        var searchService = new CatalogSearchService(category -> List.of(candidate), category ->
+                new com.hengpick.mall.catalog.domain.CategorySearchSchema(category, Map.of(
+                        "storageGb", List.of(">=", "="),
+                        "batteryMah", List.of(">=", "<="))));
         var queryService = new CatalogQueryService(new com.hengpick.mall.catalog.domain.CatalogQueryPort() {
             @Override
             public ProductPage findProducts(int page, int size) {

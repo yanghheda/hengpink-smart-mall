@@ -19,8 +19,8 @@ test("same seed and version produce the same generated dataset hash", async () =
     generatedProducts: 3,
   });
   assert.equal(first.report.content_hash, second.report.content_hash);
-  assert.equal(first.dataset.products.length, 9);
-  assert.equal(first.dataset.skus.length, 18);
+  assert.equal(first.dataset.products.length, 11);
+  assert.equal(first.dataset.skus.length, 22);
 });
 
 test("report contains version, counts, hash, and explicit anomalies", async () => {
@@ -35,13 +35,13 @@ test("report contains version, counts, hash, and explicit anomalies", async () =
   });
   assert.equal(report.dataset_version, "commerce-demo-2026.08.3");
   assert.deepEqual(report.counts, {
-    categories: 1,
-    products: 7,
-    skus: 14,
+    categories: 2,
+    products: 9,
+    skus: 18,
     shops: 2,
-    offers: 14,
-    reviews: 1,
-    knowledge_documents: 5,
+    offers: 18,
+    reviews: 3,
+    knowledge_documents: 7,
   });
   assert.match(report.content_hash, /^[a-f0-9]{64}$/);
   assert.deepEqual(report.anomalies, ["missing_attribute", "out_of_stock"]);

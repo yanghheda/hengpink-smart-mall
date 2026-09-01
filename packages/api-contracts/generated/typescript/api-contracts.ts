@@ -1,5 +1,5 @@
 // 由 packages/api-contracts/openapi.yaml 生成，请勿手工修改。
-// 契约源摘要：8b187de1281560d47f983120e9f3d7c03658425386a4d7f0baca1f8eb9778afe
+// 契约源摘要：11822ef10cdcf654a04a8df56b4648dc99a448efd1603728cd1f3036b8274049
 
 export interface LoginRequest {
   account: string;
@@ -106,9 +106,55 @@ export interface DecisionSessionSnapshot {
   currentReportVersion?: number | null;
 }
 
+export interface StartDecisionRequest {
+  requirement: string;
+}
+
+export interface StartedDecision {
+  sessionId: string;
+  runId: string;
+  runVersion: number;
+  status: "RUNNING";
+}
+
+export interface StartedDecisionResponse {
+  requestId: string;
+  data: StartedDecision;
+  meta: ResponseMeta;
+}
+
 export interface DecisionSessionSnapshotResponse {
   requestId: string;
   data: DecisionSessionSnapshot;
+  meta: ResponseMeta;
+}
+
+export interface ReweightRequest {
+  reportVersion: number;
+  weights: Record<string, unknown>;
+}
+
+export interface ReweightedCandidate {
+  rank: number;
+  productId: string;
+  skuId: string;
+  finalScore: number;
+  pricePlanId: string;
+  finalPrice: string;
+}
+
+export interface ReweightResult {
+  sessionId: string;
+  version: number;
+  selectedSkuId: string;
+  weights: Record<string, unknown>;
+  recommendations: Array<ReweightedCandidate>;
+  generationType: string;
+}
+
+export interface ReweightResponse {
+  requestId: string;
+  data: ReweightResult;
   meta: ResponseMeta;
 }
 

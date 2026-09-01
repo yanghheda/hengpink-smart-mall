@@ -29,7 +29,7 @@ hengpick:
   commerce:
     environment: ${APP_ENV:local}
     agent-url: ${COMMERCE_INTERNAL_AGENT_URL:http://localhost:8000}
-    dataset-version: ${COMMERCE_DATASET_VERSION:commerce-demo-2026.08.0}
+    dataset-version: ${COMMERCE_DATASET_VERSION:commerce-demo-2026.08.1}
     internal-service-token: ${COMMERCE_INTERNAL_SERVICE_TOKEN:local-internal-service-token-change-before-demo}
   identity:
     access-token-ttl: ${AUTH_ACCESS_TOKEN_TTL:PT30M}

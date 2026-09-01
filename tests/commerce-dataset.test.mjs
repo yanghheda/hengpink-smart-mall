@@ -9,12 +9,43 @@ import {
 
 test("curated dataset has the minimum P03 phone slice", async () => {
   const dataset = await loadCuratedDataset();
-  assert.equal(dataset.dataset_version, "commerce-demo-2026.08.1");
-  assert.equal(dataset.categories.length, 1);
-  assert.equal(dataset.products.length, 6);
-  assert.equal(dataset.skus.length, 12);
+  assert.equal(dataset.dataset_version, "commerce-demo-2026.09.1");
+  assert.ok(dataset.categories.some((item) => item.category_id === "PHONE"));
+  const phoneProductIds = new Set(
+    dataset.products
+      .filter((item) => item.category_id === "PHONE")
+      .map((item) => item.product_id),
+  );
+  assert.equal(phoneProductIds.size, 6);
+  assert.equal(
+    dataset.skus.filter((item) => phoneProductIds.has(item.product_id)).length,
+    12,
+  );
   assert.ok(dataset.shops.length >= 2);
   assert.ok(dataset.offers.length >= 12);
+  assert.doesNotThrow(() => validateDataset(dataset));
+});
+
+test("curated dataset adds a monitor slice without changing the phone slice", async () => {
+  const dataset = await loadCuratedDataset();
+  const categoryIds = dataset.categories.map((item) => item.category_id);
+  const monitorProducts = dataset.products.filter(
+    (item) => item.category_id === "MONITOR",
+  );
+  const monitorProductIds = new Set(
+    monitorProducts.map((item) => item.product_id),
+  );
+  const monitorSkus = dataset.skus.filter((item) =>
+    monitorProductIds.has(item.product_id),
+  );
+
+  assert.deepEqual(categoryIds, ["PHONE", "MONITOR"]);
+  assert.equal(
+    dataset.products.filter((item) => item.category_id === "PHONE").length,
+    6,
+  );
+  assert.equal(monitorProducts.length, 2);
+  assert.equal(monitorSkus.length, 4);
   assert.doesNotThrow(() => validateDataset(dataset));
 });
 

@@ -80,7 +80,10 @@ class CatalogControllerTest {
                 new CatalogSearchService(categoryId -> List.of(
                         new CatalogSearchCandidate("P-1", "S-1", "衡选 H1 256GB", "PHONE",
                                 new BigDecimal("3299.00"), "IN_STOCK", 3,
-                                Map.of("storageGb", 256)))), new ProductComparisonService(comparisonPort), clock);
+                                Map.of("storageGb", 256))), categoryId ->
+                        new com.hengpick.mall.catalog.domain.CategorySearchSchema(
+                                categoryId, Map.of("storageGb", List.of(">=", "=")))),
+                new ProductComparisonService(comparisonPort), clock);
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
                 .setControllerAdvice(new CatalogExceptionHandler())
                 .build();

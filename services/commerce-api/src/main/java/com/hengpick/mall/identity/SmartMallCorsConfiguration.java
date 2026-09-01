@@ -15,28 +15,17 @@ public class SmartMallCorsConfiguration {
     CorsFilter smartMallCorsFilter(
             @Value("${hengpick.identity.smart-mall-h5-origin:http://127.0.0.1:5173}") String h5Origin) {
         var source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/api/v1/smart-mall/sessions/exchange", forOrigin(h5Origin));
-        source.registerCorsConfiguration("/api/v1/decision-sessions/*/stream", forDecisionStream(h5Origin));
+        source.registerCorsConfiguration("/api/v1/**", forH5Api(h5Origin));
         return new CorsFilter(source);
     }
 
-    static CorsConfiguration forOrigin(String h5Origin) {
+    static CorsConfiguration forH5Api(String h5Origin) {
         requireSafeOrigin(h5Origin);
         var configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of(h5Origin));
-        configuration.setAllowedMethods(List.of("POST", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("Content-Type"));
-        configuration.setAllowCredentials(false);
-        configuration.setMaxAge(600L);
-        return configuration;
-    }
-
-    static CorsConfiguration forDecisionStream(String h5Origin) {
-        requireSafeOrigin(h5Origin);
-        var configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of(h5Origin));
-        configuration.setAllowedMethods(List.of("GET", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("Authorization", "Last-Event-ID"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of(
+                "Authorization", "Content-Type", "Last-Event-ID", "Idempotency-Key", "X-Request-Id"));
         configuration.setAllowCredentials(false);
         configuration.setMaxAge(600L);
         return configuration;

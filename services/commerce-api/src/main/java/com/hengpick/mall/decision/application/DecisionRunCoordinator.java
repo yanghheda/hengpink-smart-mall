@@ -66,4 +66,21 @@ public final class DecisionRunCoordinator {
         }
         return started;
     }
+
+    public StartedDecisionRun startInitialRun(String userId, String requirement) {
+        var started = runService.startInitialRun(userId, requirement, datasetVersion, "phone-v1");
+        var issuedAt = clock.instant();
+        var callbackToken = tokenCodec.issue(started.run().id(), issuedAt,
+                issuedAt.plus(properties.callbackTokenTtl()));
+        launcher.launch(AgentRunRequest.initial(started.run().id(), started.session().id(),
+                started.run().runVersion(), datasetVersion, callbackToken, userId, requirement));
+        if (eventPublisher != null) {
+            try {
+                eventPublisher.publishStarted(started.session().id(), started.run().id(), started.run().runVersion());
+            } catch (RuntimeException exception) {
+                LOGGER.warn("Redis 启动事件发布失败，Run 已按 MySQL 状态继续执行", exception);
+            }
+        }
+        return started;
+    }
 }

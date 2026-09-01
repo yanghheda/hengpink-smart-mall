@@ -38,7 +38,7 @@ class MemoryControllerTest {
         var clock = Clock.fixed(NOW, ZoneOffset.UTC);
         var service = new MemoryService(repository, clock,
                 () -> "01KTESTMEMHTTP" + String.format("%012d", sequence.incrementAndGet()));
-        var verifier = new JwtH5AccessTokenVerifier(SECRET);
+        var verifier = new JwtH5AccessTokenVerifier(SECRET, clock);
         mockMvc = MockMvcBuilders.standaloneSetup(new MemoryController(service, verifier, clock))
                 .setControllerAdvice(new MemoryExceptionHandler()).build();
         authorization = "Bearer " + new JwtH5SessionTokenIssuer(SECRET)

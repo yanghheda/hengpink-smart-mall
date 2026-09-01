@@ -20,6 +20,28 @@ public class MyBatisDecisionRunRepository implements DecisionRunRepository {
     }
 
     @Override
+    @Transactional
+    public void createInitialRun(
+            DecisionSession session,
+            DecisionRun run,
+            String title,
+            String intentJson,
+            String weightsJson,
+            String datasetVersion,
+            String categorySchemaVersion,
+            String messageId,
+            String messageContent) {
+        try {
+            mapper.insertInitialSession(session, session.status().name(), title, intentJson, weightsJson,
+                    datasetVersion, categorySchemaVersion, run.startedAt());
+            mapper.insertInitialMessage(messageId, session.id(), messageContent, run.startedAt());
+            mapper.insertRun(run);
+        } catch (DataIntegrityViolationException exception) {
+            throw new ActiveRunConstraintViolationException("首次决策 Run 创建冲突", exception);
+        }
+    }
+
+    @Override
     public boolean hasActiveRun(String sessionId) {
         return mapper.hasActiveRun(sessionId);
     }

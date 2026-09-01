@@ -21,9 +21,7 @@ def _candidate(index: int) -> dict[str, object]:
             "conditions": ["无需会员"],
         },
         "facts": [{"fact_id": f"FACT-{index}", "statement": "续航能力已核验"}],
-        "evidence": [
-            {"evidence_id": f"EV-{index}", "summary": "评价证据摘要", "topic": "battery"}
-        ],
+        "evidence": [{"evidence_id": f"EV-{index}", "summary": "评价证据摘要", "topic": "battery"}],
     }
 
 

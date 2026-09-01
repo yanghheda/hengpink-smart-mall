@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 
 public final class CommerceDatasetImporter {
-    private static final String DEFAULT_DATASET_RELATIVE_PATH = "packages/commerce-dataset/fixtures/curated/commerce-demo-2026.08.1.json";
+    private static final String DEFAULT_DATASET_RELATIVE_PATH = "packages/commerce-dataset/fixtures/curated/commerce-demo-2026.09.1.json";
     private static final String CATEGORY_SCHEMA_DIRECTORY = "packages/commerce-dataset/schemas";
 
     private CommerceDatasetImporter() {}

@@ -11,6 +11,8 @@ import com.hengpick.mall.catalog.domain.ProductSummary;
 import com.hengpick.mall.catalog.domain.ProductComparisonPort;
 import com.hengpick.mall.catalog.domain.ComparisonCandidate;
 import com.hengpick.mall.catalog.domain.CategoryComparisonSchema;
+import com.hengpick.mall.catalog.domain.CategorySearchSchema;
+import com.hengpick.mall.catalog.domain.CategorySearchSchemaPort;
 import com.hengpick.mall.catalog.domain.SkuDetail;
 import java.util.List;
 import java.util.Map;
@@ -20,7 +22,8 @@ import org.springframework.context.annotation.Profile;
 
 @Repository
 @Profile("database")
-public class MyBatisCatalogQueryAdapter implements CatalogQueryPort, CatalogSearchCandidatePort, ProductComparisonPort {
+public class MyBatisCatalogQueryAdapter implements CatalogQueryPort, CatalogSearchCandidatePort,
+        ProductComparisonPort, CategorySearchSchemaPort {
     private final CatalogMapper mapper;
     private final ObjectMapper objectMapper;
 
@@ -94,6 +97,26 @@ public class MyBatisCatalogQueryAdapter implements CatalogQueryPort, CatalogSear
             throw exception;
         } catch (Exception exception) {
             throw new IllegalStateException("类目 Schema 无法解析", exception);
+        }
+    }
+
+    @Override
+    public CategorySearchSchema findSearchSchema(String categoryId) {
+        var row = mapper.findCategorySchema(categoryId);
+        if (row == null) throw new IllegalArgumentException("类目 Schema 不存在");
+        try {
+            var root = objectMapper.readTree(row.schemaJson());
+            var operators = new java.util.LinkedHashMap<String, List<String>>();
+            var fields = root.path("hardConstraintOperators").fields();
+            while (fields.hasNext()) {
+                var field = fields.next();
+                var values = new java.util.ArrayList<String>();
+                field.getValue().forEach(value -> values.add(value.asText()));
+                operators.put(field.getKey(), List.copyOf(values));
+            }
+            return new CategorySearchSchema(row.categoryId(), Map.copyOf(operators));
+        } catch (Exception exception) {
+            throw new IllegalStateException("类目搜索 Schema 无法解析", exception);
         }
     }
 

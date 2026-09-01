@@ -4,6 +4,7 @@ import com.hengpick.mall.identity.application.AuthService;
 import com.hengpick.mall.identity.application.ObjectAccessGuard;
 import com.hengpick.mall.identity.domain.AuthSessionRepository;
 import com.hengpick.mall.identity.domain.DeletionAuditRepository;
+import com.hengpick.mall.identity.domain.TokenDigester;
 import com.hengpick.mall.identity.infrastructure.JwtAccessTokenIssuer;
 import com.hengpick.mall.identity.infrastructure.JwtH5SessionTokenIssuer;
 import com.hengpick.mall.identity.infrastructure.JwtRnAccessTokenVerifier;
@@ -25,19 +26,24 @@ import com.hengpick.mall.identity.application.SmartMallTicketService;
 @Profile("database")
 public class IdentityConfiguration {
     @Bean
+    TokenDigester tokenDigester() {
+        return new Sha256TokenDigester();
+    }
+
+    @Bean
     AuthService authService(AuthSessionRepository repository, IdentityProperties properties,
-            UlidGenerator ulidGenerator, Clock clock) {
+            UlidGenerator ulidGenerator, TokenDigester tokenDigester, Clock clock) {
         var passwordEncoder = new BCryptPasswordEncoder();
         return new AuthService(repository, passwordEncoder::matches, new SecureTokenGenerator(),
-                new Sha256TokenDigester(), new JwtAccessTokenIssuer(properties.jwtSecret()), ulidGenerator::next,
+                tokenDigester, new JwtAccessTokenIssuer(properties.jwtSecret()), ulidGenerator::next,
                 clock, properties.accessTokenTtl(), properties.refreshTokenTtl());
     }
 
     @Bean
     SmartMallTicketService smartMallTicketService(StringRedisTemplate redis, ObjectMapper objectMapper,
-            IdentityProperties properties, Clock clock) {
+            IdentityProperties properties, TokenDigester tokenDigester, Clock clock) {
         return new SmartMallTicketService(new RedisSmartMallTicketRepository(redis, objectMapper),
-                new SecureTokenGenerator(), new Sha256TokenDigester(),
+                new SecureTokenGenerator(), tokenDigester,
                 new JwtH5SessionTokenIssuer(properties.jwtSecret()), clock, properties.smartTicketTtl(),
                 properties.h5AccessTokenTtl());
     }
@@ -53,7 +59,8 @@ public class IdentityConfiguration {
     }
 
     @Bean
-    ObjectAccessGuard objectAccessGuard(DeletionAuditRepository deletionAuditRepository, Clock clock) {
-        return new ObjectAccessGuard(deletionAuditRepository, new Sha256TokenDigester(), clock);
+    ObjectAccessGuard objectAccessGuard(
+            DeletionAuditRepository deletionAuditRepository, TokenDigester tokenDigester, Clock clock) {
+        return new ObjectAccessGuard(deletionAuditRepository, tokenDigester, clock);
     }
 }

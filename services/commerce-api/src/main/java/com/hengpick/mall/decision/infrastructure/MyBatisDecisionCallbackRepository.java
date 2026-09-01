@@ -3,6 +3,7 @@ package com.hengpick.mall.decision.infrastructure;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hengpick.mall.decision.application.CallbackConflictException;
+import com.hengpick.mall.decision.application.RecommendationCallbackReportPublisher;
 import com.hengpick.mall.decision.domain.AgentStepCallback;
 import com.hengpick.mall.decision.domain.DecisionCallbackRepository;
 import com.hengpick.mall.decision.domain.RunCompletionCallback;
@@ -19,12 +20,23 @@ public class MyBatisDecisionCallbackRepository implements DecisionCallbackReposi
     private final DecisionMapper mapper;
     private final ObjectMapper objectMapper;
     private final UlidGenerator ulidGenerator;
+    private final RecommendationCallbackReportPublisher reportPublisher;
 
     public MyBatisDecisionCallbackRepository(
             DecisionMapper mapper, ObjectMapper objectMapper, UlidGenerator ulidGenerator) {
+        this(mapper, objectMapper, ulidGenerator, null);
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public MyBatisDecisionCallbackRepository(
+            DecisionMapper mapper,
+            ObjectMapper objectMapper,
+            UlidGenerator ulidGenerator,
+            RecommendationCallbackReportPublisher reportPublisher) {
         this.mapper = mapper;
         this.objectMapper = objectMapper;
         this.ulidGenerator = ulidGenerator;
+        this.reportPublisher = reportPublisher;
     }
 
     @Override
@@ -64,6 +76,7 @@ public class MyBatisDecisionCallbackRepository implements DecisionCallbackReposi
             throw new CallbackConflictException("Run 已不是可完成状态");
         }
         mapper.insertRunResult(completion, json(completion.resultSummary()), true);
+        if (reportPublisher != null) reportPublisher.publish(completion);
         return true;
     }
 

@@ -41,6 +41,24 @@ public final class DecisionRunService {
         return new StartedDecisionRun(nextSession, run);
     }
 
+    public StartedDecisionRun startInitialRun(
+            String userId, String requirement, String datasetVersion, String categorySchemaVersion) {
+        var now = clock.instant();
+        var session = new DecisionSession(idGenerator.get(), userId, DecisionStatus.RUNNING, 1, 0, 1);
+        var run = new DecisionRun(idGenerator.get(), session.id(), 1, RunStatus.RUNNING,
+                RunTriggerType.INITIAL_REQUEST, now, null);
+        var title = requirement.length() <= 80 ? requirement : requirement.substring(0, 80);
+        repository.createInitialRun(session, run, title,
+                "{\"requirement\":" + jsonString(requirement) + "}", "{}", datasetVersion,
+                categorySchemaVersion, idGenerator.get(), requirement);
+        return new StartedDecisionRun(session, run);
+    }
+
+    private String jsonString(String value) {
+        return "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"")
+                .replace("\n", "\\n").replace("\r", "\\r") + "\"";
+    }
+
     private ActiveDecisionRunExistsException activeRunExists() {
         return new ActiveDecisionRunExistsException("同一决策会话已有活跃 Run");
     }

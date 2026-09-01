@@ -12,8 +12,8 @@ from datetime import UTC, datetime
 from hashlib import sha256
 from typing import Any, Protocol
 from urllib.error import URLError
+from urllib.request import ProxyHandler, build_opener
 from urllib.request import Request as UrlRequest
-from urllib.request import urlopen
 
 from fastapi import FastAPI, Request, Response, status
 from fastapi.responses import JSONResponse
@@ -24,6 +24,7 @@ from app.graph.workflow import StubGraphModel, build_shopping_decision_graph
 from app.tools.client import CommerceToolClient, UrlLibToolTransport
 
 logger = logging.getLogger("hengpick.agent")
+INTERNAL_HTTP_OPENER = build_opener(ProxyHandler({}))
 TRACEPARENT = re.compile(r"00-[0-9a-f]{32}-[0-9a-f]{16}-[0-9a-f]{2}")
 REQUEST_ID = re.compile(r"[A-Za-z0-9_-]{1,128}")
 
@@ -129,7 +130,7 @@ class HttpCallbackSender:
             headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
             method="POST",
         )
-        with urlopen(request, timeout=2) as response:
+        with INTERNAL_HTTP_OPENER.open(request, timeout=2) as response:
             if not 200 <= response.status < 300:
                 raise RuntimeError(f"回调返回非成功状态: {response.status}")
 
@@ -233,9 +234,11 @@ class GraphRunExecutor:
             request.callback.callbackToken,
             {**step_without_hash, "contentHash": callback_body_hash(step_without_hash)},
         )
-        completion_type = "CLARIFICATION_REQUIRED" if (
-            result.get("clarification") or {}
-        ).get("questions") else ("NO_RESULT" if not result["candidates"] else "REPORT_READY")
+        completion_type = (
+            "CLARIFICATION_REQUIRED"
+            if (result.get("clarification") or {}).get("questions")
+            else ("NO_RESULT" if not result["candidates"] else "REPORT_READY")
+        )
         completion_without_hash: dict[str, Any] = {
             "runVersion": request.runVersion,
             "completionType": completion_type,
@@ -243,6 +246,8 @@ class GraphRunExecutor:
                 "generationType": "TOOL_BACKED_REVIEW_STUB",
                 "candidates": result["candidates"][:3],
                 "scoreCards": result["score_cards"][:3],
+                "pricePlans": result["price_plans"],
+                "versions": request.versions,
                 "warnings": result["warnings"],
             },
             "completedAt": now,
@@ -304,7 +309,7 @@ class HttpReadinessProbe:
     @staticmethod
     def _is_up(url: str) -> bool:
         try:
-            with urlopen(url, timeout=0.5) as response:
+            with INTERNAL_HTTP_OPENER.open(url, timeout=0.5) as response:
                 return 200 <= response.status < 300
         except (OSError, URLError):
             return False
@@ -413,6 +418,28 @@ def create_app(
             except Exception:
                 registry[body.runId]["status"] = "FAILED"
                 logger.exception("Stub Run 执行失败 runId=%s", body.runId)
+                completed_at = datetime.now(UTC).isoformat().replace("+00:00", "Z")
+                failure_without_hash: dict[str, Any] = {
+                    "runVersion": body.runVersion,
+                    "completionType": "FAILED",
+                    "resultSummary": {
+                        "failureCode": "AGENT_EXECUTION_FAILED",
+                        "warnings": [],
+                        "versions": body.versions,
+                    },
+                    "completedAt": completed_at,
+                }
+                try:
+                    await HttpCallbackSender(request.app.state.settings.tool_api_base_url).post(
+                        f"/internal/v1/decision-runs/{body.runId}/complete",
+                        body.callback.callbackToken,
+                        {
+                            **failure_without_hash,
+                            "contentHash": callback_body_hash(failure_without_hash),
+                        },
+                    )
+                except Exception:
+                    logger.exception("失败终态回调失败 runId=%s", body.runId)
 
         asyncio.create_task(execute_stub())
         return JSONResponse(

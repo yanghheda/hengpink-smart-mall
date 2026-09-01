@@ -38,7 +38,7 @@ class EngagementControllerTest {
         var clock = Clock.fixed(NOW, ZoneOffset.UTC);
         var repository = new InMemoryRepository();
         var service = new EngagementService(repository, clock, () -> "FAVORITE-1");
-        var verifier = new JwtH5AccessTokenVerifier(SECRET);
+        var verifier = new JwtH5AccessTokenVerifier(SECRET, clock);
         mockMvc = MockMvcBuilders.standaloneSetup(new EngagementController(service, verifier, clock))
                 .setControllerAdvice(new EngagementExceptionHandler()).build();
         authorization = "Bearer " + new JwtH5SessionTokenIssuer(SECRET)

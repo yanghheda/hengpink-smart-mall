@@ -17,21 +17,36 @@ class DeterministicToolTransport:
         self.calls.append((path, deepcopy(payload), timeout_seconds))
         sku_ids = [f"SKU-PHONE-{index + 1}" for index in range(self.candidate_count)]
         if path.endswith("search-products"):
-            data = {"matchedCandidates": [{"skuId": sku_id} for sku_id in sku_ids], "rejectedCandidates": []}
+            data = {
+                "matchedCandidates": [{"skuId": sku_id} for sku_id in sku_ids],
+                "rejectedCandidates": [],
+            }
         elif path.endswith("get-product-specs"):
             requested = payload["input"]["candidates"]
             data = {
                 "candidates": [
-                    {"productId": f"P-{index + 1}", "skuId": candidate["skuId"], "displayName": f"手机 {index + 1}", "attributes": {"storageGb": 256}}
+                    {
+                        "productId": f"P-{index + 1}",
+                        "skuId": candidate["skuId"],
+                        "displayName": f"手机 {index + 1}",
+                        "attributes": {"storageGb": 256},
+                    }
                     for index, candidate in enumerate(requested)
                 ]
             }
         elif path.endswith("get-price-offers"):
-            data = {"offers": [{"skuId": sku_id, "offerId": f"O-{sku_id}", "salePrice": "2999.00"} for sku_id in payload["input"]["skuIds"]]}
+            data = {
+                "offers": [
+                    {"skuId": sku_id, "offerId": f"O-{sku_id}", "salePrice": "2999.00"}
+                    for sku_id in payload["input"]["skuIds"]
+                ]
+            }
         elif path.endswith("calculate-final-price"):
             data = {
                 "pricePlans": {
-                    offer["skuId"]: [{"pricePlanId": f"PP-{offer['skuId']}", "finalPrice": offer["salePrice"]}]
+                    offer["skuId"]: [
+                        {"pricePlanId": f"PP-{offer['skuId']}", "finalPrice": offer["salePrice"]}
+                    ]
                     for offer in payload["input"]["offers"]
                 }
             }

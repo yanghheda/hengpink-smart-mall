@@ -1,14 +1,34 @@
 {
-  "dataset_version": "commerce-demo-2026.08.1",
+  "dataset_version": "commerce-demo-2026.09.1",
   "updated_at": "2026-08-26T00:00:00Z",
   "categories": [
     {
       "category_id": "PHONE",
-      "dataset_version": "commerce-demo-2026.08.1",
+      "dataset_version": "commerce-demo-2026.09.1",
       "updated_at": "2026-08-26T00:00:00Z",
       "schema_version": "phone-1.0",
       "name": "手机",
       "attributes": ["ramGb", "storageGb", "batteryMah", "color"]
+    },
+    {
+      "category_id": "MONITOR",
+      "dataset_version": "commerce-demo-2026.09.1",
+      "updated_at": "2026-08-26T00:00:00Z",
+      "schema_version": "monitor-1.0",
+      "name": "显示器",
+      "attributes": [
+        "sizeInch",
+        "resolution",
+        "refreshHz",
+        "panelType",
+        "pixelDensityPpi",
+        "colorGamutSrgb",
+        "colorAccuracyDeltaE",
+        "brightnessNit",
+        "eyeCareCertification",
+        "usbCChargingW",
+        "standAdjustable"
+      ]
     }
   ],
   "products": [
@@ -17,7 +37,7 @@
       "category_id": "PHONE",
       "brand": "Northstar",
       "model": "N9A",
-      "dataset_version": "commerce-demo-2026.08.1",
+      "dataset_version": "commerce-demo-2026.09.1",
       "updated_at": "2026-08-26T00:00:00Z"
     },
     {
@@ -25,7 +45,7 @@
       "category_id": "PHONE",
       "brand": "Lumen",
       "model": "L14",
-      "dataset_version": "commerce-demo-2026.08.1",
+      "dataset_version": "commerce-demo-2026.09.1",
       "updated_at": "2026-08-26T00:00:00Z"
     },
     {
@@ -33,7 +53,7 @@
       "category_id": "PHONE",
       "brand": "Orbit",
       "model": "X5",
-      "dataset_version": "commerce-demo-2026.08.1",
+      "dataset_version": "commerce-demo-2026.09.1",
       "updated_at": "2026-08-26T00:00:00Z"
     },
     {
@@ -41,7 +61,7 @@
       "category_id": "PHONE",
       "brand": "Aster",
       "model": "A3",
-      "dataset_version": "commerce-demo-2026.08.1",
+      "dataset_version": "commerce-demo-2026.09.1",
       "updated_at": "2026-08-26T00:00:00Z"
     },
     {
@@ -49,7 +69,7 @@
       "category_id": "PHONE",
       "brand": "Cedar",
       "model": "S1",
-      "dataset_version": "commerce-demo-2026.08.1",
+      "dataset_version": "commerce-demo-2026.09.1",
       "updated_at": "2026-08-26T00:00:00Z"
     },
     {
@@ -57,7 +77,23 @@
       "category_id": "PHONE",
       "brand": "Vale",
       "model": "V8",
-      "dataset_version": "commerce-demo-2026.08.1",
+      "dataset_version": "commerce-demo-2026.09.1",
+      "updated_at": "2026-08-26T00:00:00Z"
+    },
+    {
+      "product_id": "P-CODEVIEW-27",
+      "category_id": "MONITOR",
+      "brand": "CodeView",
+      "model": "C27U",
+      "dataset_version": "commerce-demo-2026.09.1",
+      "updated_at": "2026-08-26T00:00:00Z"
+    },
+    {
+      "product_id": "P-COLORPRO-27",
+      "category_id": "MONITOR",
+      "brand": "ColorPro",
+      "model": "P27Q",
+      "dataset_version": "commerce-demo-2026.09.1",
       "updated_at": "2026-08-26T00:00:00Z"
     }
   ],
@@ -65,7 +101,7 @@
     {
       "sku_id": "S-PIXEL-9A-128-B",
       "product_id": "P-PIXEL-9A",
-      "dataset_version": "commerce-demo-2026.08.1",
+      "dataset_version": "commerce-demo-2026.09.1",
       "updated_at": "2026-08-26T00:00:00Z",
       "attributes": {
         "ramGb": 8,
@@ -77,7 +113,7 @@
     {
       "sku_id": "S-PIXEL-9A-256-W",
       "product_id": "P-PIXEL-9A",
-      "dataset_version": "commerce-demo-2026.08.1",
+      "dataset_version": "commerce-demo-2026.09.1",
       "updated_at": "2026-08-26T00:00:00Z",
       "attributes": {
         "ramGb": 8,
@@ -89,7 +125,7 @@
     {
       "sku_id": "S-LUMEN-14-128-G",
       "product_id": "P-LUMEN-14",
-      "dataset_version": "commerce-demo-2026.08.1",
+      "dataset_version": "commerce-demo-2026.09.1",
       "updated_at": "2026-08-26T00:00:00Z",
       "attributes": {
         "ramGb": 12,
@@ -101,7 +137,7 @@
     {
       "sku_id": "S-LUMEN-14-256-B",
       "product_id": "P-LUMEN-14",
-      "dataset_version": "commerce-demo-2026.08.1",
+      "dataset_version": "commerce-demo-2026.09.1",
       "updated_at": "2026-08-26T00:00:00Z",
       "attributes": {
         "ramGb": 12,
@@ -113,7 +149,7 @@
     {
       "sku_id": "S-ORBIT-X5-256-B",
       "product_id": "P-ORBIT-X5",
-      "dataset_version": "commerce-demo-2026.08.1",
+      "dataset_version": "commerce-demo-2026.09.1",
       "updated_at": "2026-08-26T00:00:00Z",
       "attributes": {
         "ramGb": 12,
@@ -125,7 +161,7 @@
     {
       "sku_id": "S-ORBIT-X5-512-S",
       "product_id": "P-ORBIT-X5",
-      "dataset_version": "commerce-demo-2026.08.1",
+      "dataset_version": "commerce-demo-2026.09.1",
       "updated_at": "2026-08-26T00:00:00Z",
       "attributes": {
         "ramGb": 16,
@@ -137,7 +173,7 @@
     {
       "sku_id": "S-ASTER-3-128-B",
       "product_id": "P-ASTER-3",
-      "dataset_version": "commerce-demo-2026.08.1",
+      "dataset_version": "commerce-demo-2026.09.1",
       "updated_at": "2026-08-26T00:00:00Z",
       "attributes": {
         "ramGb": 8,
@@ -149,7 +185,7 @@
     {
       "sku_id": "S-ASTER-3-256-P",
       "product_id": "P-ASTER-3",
-      "dataset_version": "commerce-demo-2026.08.1",
+      "dataset_version": "commerce-demo-2026.09.1",
       "updated_at": "2026-08-26T00:00:00Z",
       "attributes": {
         "ramGb": 12,
@@ -161,7 +197,7 @@
     {
       "sku_id": "S-CEDAR-S-128-W",
       "product_id": "P-CEDAR-S",
-      "dataset_version": "commerce-demo-2026.08.1",
+      "dataset_version": "commerce-demo-2026.09.1",
       "updated_at": "2026-08-26T00:00:00Z",
       "attributes": {
         "ramGb": 8,
@@ -173,7 +209,7 @@
     {
       "sku_id": "S-CEDAR-S-256-B",
       "product_id": "P-CEDAR-S",
-      "dataset_version": "commerce-demo-2026.08.1",
+      "dataset_version": "commerce-demo-2026.09.1",
       "updated_at": "2026-08-26T00:00:00Z",
       "attributes": {
         "ramGb": 12,
@@ -185,7 +221,7 @@
     {
       "sku_id": "S-VALE-8-128-B",
       "product_id": "P-VALE-8",
-      "dataset_version": "commerce-demo-2026.08.1",
+      "dataset_version": "commerce-demo-2026.09.1",
       "updated_at": "2026-08-26T00:00:00Z",
       "attributes": {
         "ramGb": 8,
@@ -197,7 +233,7 @@
     {
       "sku_id": "S-VALE-8-256-B",
       "product_id": "P-VALE-8",
-      "dataset_version": "commerce-demo-2026.08.1",
+      "dataset_version": "commerce-demo-2026.09.1",
       "updated_at": "2026-08-26T00:00:00Z",
       "attributes": {
         "ramGb": 12,
@@ -205,19 +241,95 @@
         "batteryMah": 4600,
         "color": "blue"
       }
+    },
+    {
+      "sku_id": "S-CODEVIEW-27-BASE",
+      "product_id": "P-CODEVIEW-27",
+      "dataset_version": "commerce-demo-2026.09.1",
+      "updated_at": "2026-08-26T00:00:00Z",
+      "attributes": {
+        "sizeInch": 27,
+        "resolution": "4K",
+        "refreshHz": 60,
+        "panelType": "IPS",
+        "pixelDensityPpi": 163,
+        "colorGamutSrgb": 100,
+        "colorAccuracyDeltaE": 1.8,
+        "brightnessNit": 350,
+        "eyeCareCertification": true,
+        "usbCChargingW": 65,
+        "standAdjustable": false
+      }
+    },
+    {
+      "sku_id": "S-CODEVIEW-27-ERGONOMIC",
+      "product_id": "P-CODEVIEW-27",
+      "dataset_version": "commerce-demo-2026.09.1",
+      "updated_at": "2026-08-26T00:00:00Z",
+      "attributes": {
+        "sizeInch": 27,
+        "resolution": "4K",
+        "refreshHz": 60,
+        "panelType": "IPS",
+        "pixelDensityPpi": 163,
+        "colorGamutSrgb": 100,
+        "colorAccuracyDeltaE": 1.8,
+        "brightnessNit": 350,
+        "eyeCareCertification": true,
+        "usbCChargingW": 90,
+        "standAdjustable": true
+      }
+    },
+    {
+      "sku_id": "S-COLORPRO-27-BASE",
+      "product_id": "P-COLORPRO-27",
+      "dataset_version": "commerce-demo-2026.09.1",
+      "updated_at": "2026-08-26T00:00:00Z",
+      "attributes": {
+        "sizeInch": 27,
+        "resolution": "2K",
+        "refreshHz": 165,
+        "panelType": "IPS",
+        "pixelDensityPpi": 109,
+        "colorGamutSrgb": 100,
+        "colorAccuracyDeltaE": 1.5,
+        "brightnessNit": 400,
+        "eyeCareCertification": true,
+        "usbCChargingW": 0,
+        "standAdjustable": false
+      }
+    },
+    {
+      "sku_id": "S-COLORPRO-27-STAND",
+      "product_id": "P-COLORPRO-27",
+      "dataset_version": "commerce-demo-2026.09.1",
+      "updated_at": "2026-08-26T00:00:00Z",
+      "attributes": {
+        "sizeInch": 27,
+        "resolution": "2K",
+        "refreshHz": 165,
+        "panelType": "IPS",
+        "pixelDensityPpi": 109,
+        "colorGamutSrgb": 100,
+        "colorAccuracyDeltaE": 1.5,
+        "brightnessNit": 400,
+        "eyeCareCertification": true,
+        "usbCChargingW": 0,
+        "standAdjustable": true
+      }
     }
   ],
   "shops": [
     {
       "shop_id": "SHOP-DIRECT",
       "name": "品牌直营店",
-      "dataset_version": "commerce-demo-2026.08.1",
+      "dataset_version": "commerce-demo-2026.09.1",
       "updated_at": "2026-08-26T00:00:00Z"
     },
     {
       "shop_id": "SHOP-CARE",
       "name": "安心数码店",
-      "dataset_version": "commerce-demo-2026.08.1",
+      "dataset_version": "commerce-demo-2026.09.1",
       "updated_at": "2026-08-26T00:00:00Z"
     }
   ],
@@ -234,7 +346,7 @@
       "valid_from": "2026-08-01T00:00:00Z",
       "valid_to": "2026-09-01T00:00:00Z",
       "version": 0,
-      "dataset_version": "commerce-demo-2026.08.1",
+      "dataset_version": "commerce-demo-2026.09.1",
       "updated_at": "2026-08-26T00:00:00Z"
     },
     {
@@ -249,7 +361,7 @@
       "valid_from": "2026-08-01T00:00:00Z",
       "valid_to": "2026-09-01T00:00:00Z",
       "version": 0,
-      "dataset_version": "commerce-demo-2026.08.1",
+      "dataset_version": "commerce-demo-2026.09.1",
       "updated_at": "2026-08-26T00:00:00Z"
     },
     {
@@ -264,7 +376,7 @@
       "valid_from": "2026-08-01T00:00:00Z",
       "valid_to": "2026-09-01T00:00:00Z",
       "version": 0,
-      "dataset_version": "commerce-demo-2026.08.1",
+      "dataset_version": "commerce-demo-2026.09.1",
       "updated_at": "2026-08-26T00:00:00Z"
     },
     {
@@ -279,7 +391,7 @@
       "valid_from": "2026-08-01T00:00:00Z",
       "valid_to": "2026-09-01T00:00:00Z",
       "version": 0,
-      "dataset_version": "commerce-demo-2026.08.1",
+      "dataset_version": "commerce-demo-2026.09.1",
       "updated_at": "2026-08-26T00:00:00Z"
     },
     {
@@ -294,7 +406,7 @@
       "valid_from": "2026-08-01T00:00:00Z",
       "valid_to": "2026-09-01T00:00:00Z",
       "version": 0,
-      "dataset_version": "commerce-demo-2026.08.1",
+      "dataset_version": "commerce-demo-2026.09.1",
       "updated_at": "2026-08-26T00:00:00Z"
     },
     {
@@ -309,7 +421,7 @@
       "valid_from": "2026-08-01T00:00:00Z",
       "valid_to": "2026-09-01T00:00:00Z",
       "version": 0,
-      "dataset_version": "commerce-demo-2026.08.1",
+      "dataset_version": "commerce-demo-2026.09.1",
       "updated_at": "2026-08-26T00:00:00Z"
     },
     {
@@ -324,7 +436,7 @@
       "valid_from": "2026-08-01T00:00:00Z",
       "valid_to": "2026-09-01T00:00:00Z",
       "version": 0,
-      "dataset_version": "commerce-demo-2026.08.1",
+      "dataset_version": "commerce-demo-2026.09.1",
       "updated_at": "2026-08-26T00:00:00Z"
     },
     {
@@ -339,7 +451,7 @@
       "valid_from": "2026-08-01T00:00:00Z",
       "valid_to": "2026-09-01T00:00:00Z",
       "version": 0,
-      "dataset_version": "commerce-demo-2026.08.1",
+      "dataset_version": "commerce-demo-2026.09.1",
       "updated_at": "2026-08-26T00:00:00Z"
     },
     {
@@ -354,7 +466,7 @@
       "valid_from": "2026-08-01T00:00:00Z",
       "valid_to": "2026-09-01T00:00:00Z",
       "version": 0,
-      "dataset_version": "commerce-demo-2026.08.1",
+      "dataset_version": "commerce-demo-2026.09.1",
       "updated_at": "2026-08-26T00:00:00Z"
     },
     {
@@ -369,7 +481,7 @@
       "valid_from": "2026-08-01T00:00:00Z",
       "valid_to": "2026-09-01T00:00:00Z",
       "version": 0,
-      "dataset_version": "commerce-demo-2026.08.1",
+      "dataset_version": "commerce-demo-2026.09.1",
       "updated_at": "2026-08-26T00:00:00Z"
     },
     {
@@ -384,7 +496,7 @@
       "valid_from": "2026-08-01T00:00:00Z",
       "valid_to": "2026-09-01T00:00:00Z",
       "version": 0,
-      "dataset_version": "commerce-demo-2026.08.1",
+      "dataset_version": "commerce-demo-2026.09.1",
       "updated_at": "2026-08-26T00:00:00Z"
     },
     {
@@ -399,7 +511,67 @@
       "valid_from": "2026-08-01T00:00:00Z",
       "valid_to": "2026-09-01T00:00:00Z",
       "version": 0,
-      "dataset_version": "commerce-demo-2026.08.1",
+      "dataset_version": "commerce-demo-2026.09.1",
+      "updated_at": "2026-08-26T00:00:00Z"
+    },
+    {
+      "offer_id": "O-CODEVIEW-BASE",
+      "sku_id": "S-CODEVIEW-27-BASE",
+      "shop_id": "SHOP-DIRECT",
+      "list_price": "2199.00",
+      "price": "1999.00",
+      "additional_fee": "0.00",
+      "currency": "CNY",
+      "stock_status": "IN_STOCK",
+      "valid_from": "2026-08-01T00:00:00Z",
+      "valid_to": "2026-09-01T00:00:00Z",
+      "version": 0,
+      "dataset_version": "commerce-demo-2026.09.1",
+      "updated_at": "2026-08-26T00:00:00Z"
+    },
+    {
+      "offer_id": "O-CODEVIEW-ERGONOMIC",
+      "sku_id": "S-CODEVIEW-27-ERGONOMIC",
+      "shop_id": "SHOP-DIRECT",
+      "list_price": "2499.00",
+      "price": "2299.00",
+      "additional_fee": "0.00",
+      "currency": "CNY",
+      "stock_status": "IN_STOCK",
+      "valid_from": "2026-08-01T00:00:00Z",
+      "valid_to": "2026-09-01T00:00:00Z",
+      "version": 0,
+      "dataset_version": "commerce-demo-2026.09.1",
+      "updated_at": "2026-08-26T00:00:00Z"
+    },
+    {
+      "offer_id": "O-COLORPRO-BASE",
+      "sku_id": "S-COLORPRO-27-BASE",
+      "shop_id": "SHOP-CARE",
+      "list_price": "1899.00",
+      "price": "1699.00",
+      "additional_fee": "0.00",
+      "currency": "CNY",
+      "stock_status": "IN_STOCK",
+      "valid_from": "2026-08-01T00:00:00Z",
+      "valid_to": "2026-09-01T00:00:00Z",
+      "version": 0,
+      "dataset_version": "commerce-demo-2026.09.1",
+      "updated_at": "2026-08-26T00:00:00Z"
+    },
+    {
+      "offer_id": "O-COLORPRO-STAND",
+      "sku_id": "S-COLORPRO-27-STAND",
+      "shop_id": "SHOP-CARE",
+      "list_price": "2099.00",
+      "price": "1899.00",
+      "additional_fee": "0.00",
+      "currency": "CNY",
+      "stock_status": "IN_STOCK",
+      "valid_from": "2026-08-01T00:00:00Z",
+      "valid_to": "2026-09-01T00:00:00Z",
+      "version": 0,
+      "dataset_version": "commerce-demo-2026.09.1",
       "updated_at": "2026-08-26T00:00:00Z"
     }
   ],
@@ -410,7 +582,25 @@
       "sku_id": "S-PIXEL-9A-128-B",
       "rating": 5,
       "text": "续航稳定，长辈模式清晰。",
-      "dataset_version": "commerce-demo-2026.08.1",
+      "dataset_version": "commerce-demo-2026.09.1",
+      "updated_at": "2026-08-26T00:00:00Z"
+    },
+    {
+      "review_id": "R-CODEVIEW-1",
+      "product_id": "P-CODEVIEW-27",
+      "sku_id": "S-CODEVIEW-27-ERGONOMIC",
+      "rating": 5,
+      "text": "4K 文本细腻，支架调节范围适合长时间编程。",
+      "dataset_version": "commerce-demo-2026.09.1",
+      "updated_at": "2026-08-26T00:00:00Z"
+    },
+    {
+      "review_id": "R-COLORPRO-1",
+      "product_id": "P-COLORPRO-27",
+      "sku_id": "S-COLORPRO-27-STAND",
+      "rating": 4,
+      "text": "高刷新操作流畅，色彩稳定，但像素密度低于同尺寸 4K。",
+      "dataset_version": "commerce-demo-2026.09.1",
       "updated_at": "2026-08-26T00:00:00Z"
     }
   ],
@@ -426,7 +616,7 @@
       "trust_level": 0.95,
       "published_at": "2026-07-01T00:00:00Z",
       "content": "256GB 白色版本配备 5100mAh 电池，支持大字体与简易模式。规格仅适用于该 SKU。",
-      "dataset_version": "commerce-demo-2026.08.1",
+      "dataset_version": "commerce-demo-2026.09.1",
       "is_simulated": true,
       "updated_at": "2026-08-26T00:00:00Z"
     },
@@ -441,7 +631,7 @@
       "trust_level": 0.7,
       "published_at": "2026-07-08T00:00:00Z",
       "content": "模拟用户反馈：长辈模式入口清晰，连续日常通讯后剩余电量表现稳定。该内容为单条模拟评价。",
-      "dataset_version": "commerce-demo-2026.08.1",
+      "dataset_version": "commerce-demo-2026.09.1",
       "is_simulated": true,
       "updated_at": "2026-08-26T00:00:00Z"
     },
@@ -456,7 +646,7 @@
       "trust_level": 0.85,
       "published_at": "2026-07-10T00:00:00Z",
       "content": "问：是否可以放大字体和桌面图标？答：产品级系统说明支持大字体和简易桌面，具体入口以演示系统设置为准。",
-      "dataset_version": "commerce-demo-2026.08.1",
+      "dataset_version": "commerce-demo-2026.09.1",
       "is_simulated": true,
       "updated_at": "2026-08-26T00:00:00Z"
     },
@@ -471,7 +661,7 @@
       "trust_level": 0.9,
       "published_at": "2026-07-12T00:00:00Z",
       "content": "模拟售后条款：整机提供十二个月有限保修。人为损坏不在保修范围内，送修前应备份个人数据。",
-      "dataset_version": "commerce-demo-2026.08.1",
+      "dataset_version": "commerce-demo-2026.09.1",
       "is_simulated": true,
       "updated_at": "2026-08-26T00:00:00Z"
     },
@@ -486,7 +676,37 @@
       "trust_level": 0.8,
       "published_at": "2026-07-15T00:00:00Z",
       "content": "模拟专业摘要：日间家庭拍照曝光稳定，界面操作较直接；低照度细节属于中等水平，不应据此宣称旗舰影像能力。",
-      "dataset_version": "commerce-demo-2026.08.1",
+      "dataset_version": "commerce-demo-2026.09.1",
+      "is_simulated": true,
+      "updated_at": "2026-08-26T00:00:00Z"
+    },
+    {
+      "evidence_id": "EV-CODEVIEW-SPEC-001",
+      "product_id": "P-CODEVIEW-27",
+      "sku_id": "S-CODEVIEW-27-ERGONOMIC",
+      "category_id": "MONITOR",
+      "source_type": "SPECIFICATION",
+      "topic": "coding",
+      "sentiment": null,
+      "trust_level": 0.95,
+      "published_at": "2026-07-18T00:00:00Z",
+      "content": "模拟规格：27 英寸 4K IPS 面板，像素密度 163ppi，人体工学版本支持升降旋转与 90W USB-C 供电。",
+      "dataset_version": "commerce-demo-2026.09.1",
+      "is_simulated": true,
+      "updated_at": "2026-08-26T00:00:00Z"
+    },
+    {
+      "evidence_id": "EV-COLORPRO-SUMMARY-001",
+      "product_id": "P-COLORPRO-27",
+      "sku_id": null,
+      "category_id": "MONITOR",
+      "source_type": "EXPERT_SUMMARY",
+      "topic": "color",
+      "sentiment": "MIXED",
+      "trust_level": 0.82,
+      "published_at": "2026-07-20T00:00:00Z",
+      "content": "模拟专业摘要：sRGB 覆盖完整且色准稳定，165Hz 操作流畅；2K 分辨率用于精细修图时不如同尺寸 4K 细腻。",
+      "dataset_version": "commerce-demo-2026.09.1",
       "is_simulated": true,
       "updated_at": "2026-08-26T00:00:00Z"
     }

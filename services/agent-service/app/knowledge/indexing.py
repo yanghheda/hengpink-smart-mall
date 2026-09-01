@@ -30,9 +30,9 @@ def build_points(chunks: list[dict[str, Any]]) -> list[dict[str, Any]]:
         payload = dict(chunk)
         payload["embedding_model"] = EMBEDDING_MODEL
         payload["embedding_version"] = EMBEDDING_VERSION
-        payload["injection_flag"] = bool(chunk.get("injection_flag", False)) or scan_prompt_injection(
-            str(chunk.get("content", ""))
-        )
+        payload["injection_flag"] = bool(
+            chunk.get("injection_flag", False)
+        ) or scan_prompt_injection(str(chunk.get("content", "")))
         points.append(
             {
                 "id": _point_id(chunk["chunk_id"]),

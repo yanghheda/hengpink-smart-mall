@@ -5,25 +5,22 @@ import com.hengpick.mall.catalog.domain.CatalogSearchCandidate;
 import com.hengpick.mall.catalog.domain.CatalogSearchCandidatePort;
 import com.hengpick.mall.catalog.domain.CatalogSearchCriteria;
 import com.hengpick.mall.catalog.domain.CatalogSearchResult;
+import com.hengpick.mall.catalog.domain.CategorySearchSchemaPort;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
 @Service
 @Profile("database")
 public class CatalogSearchService {
-    private static final Map<String, Set<String>> PHONE_OPERATORS = Map.of(
-            "batteryMah", Set.of(">=", "<="), "ramGb", Set.of(">=", "="),
-            "storageGb", Set.of(">=", "="), "weightG", Set.of("<="),
-            "ois", Set.of("="), "simpleMode", Set.of("="));
     private final CatalogSearchCandidatePort candidatePort;
+    private final CategorySearchSchemaPort schemaPort;
 
-    public CatalogSearchService(CatalogSearchCandidatePort candidatePort) {
+    public CatalogSearchService(CatalogSearchCandidatePort candidatePort, CategorySearchSchemaPort schemaPort) {
         this.candidatePort = candidatePort;
+        this.schemaPort = schemaPort;
     }
 
     public CatalogSearchResult search(CatalogSearchCriteria criteria) {
@@ -45,17 +42,15 @@ public class CatalogSearchService {
         if (criteria == null || criteria.categoryId() == null || criteria.categoryId().isBlank()) {
             throw new IllegalArgumentException("类目不能为空");
         }
-        if (!"PHONE".equals(criteria.categoryId())) {
-            throw new IllegalArgumentException("当前阶段只支持手机类目");
-        }
         if (criteria.minPrice() != null && criteria.maxPrice() != null
                 && criteria.minPrice().compareTo(criteria.maxPrice()) > 0) {
             throw new IllegalArgumentException("最低预算不能高于最高预算");
         }
+        var schema = schemaPort.findSearchSchema(criteria.categoryId());
         for (var constraint : criteria.attributes()) {
-            var operators = PHONE_OPERATORS.get(constraint.attribute());
+            var operators = schema.hardConstraintOperators().get(constraint.attribute());
             if (operators == null || !operators.contains(constraint.operator())) {
-                throw new IllegalArgumentException("属性或操作符不受手机类目支持");
+                throw new IllegalArgumentException("属性或操作符不受当前类目 Schema 支持");
             }
         }
     }

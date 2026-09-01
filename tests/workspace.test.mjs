@@ -17,7 +17,7 @@ test("root workspace exposes the four P01-S01 applications", async () => {
   );
   assert.equal(
     root.scripts.check,
-    "npm run contract:check && npm run bridge:check && npm run tokens:check && npm run dataset:check && npm run format:check && npm run build:js && npm test && npm run test:services",
+    "npm run contract:check && npm run bridge:check && npm run tokens:check && npm run dataset:check && npm run eval:smoke && npm run format:check && npm run build:js && npm test && npm run test:services",
   );
   for (const script of [
     "contract:validate",
@@ -33,6 +33,9 @@ test("root workspace exposes the four P01-S01 applications", async () => {
     "tokens:typecheck",
     "tokens:check",
     "dataset:check",
+    "eval:smoke",
+    "perf:benchmark",
+    "drill:failure",
   ]) {
     assert.equal(typeof root.scripts[script], "string");
   }

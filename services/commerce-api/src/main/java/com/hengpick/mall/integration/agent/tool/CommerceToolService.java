@@ -171,6 +171,7 @@ public final class CommerceToolService {
         var cards = result.ranked().stream().limit(3).map(item -> Map.of(
                 "skuId", item.scoreCard().skuId(),
                 "finalScore", item.scoreCard().finalScore().toPlainString(),
+                "finalPrice", item.finalPrice().toPlainString(),
                 "confidence", item.scoreCard().confidence().score().toPlainString(),
                 "scoreCard", item.scoreCard())).toList();
         return Map.of("scoreCards", cards);

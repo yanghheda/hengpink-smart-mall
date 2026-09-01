@@ -1,0 +1,53 @@
+{
+  "metadata": {
+    "datasetVersion": "commerce-demo-2026.08.1",
+    "scoringVersion": "scoring-v1"
+  },
+  "scenarios": [
+    {
+      "name": "h5-first-screen",
+      "url": "http://127.0.0.1:5173/",
+      "method": "GET",
+      "warmups": 3,
+      "iterations": 30,
+      "expectedStatuses": [200],
+      "timeoutSeconds": 3
+    },
+    {
+      "name": "product-search",
+      "url": "http://127.0.0.1:8080/api/v1/products/search",
+      "method": "POST",
+      "body": {
+        "categoryId": "PHONE",
+        "keywords": ["续航"],
+        "limit": 10
+      },
+      "warmups": 3,
+      "iterations": 30,
+      "expectedStatuses": [200],
+      "timeoutSeconds": 3
+    },
+    {
+      "name": "reweight",
+      "url": "http://127.0.0.1:8080/api/v1/decision-sessions/请替换/weights",
+      "method": "PUT",
+      "headers": {
+        "Authorization": "Bearer 请替换"
+      },
+      "body": {
+        "reportVersion": 1,
+        "weights": {
+          "NEED_MATCH": 0.3,
+          "PRICE_VALUE": 0.2,
+          "REVIEW_QUALITY": 0.25,
+          "PROMOTION_VALUE": 0.1,
+          "RELIABILITY": 0.15
+        }
+      },
+      "warmups": 3,
+      "iterations": 30,
+      "expectedStatuses": [200],
+      "timeoutSeconds": 3
+    }
+  ]
+}

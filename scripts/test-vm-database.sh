@@ -17,6 +17,7 @@ vm_mysql_port="${VM_MYSQL_TUNNEL_PORT:-13306}"
 vm_mysql_user="${VM_MYSQL_ADMIN_USER:-root}"
 run_suffix="$(date -u +%Y%m%d%H%M%S)_$$"
 created_databases=()
+cleanup_registered=false
 
 mysql_admin() {
   MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysql \
@@ -33,7 +34,6 @@ cleanup() {
     mysql_admin --execute="DROP DATABASE IF EXISTS \`$database_name\`;" >/dev/null || true
   done
 }
-trap cleanup EXIT
 
 run_test_class() {
   local test_class="$1"
@@ -45,6 +45,10 @@ run_test_class() {
 
   mysql_admin --execute="CREATE DATABASE \`$database_name\` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;"
   created_databases+=("$database_name")
+  if [[ "$cleanup_registered" == false ]]; then
+    trap cleanup EXIT
+    cleanup_registered=true
+  fi
 
   VM_DATABASE_INTEGRATION=true \
   MYSQL_URL="jdbc:mysql://${vm_mysql_host}:${vm_mysql_port}/${database_name}?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true" \
@@ -61,5 +65,6 @@ run_test_class DatabaseMigrationIntegrationTest migration
 run_test_class AuthMapperIntegrationTest identity
 run_test_class CatalogMapperIntegrationTest catalog
 run_test_class OfferMapperIntegrationTest pricing
+run_test_class DecisionSubmissionMapperIntegrationTest decision
 
 printf '%s\n' 'VM 数据库迁移与 Mapper 集成测试全部通过。'

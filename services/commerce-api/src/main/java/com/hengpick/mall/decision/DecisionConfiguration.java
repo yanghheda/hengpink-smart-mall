@@ -5,6 +5,7 @@ import com.hengpick.mall.decision.application.DecisionRunService;
 import com.hengpick.mall.decision.application.DecisionSessionQueryService;
 import com.hengpick.mall.decision.application.DecisionStreamQueryService;
 import com.hengpick.mall.decision.application.DecisionTraceService;
+import com.hengpick.mall.decision.application.RecommendationCallbackReportPublisher;
 import com.hengpick.mall.decision.domain.DecisionRunRepository;
 import com.hengpick.mall.decision.domain.DecisionSessionSnapshotRepository;
 import com.hengpick.mall.decision.domain.DecisionStreamAccessRepository;
@@ -13,6 +14,8 @@ import com.hengpick.mall.identity.application.ObjectAccessGuard;
 import com.hengpick.mall.decision.event.DecisionEventPublisher;
 import com.hengpick.mall.decision.event.DecisionStreamStore;
 import com.hengpick.mall.decision.infrastructure.RedisDecisionStreamStore;
+import com.hengpick.mall.decision.infrastructure.DecisionMapper;
+import com.hengpick.mall.recommendation.application.RecommendationReportService;
 import com.hengpick.mall.decision.web.DecisionSseService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hengpick.mall.integration.agent.AgentProtocolProperties;
@@ -30,6 +33,12 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 @Configuration
 @Profile("database")
 public class DecisionConfiguration {
+    @Bean
+    RecommendationCallbackReportPublisher recommendationCallbackReportPublisher(
+            DecisionMapper mapper, RecommendationReportService reportService, ObjectMapper objectMapper) {
+        return new RecommendationCallbackReportPublisher(mapper, reportService, objectMapper);
+    }
+
     @Bean
     DecisionTraceService decisionTraceService(DecisionTraceRepository repository, ObjectAccessGuard accessGuard) {
         return new DecisionTraceService(repository, accessGuard);

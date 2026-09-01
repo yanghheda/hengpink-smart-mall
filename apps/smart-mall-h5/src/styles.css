@@ -134,6 +134,82 @@ button,
   font-weight: 700;
 }
 
+.analysis-progress,
+.report-section,
+.weights-panel {
+  background: #f6fbfa;
+  border: 1px solid #cce5df;
+  border-radius: 18px;
+  margin-top: 24px;
+  padding: 20px;
+}
+
+.progress-title,
+.report-heading,
+.recommendation-title,
+.weight-row {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.analysis-progress progress {
+  accent-color: var(--primary);
+  margin-top: 12px;
+  width: 100%;
+}
+
+.report-heading h2,
+.weights-panel h3 {
+  margin: 8px 0;
+}
+
+.recommendation-list {
+  display: grid;
+  gap: 14px;
+  list-style: none;
+  padding: 0;
+}
+
+.recommendation-card {
+  background: white;
+  border: 1px solid #dbe9e6;
+  border-radius: 16px;
+  padding: 18px;
+}
+
+.recommendation-card small {
+  color: #647976;
+  display: block;
+  margin-top: 4px;
+}
+
+.price {
+  color: #b45309;
+  font-size: 1.35rem;
+  font-weight: 900;
+  margin: 12px 0 4px;
+}
+
+.weight-row {
+  margin: 10px 0;
+}
+
+.weight-row span {
+  font-size: 0.8rem;
+  width: 132px;
+}
+
+.weight-row input {
+  flex: 1;
+}
+
+.weight-row output {
+  text-align: right;
+  width: 20px;
+}
+
 .quick-section {
   margin-top: 34px;
 }
@@ -247,6 +323,11 @@ button,
   .trace-grid,
   .trace-summaries {
     grid-template-columns: 1fr;
+  }
+  .report-heading,
+  .recommendation-title {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }
 

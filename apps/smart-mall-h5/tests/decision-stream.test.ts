@@ -140,6 +140,36 @@ describe("Decision SSE", () => {
     expect(result).toEqual(terminalSnapshot);
   });
 
+  it("SSE 正常结束后立即读取 MySQL 终态，不做无意义重连", async () => {
+    const fetchSnapshot = vi
+      .fn()
+      .mockResolvedValueOnce({
+        sessionId: "session-1",
+        currentRunId: "run-1",
+        currentRunVersion: 1,
+        status: "RUNNING",
+        currentReportVersion: null,
+      })
+      .mockResolvedValueOnce({
+        sessionId: "session-1",
+        currentRunId: "run-1",
+        currentRunVersion: 1,
+        status: "COMPLETED",
+        currentReportVersion: 1,
+      });
+    const consumeStream = vi.fn().mockResolvedValue(undefined);
+
+    const result = await recoverDecisionSession({
+      fetchSnapshot,
+      consumeStream,
+      onSnapshot: vi.fn(),
+      onTransportState: vi.fn(),
+    });
+
+    expect(consumeStream).toHaveBeenCalledTimes(1);
+    expect(result.status).toBe("COMPLETED");
+  });
+
   it("快照查询携带 H5 认证且只返回 data", async () => {
     const snapshot = {
       sessionId: "session-1",

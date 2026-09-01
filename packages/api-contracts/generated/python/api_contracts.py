@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-# 契约源摘要：8b187de1281560d47f983120e9f3d7c03658425386a4d7f0baca1f8eb9778afe
+# 契约源摘要：11822ef10cdcf654a04a8df56b4648dc99a448efd1603728cd1f3036b8274049
 from typing import Literal, NotRequired, TypedDict
 
 
@@ -112,9 +112,55 @@ class DecisionSessionSnapshot(TypedDict):
     currentReportVersion: NotRequired[int | None]
 
 
+class StartDecisionRequest(TypedDict):
+    requirement: str
+
+
+class StartedDecision(TypedDict):
+    sessionId: str
+    runId: str
+    runVersion: int
+    status: Literal["RUNNING"]
+
+
+class StartedDecisionResponse(TypedDict):
+    requestId: str
+    data: StartedDecision
+    meta: ResponseMeta
+
+
 class DecisionSessionSnapshotResponse(TypedDict):
     requestId: str
     data: DecisionSessionSnapshot
+    meta: ResponseMeta
+
+
+class ReweightRequest(TypedDict):
+    reportVersion: int
+    weights: dict[str, object]
+
+
+class ReweightedCandidate(TypedDict):
+    rank: int
+    productId: str
+    skuId: str
+    finalScore: float
+    pricePlanId: str
+    finalPrice: str
+
+
+class ReweightResult(TypedDict):
+    sessionId: str
+    version: int
+    selectedSkuId: str
+    weights: dict[str, object]
+    recommendations: list[ReweightedCandidate]
+    generationType: str
+
+
+class ReweightResponse(TypedDict):
+    requestId: str
+    data: ReweightResult
     meta: ResponseMeta
 
 

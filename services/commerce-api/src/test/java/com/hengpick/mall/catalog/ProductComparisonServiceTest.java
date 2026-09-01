@@ -59,6 +59,26 @@ class ProductComparisonServiceTest {
     }
 
     @Test
+    void monitorComparisonRowsComeFromMonitorSchema() {
+        var monitorSchema = new CategoryComparisonSchema(
+                "MONITOR",
+                "monitor-1.0",
+                List.of(
+                        new CategoryComparisonSchema.Attribute("sizeInch", "尺寸", "inch", true),
+                        new CategoryComparisonSchema.Attribute("resolution", "分辨率", null, true),
+                        new CategoryComparisonSchema.Attribute("batteryMah", "手机电池", "mAh", false)));
+        var service = serviceWithSchema(List.of(
+                candidate("M-1", "MONITOR", Map.of("sizeInch", 27, "resolution", "4K")),
+                candidate("M-2", "MONITOR", Map.of("sizeInch", 32, "resolution", "2K"))), monitorSchema);
+
+        var result = service.compare(List.of("M-1", "M-2"), ComparisonMode.ALL);
+
+        assertThat(result.schemaVersion()).isEqualTo("monitor-1.0");
+        assertThat(result.rows()).extracting(row -> row.attributeKey())
+                .containsExactly("sizeInch", "resolution");
+    }
+
+    @Test
     void rejectsCandidatesFromDifferentCategories() {
         var service = service(List.of(
                 candidate("S-1", "PHONE", Map.of()),
@@ -81,6 +101,11 @@ class ProductComparisonServiceTest {
     }
 
     private ProductComparisonService service(List<ComparisonCandidate> candidates) {
+        return serviceWithSchema(candidates, PHONE_SCHEMA);
+    }
+
+    private ProductComparisonService serviceWithSchema(
+            List<ComparisonCandidate> candidates, CategoryComparisonSchema schema) {
         ProductComparisonPort port = new ProductComparisonPort() {
             @Override
             public List<ComparisonCandidate> findCandidates(List<String> skuIds) {
@@ -89,7 +114,7 @@ class ProductComparisonServiceTest {
 
             @Override
             public CategoryComparisonSchema findSchema(String categoryId) {
-                return PHONE_SCHEMA;
+                return schema;
             }
         };
         return new ProductComparisonService(port);

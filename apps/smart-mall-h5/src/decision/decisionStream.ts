@@ -159,6 +159,12 @@ export async function recoverDecisionSession({
     onTransportState(failures === 0 ? "STREAMING" : "RECONNECTING");
     try {
       await consumeStream();
+      snapshot = await fetchSnapshot();
+      onSnapshot(snapshot);
+      if (terminalStatuses.has(snapshot.status)) {
+        onTransportState("STOPPED");
+        return snapshot;
+      }
     } catch {
       // 连接失败由状态切换显式呈现，达到阈值后由 MySQL 轮询接管。
     }

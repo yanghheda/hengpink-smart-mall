@@ -1,4 +1,4 @@
-.PHONY: install start-commerce-app start-smart-mall-h5 start-commerce-api start-agent-service infra-up infra-down infra-status db-migrate db-seed rag-index eval-golden eval-smoke eval-demo test-db-integration test check
+.PHONY: install start-commerce-app start-smart-mall-h5 start-commerce-api start-agent-service infra-up infra-down infra-status db-migrate db-seed rag-index eval-golden eval-smoke eval-demo perf-benchmark failure-drill test-db-integration test check
 
 install:
 	npm ci
@@ -46,6 +46,12 @@ eval-smoke:
 
 eval-demo:
 	npm run eval:demo
+
+perf-benchmark:
+	python3 scripts/performance_benchmark.py --config "$$CONFIG" --output "$$OUTPUT"
+
+failure-drill:
+	python3 scripts/failure_drill.py --config "$$CONFIG" --scenario "$$SCENARIO" --output "$$OUTPUT" --execute
 
 test-db-integration:
 	./scripts/test-vm-database.sh

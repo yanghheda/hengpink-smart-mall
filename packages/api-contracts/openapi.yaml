@@ -396,8 +396,70 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+  /api/v1/decision-sessions:
+    post:
+      operationId: startDecisionSession
+      summary: 保存用户原始需求并启动首次确定性决策 Run
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StartDecisionRequest" }
+      responses:
+        "200":
+          description: 返回已原子落库并提交 Agent 的 Session 与 Run 标识
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StartedDecisionResponse" }
+        "400":
+          description: 购买需求为空或超过长度限制
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+        "401":
+          description: H5 Access Token 无效或过期
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorEnvelope" }
         "404":
           description: Session 不存在或无权访问
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+  /api/v1/decision-sessions/{sessionId}/weights:
+    put:
+      operationId: reweightDecisionReport
+      summary: 使用保存的 Java 五维分确定性重排并生成新报告版本
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: sessionId
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 64 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReweightRequest" }
+      responses:
+        "200":
+          description: 返回新报告版本、归一化权重和 Java 确定性排序
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ReweightResponse" }
+        "400":
+          description: 请求非法、报告不存在或旧报告没有权威快照
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+        "401":
+          description: H5 Access Token 无效或过期
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+        "409":
+          description: reportVersion 已落后于当前版本
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorEnvelope" }
@@ -820,6 +882,31 @@ components:
         currentReportVersion:
           type: [integer, "null"]
           minimum: 1
+    StartDecisionRequest:
+      type: object
+      additionalProperties: false
+      required: [requirement]
+      properties:
+        requirement:
+          type: string
+          minLength: 1
+          maxLength: 2000
+    StartedDecision:
+      type: object
+      additionalProperties: false
+      required: [sessionId, runId, runVersion, status]
+      properties:
+        sessionId: { type: string }
+        runId: { type: string }
+        runVersion: { type: integer, minimum: 1 }
+        status: { type: string, enum: [RUNNING] }
+    StartedDecisionResponse:
+      allOf:
+        - $ref: "#/components/schemas/SuccessEnvelope"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/StartedDecision"
     DecisionSessionSnapshotResponse:
       allOf:
         - $ref: "#/components/schemas/SuccessEnvelope"
@@ -827,6 +914,67 @@ components:
           properties:
             data:
               $ref: "#/components/schemas/DecisionSessionSnapshot"
+    ReweightRequest:
+      type: object
+      additionalProperties: false
+      required: [reportVersion, weights]
+      properties:
+        reportVersion:
+          type: integer
+          minimum: 1
+        weights:
+          type: object
+          additionalProperties: false
+          properties:
+            NEED_MATCH: { type: number, minimum: 0 }
+            PRICE_VALUE: { type: number, minimum: 0 }
+            REVIEW_QUALITY: { type: number, minimum: 0 }
+            PROMOTION_VALUE: { type: number, minimum: 0 }
+            RELIABILITY: { type: number, minimum: 0 }
+    ReweightedCandidate:
+      type: object
+      additionalProperties: false
+      required: [rank, productId, skuId, finalScore, pricePlanId, finalPrice]
+      properties:
+        rank: { type: integer, minimum: 1, maximum: 3 }
+        productId: { type: string }
+        skuId: { type: string }
+        finalScore: { type: number, minimum: 0, maximum: 100 }
+        pricePlanId: { type: string }
+        finalPrice: { type: string, pattern: "^(0|[1-9][0-9]*)\\.[0-9]{2}$" }
+    ReweightResult:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          sessionId,
+          version,
+          selectedSkuId,
+          weights,
+          recommendations,
+          generationType,
+        ]
+      properties:
+        sessionId: { type: string }
+        version: { type: integer, minimum: 2 }
+        selectedSkuId: { type: string }
+        weights:
+          type: object
+          additionalProperties: { type: number, minimum: 0, maximum: 1 }
+        recommendations:
+          type: array
+          minItems: 1
+          maxItems: 3
+          items: { $ref: "#/components/schemas/ReweightedCandidate" }
+        generationType:
+          type: string
+          const: DETERMINISTIC_REWEIGHT
+    ReweightResponse:
+      allOf:
+        - $ref: "#/components/schemas/SuccessEnvelope"
+        - type: object
+          properties:
+            data: { $ref: "#/components/schemas/ReweightResult" }
     HealthData:
       type: object
       additionalProperties: false

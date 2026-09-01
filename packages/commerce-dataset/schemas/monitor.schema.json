@@ -1,0 +1,182 @@
+{
+  "categoryId": "MONITOR",
+  "schemaVersion": "monitor-1.0",
+  "attributes": [
+    {
+      "key": "sizeInch",
+      "label": "尺寸",
+      "type": "number",
+      "unit": "inch",
+      "filterable": true,
+      "comparable": true,
+      "skuSpecific": false
+    },
+    {
+      "key": "resolution",
+      "label": "分辨率",
+      "type": "enum",
+      "enumValues": ["FHD", "2K", "4K"],
+      "unit": null,
+      "filterable": true,
+      "comparable": true,
+      "skuSpecific": false
+    },
+    {
+      "key": "refreshHz",
+      "label": "刷新率",
+      "type": "number",
+      "unit": "Hz",
+      "filterable": true,
+      "comparable": true,
+      "skuSpecific": false
+    },
+    {
+      "key": "panelType",
+      "label": "面板类型",
+      "type": "enum",
+      "enumValues": ["IPS", "VA", "OLED"],
+      "unit": null,
+      "filterable": true,
+      "comparable": true,
+      "skuSpecific": false
+    },
+    {
+      "key": "pixelDensityPpi",
+      "label": "像素密度",
+      "type": "number",
+      "unit": "ppi",
+      "filterable": false,
+      "comparable": true,
+      "skuSpecific": false
+    },
+    {
+      "key": "colorGamutSrgb",
+      "label": "sRGB 色域",
+      "type": "number",
+      "unit": "%",
+      "filterable": true,
+      "comparable": true,
+      "skuSpecific": false
+    },
+    {
+      "key": "colorAccuracyDeltaE",
+      "label": "色准 Delta E",
+      "type": "number",
+      "unit": null,
+      "filterable": true,
+      "comparable": true,
+      "skuSpecific": false
+    },
+    {
+      "key": "brightnessNit",
+      "label": "亮度",
+      "type": "number",
+      "unit": "nit",
+      "filterable": true,
+      "comparable": true,
+      "skuSpecific": false
+    },
+    {
+      "key": "eyeCareCertification",
+      "label": "护眼认证",
+      "type": "boolean",
+      "unit": null,
+      "filterable": true,
+      "comparable": true,
+      "skuSpecific": false
+    },
+    {
+      "key": "usbCChargingW",
+      "label": "USB-C 反向供电",
+      "type": "number",
+      "unit": "W",
+      "filterable": true,
+      "comparable": true,
+      "skuSpecific": false
+    },
+    {
+      "key": "standAdjustable",
+      "label": "人体工学支架",
+      "type": "boolean",
+      "unit": null,
+      "filterable": true,
+      "comparable": true,
+      "skuSpecific": true
+    }
+  ],
+  "hardConstraintOperators": {
+    "sizeInch": [">=", "<=", "="],
+    "resolution": ["="],
+    "refreshHz": [">=", "<="],
+    "panelType": ["="],
+    "colorGamutSrgb": [">="],
+    "colorAccuracyDeltaE": ["<="],
+    "eyeCareCertification": ["="],
+    "usbCChargingW": [">="],
+    "standAdjustable": ["="]
+  },
+  "comparisonGroups": [
+    {
+      "key": "display",
+      "label": "显示",
+      "attributes": [
+        "sizeInch",
+        "resolution",
+        "refreshHz",
+        "panelType",
+        "pixelDensityPpi",
+        "brightnessNit"
+      ]
+    },
+    {
+      "key": "color",
+      "label": "色彩",
+      "attributes": ["colorGamutSrgb", "colorAccuracyDeltaE"]
+    },
+    {
+      "key": "comfort",
+      "label": "办公舒适",
+      "attributes": ["eyeCareCertification", "usbCChargingW", "standAdjustable"]
+    }
+  ],
+  "capabilities": [
+    {
+      "key": "coding",
+      "label": "编程办公能力",
+      "inputAttributes": [
+        "sizeInch",
+        "resolution",
+        "pixelDensityPpi",
+        "standAdjustable"
+      ],
+      "evidenceTopics": ["coding", "text-clarity", "ergonomics"],
+      "formulaVersion": "monitor-capability-v1",
+      "missingDataPolicy": "RENORMALIZE_AND_LOWER_COMPLETENESS"
+    },
+    {
+      "key": "image_editing",
+      "label": "图像编辑能力",
+      "inputAttributes": [
+        "resolution",
+        "colorGamutSrgb",
+        "colorAccuracyDeltaE",
+        "brightnessNit"
+      ],
+      "evidenceTopics": ["color", "image-editing"],
+      "formulaVersion": "monitor-capability-v1",
+      "missingDataPolicy": "RENORMALIZE_AND_LOWER_COMPLETENESS"
+    },
+    {
+      "key": "eye_comfort",
+      "label": "长时护眼能力",
+      "inputAttributes": [
+        "eyeCareCertification",
+        "brightnessNit",
+        "standAdjustable"
+      ],
+      "evidenceTopics": ["eye-care", "ergonomics"],
+      "formulaVersion": "monitor-capability-v1",
+      "missingDataPolicy": "RENORMALIZE_AND_LOWER_COMPLETENESS"
+    }
+  ]
+}

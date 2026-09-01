@@ -1,0 +1,102 @@
+{
+  "metadata": {
+    "gitSha": "请替换",
+    "datasetVersion": "commerce-demo-2026.08.1"
+  },
+  "scenarios": [
+    {
+      "name": "model",
+      "stopCommand": ["请替换为模型故障注入命令"],
+      "startCommand": ["请替换为模型恢复命令"],
+      "probe": {
+        "url": "http://127.0.0.1:8080/api/v1/decision-runs/请替换/trace",
+        "headers": { "Authorization": "Bearer 请替换" }
+      },
+      "expectedStatuses": [200],
+      "requiredMarkers": ["MODEL_UNAVAILABLE"],
+      "recoveryScenario": {
+        "probe": { "url": "http://127.0.0.1:8000/health/ready" },
+        "expectedStatuses": [200],
+        "requiredMarkers": ["ready"]
+      }
+    },
+    {
+      "name": "qdrant",
+      "stopCommand": [
+        "docker",
+        "compose",
+        "--env-file",
+        "deploy/.env",
+        "-f",
+        "deploy/docker-compose.yml",
+        "stop",
+        "qdrant"
+      ],
+      "startCommand": [
+        "docker",
+        "compose",
+        "--env-file",
+        "deploy/.env",
+        "-f",
+        "deploy/docker-compose.yml",
+        "start",
+        "qdrant"
+      ],
+      "probe": {
+        "url": "http://127.0.0.1:8080/api/v1/decision-runs/请替换/trace",
+        "headers": { "Authorization": "Bearer 请替换" }
+      },
+      "expectedStatuses": [200],
+      "requiredMarkers": ["QDRANT_UNAVAILABLE"],
+      "recoveryScenario": {
+        "probe": { "url": "http://127.0.0.1:8000/health/ready" },
+        "expectedStatuses": [200],
+        "requiredMarkers": ["ready"]
+      }
+    },
+    {
+      "name": "redis",
+      "stopCommand": [
+        "docker",
+        "compose",
+        "--env-file",
+        "deploy/.env",
+        "-f",
+        "deploy/docker-compose.yml",
+        "stop",
+        "redis"
+      ],
+      "startCommand": [
+        "docker",
+        "compose",
+        "--env-file",
+        "deploy/.env",
+        "-f",
+        "deploy/docker-compose.yml",
+        "start",
+        "redis"
+      ],
+      "probe": { "url": "http://127.0.0.1:8080/actuator/health/readiness" },
+      "expectedStatuses": [200, 503],
+      "requiredMarkers": ["REDIS_UNAVAILABLE"],
+      "recoveryScenario": {
+        "probe": { "url": "http://127.0.0.1:8080/actuator/health/readiness" },
+        "expectedStatuses": [200],
+        "requiredMarkers": ["UP"]
+      }
+    },
+    {
+      "name": "python",
+      "stopCommand": ["请替换为 Agent Service 停止命令"],
+      "startCommand": ["请替换为 Agent Service 恢复命令"],
+      "probe": { "url": "http://127.0.0.1:8080/actuator/health/readiness" },
+      "expectedStatuses": [200, 503],
+      "requiredMarkers": ["AGENT_UNAVAILABLE"],
+      "recoveryScenario": {
+        "probe": { "url": "http://127.0.0.1:8000/health/ready" },
+        "expectedStatuses": [200],
+        "requiredMarkers": ["ready"]
+      }
+    }
+  ]
+}

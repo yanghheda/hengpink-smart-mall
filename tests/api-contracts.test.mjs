@@ -21,6 +21,10 @@ test("OpenAPI 3.1 defines auth, decision, engagement, catalog, and offer slices"
   assert.doesNotThrow(() => validateContract(contract));
   assert.match(contract.openapi, /^3\.1\./);
   assert.deepEqual(Object.keys(contract.paths), [
+    "/api/v1/admin/decision-runs/{runId}/trace",
+    "/api/v1/purchase-intents",
+    "/api/v1/purchase-intents/{purchaseIntentId}",
+    "/api/v1/purchase-intents/{purchaseIntentId}/confirm",
     "/api/v1/favorites",
     "/api/v1/favorites/{favoriteId}",
     "/api/v1/decision-sessions/{sessionId}/reports/{version}",
@@ -30,6 +34,8 @@ test("OpenAPI 3.1 defines auth, decision, engagement, catalog, and offer slices"
     "/api/v1/smart-mall/sessions/exchange",
     "/api/v1/decision-sessions/{sessionId}/stream",
     "/api/v1/decision-sessions/{sessionId}",
+    "/api/v1/decision-sessions",
+    "/api/v1/decision-sessions/{sessionId}/weights",
     "/api/v1/decision-sessions/{sessionId}/memory-proposals",
     "/api/v1/me/memory-proposals/{proposalId}/decision",
     "/api/v1/health",
@@ -53,6 +59,12 @@ test("OpenAPI 3.1 defines auth, decision, engagement, catalog, and offer slices"
     "ExchangeSmartMallTicketRequest",
     "H5Session",
     "H5SessionResponse",
+    "DecisionSessionSnapshot",
+    "DecisionSessionSnapshotResponse",
+    "ReweightRequest",
+    "ReweightedCandidate",
+    "ReweightResult",
+    "ReweightResponse",
     "SuccessEnvelope",
     "ErrorEnvelope",
     "ApiError",
@@ -76,8 +88,12 @@ test("OpenAPI 3.1 defines auth, decision, engagement, catalog, and offer slices"
     "FavoriteListResponse",
     "HistoricalReportResponse",
     "DeletionResponse",
+    "CreatePurchaseIntentRequest",
+    "PurchaseIntentResponse",
     "CatalogFactListResponse",
     "OfferListResponse",
+    "DecisionTraceStep",
+    "DecisionTraceResponse",
   ]) {
     assert.ok(schemas[name], `missing components.schemas.${name}`);
   }

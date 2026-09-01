@@ -5,20 +5,28 @@ import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
 
 /** 校验 H5 短期访问令牌，拒绝把 RN 令牌用于 SSE。 */
 public final class JwtH5AccessTokenVerifier {
     private final javax.crypto.SecretKey key;
+    private final Clock clock;
 
     public JwtH5AccessTokenVerifier(String secret) {
+        this(secret, Clock.systemUTC());
+    }
+
+    public JwtH5AccessTokenVerifier(String secret, Clock clock) {
         key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        this.clock = clock;
     }
 
     public RequestSubject verify(String authorization) {
         if (authorization == null || !authorization.startsWith("Bearer ")) {
             throw new JwtException("缺少 H5 Access Token");
         }
-        var claims = Jwts.parser().verifyWith(key).build()
+        var claims = Jwts.parser().verifyWith(key)
+                .clock(() -> java.util.Date.from(clock.instant())).build()
                 .parseSignedClaims(authorization.substring("Bearer ".length())).getPayload();
         if (!"H5_ACCESS".equals(claims.get("tokenType", String.class))) {
             throw new JwtException("凭证类型不正确");

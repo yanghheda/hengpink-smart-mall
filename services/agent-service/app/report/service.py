@@ -29,9 +29,7 @@ class DecisionReportComposer:
             "rejected_popular_candidates": deepcopy(rejected_popular_candidates),
         }
 
-    def compose(
-        self, prompt_input: dict[str, Any], model_output: dict[str, Any]
-    ) -> dict[str, Any]:
+    def compose(self, prompt_input: dict[str, Any], model_output: dict[str, Any]) -> dict[str, Any]:
         """严格解析文案，再按槽位注入不可由模型修改的事实。"""
 
         narrative = DecisionReportNarrative.model_validate(model_output)

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { HostBridge } from "./bridge/hostBridge";
 import { createHostBridgeReactNative } from "./bridge/hostBridgeReactNative";
@@ -9,6 +9,20 @@ import {
   rememberH5AccessToken,
   type DecisionTrace,
 } from "./decision/decisionTrace";
+import { startDecision } from "./decision/startDecision";
+import { createStandaloneH5Session } from "./decision/standaloneSession";
+import {
+  loadDecisionReport,
+  reweightDecisionReport,
+  type DecisionReport,
+} from "./decision/decisionReport";
+import {
+  consumeDecisionStream,
+  fetchDecisionSessionSnapshot,
+  recoverDecisionSession,
+  type DecisionSessionSnapshot,
+  type DecisionTransportState,
+} from "./decision/decisionStream";
 import "./styles.css";
 
 const quickScenarios = [
@@ -235,6 +249,23 @@ type NativeWindow = Window & {
 function Home({ onPathChange }: { onPathChange: (path: string) => void }) {
   const [draft, setDraft] = useState("");
   const [message, setMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [snapshot, setSnapshot] = useState<DecisionSessionSnapshot>();
+  const [progress, setProgress] = useState(0);
+  const [stageText, setStageText] = useState("");
+  const [transportState, setTransportState] =
+    useState<DecisionTransportState>("STOPPED");
+  const [report, setReport] = useState<DecisionReport>();
+  const [weights, setWeights] = useState({
+    NEED_MATCH: 1,
+    PRICE_VALUE: 1,
+    REVIEW_QUALITY: 1,
+    PROMOTION_VALUE: 1,
+    RELIABILITY: 1,
+  });
+  const [reweighting, setReweighting] = useState(false);
+  const streamCursor = useRef<string | undefined>(undefined);
+  const activeAbort = useRef<AbortController | undefined>(undefined);
   const [bridgeStatus, setBridgeStatus] = useState("Standalone Demo");
   const bridge = useMemo((): HostBridge => {
     if (typeof window === "undefined")
@@ -299,6 +330,65 @@ function Home({ onPathChange }: { onPathChange: (path: string) => void }) {
       nativeBridge.stop();
     };
   }, [bridge]);
+  useEffect(() => () => activeAbort.current?.abort(), []);
+
+  const followDecision = async (
+    started: { sessionId: string },
+    accessToken: string,
+  ) => {
+    activeAbort.current?.abort();
+    const controller = new AbortController();
+    activeAbort.current = controller;
+    streamCursor.current = undefined;
+    const apiBaseUrl =
+      import.meta.env.VITE_API_BASE_URL ?? "http://127.0.0.1:8080";
+    const sessionUrl = `${apiBaseUrl}/api/v1/decision-sessions/${encodeURIComponent(started.sessionId)}`;
+    const completed = await recoverDecisionSession({
+      fetchSnapshot: () =>
+        fetchDecisionSessionSnapshot({
+          url: sessionUrl,
+          accessToken,
+          signal: controller.signal,
+        }),
+      consumeStream: () =>
+        consumeDecisionStream({
+          url: `${sessionUrl}/stream`,
+          accessToken,
+          lastEventId: streamCursor.current,
+          signal: controller.signal,
+          onEvent(event) {
+            streamCursor.current = event.eventId;
+            setProgress(event.progress);
+            const displayText = event.payload.displayText;
+            setStageText(
+              typeof displayText === "string"
+                ? displayText
+                : `正在执行 ${event.eventType}`,
+            );
+          },
+        }),
+      onSnapshot: setSnapshot,
+      onTransportState: setTransportState,
+    });
+    if (
+      (completed.status === "COMPLETED" || completed.status === "PARTIAL") &&
+      completed.currentReportVersion
+    ) {
+      setProgress(100);
+      setStageText("购买分析已完成");
+      setReport(
+        await loadDecisionReport(
+          completed.sessionId,
+          completed.currentReportVersion,
+          accessToken,
+        ),
+      );
+    } else if (completed.status === "FAILED") {
+      setStageText("分析失败，请稍后重试");
+    } else if (completed.status === "WAITING_CLARIFICATION") {
+      setStageText("需要补充信息后才能继续分析");
+    }
+  };
   return (
     <main className="shell">
       <section className="panel">
@@ -308,18 +398,51 @@ function Home({ onPathChange }: { onPathChange: (path: string) => void }) {
         </div>
         <h1>告诉我为谁买、怎么用</h1>
         <p className="description">
-          我会把购买目标整理成可核对的条件；决策会话将在后续阶段接入。
+          我会把购买目标整理成可核对的条件，并启动可追踪的决策分析。
         </p>
         <p className="notice">所有商品、价格与评价均为项目模拟数据</p>
         <form
           className="decision-form"
           onSubmit={(event) => {
             event.preventDefault();
-            setMessage(
-              draft.trim()
-                ? "需求已保留在当前页面；决策服务将在后续阶段接入。"
-                : "请先描述你的购买目标。",
-            );
+            const requirement = draft.trim();
+            if (!requirement) {
+              setMessage("请先描述你的购买目标。");
+              return;
+            }
+            setSubmitting(true);
+            setReport(undefined);
+            setSnapshot(undefined);
+            setProgress(0);
+            setMessage("正在创建决策会话…");
+            const existingToken = readH5AccessToken();
+            const accessTokenPromise = existingToken
+              ? Promise.resolve(existingToken)
+              : window.location.pathname.startsWith("/standalone")
+                ? createStandaloneH5Session()
+                : Promise.reject(
+                    new Error(
+                      "当前没有 H5 会话，请从已登录的商城 App 进入智能商城。",
+                    ),
+                  );
+            void accessTokenPromise
+              .then((accessToken) =>
+                startDecision({ requirement, accessToken }),
+              )
+              .then((started) => {
+                setMessage(
+                  `分析已启动：Session ${started.sessionId}，Run v${started.runVersion}`,
+                );
+                return accessTokenPromise.then((accessToken) =>
+                  followDecision(started, accessToken),
+                );
+              })
+              .catch((error: unknown) => {
+                setMessage(
+                  error instanceof Error ? error.message : "分析启动失败",
+                );
+              })
+              .finally(() => setSubmitting(false));
           }}
         >
           <label htmlFor="decision-input">描述你的购买目标</label>
@@ -329,9 +452,125 @@ function Home({ onPathChange }: { onPathChange: (path: string) => void }) {
             onChange={(event) => setDraft(event.target.value)}
             placeholder="例如：给爸妈买一台 3000 元内、系统简单、续航好的手机"
           />
-          <button type="submit">开始分析</button>
+          <button disabled={submitting} type="submit">
+            {submitting ? "正在启动…" : "开始分析"}
+          </button>
         </form>
         {message ? <p className="status-message">{message}</p> : null}
+        {snapshot ? (
+          <section className="analysis-progress" aria-live="polite">
+            <div className="progress-title">
+              <strong>{stageText || "正在读取决策状态"}</strong>
+              <span>{progress}%</span>
+            </div>
+            <progress max="100" value={progress} />
+            <p className="muted">
+              状态：{snapshot.status} · 传输：{transportState} · Run v
+              {snapshot.currentRunVersion}
+            </p>
+          </section>
+        ) : null}
+        {report ? (
+          <section className="report-section" aria-labelledby="report-title">
+            <div className="report-heading">
+              <div>
+                <p className="eyebrow">REPORT V{report.version}</p>
+                <h2 id="report-title">推荐结果</h2>
+              </div>
+              <span className="mode-badge">{report.report.generationType}</span>
+            </div>
+            <p>{report.report.summary}</p>
+            <ol className="recommendation-list">
+              {report.report.recommendations.map((item) => (
+                <li className="recommendation-card" key={item.skuId}>
+                  <div className="recommendation-title">
+                    <strong>
+                      #{item.rank} · {item.productId}
+                    </strong>
+                    <span>{item.finalScore} 分</span>
+                  </div>
+                  <p className="price">¥{item.finalPrice}</p>
+                  <p className="muted">SKU：{item.skuId}</p>
+                  <ul>
+                    {item.reasons.map((reason) => (
+                      <li key={`${item.skuId}-${reason.text}`}>
+                        {reason.text}
+                        {reason.factIds.length ? (
+                          <small>事实：{reason.factIds.join("、")}</small>
+                        ) : null}
+                      </li>
+                    ))}
+                  </ul>
+                </li>
+              ))}
+            </ol>
+            {report.report.overallDataGaps.length ? (
+              <p className="notice">
+                数据缺口：{report.report.overallDataGaps.join("；")}
+              </p>
+            ) : null}
+            <section className="weights-panel">
+              <h3>调整关注重点</h3>
+              {Object.entries(weights).map(([dimension, value]) => (
+                <label className="weight-row" key={dimension}>
+                  <span>{dimension}</span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="10"
+                    step="1"
+                    value={value}
+                    onChange={(event) =>
+                      setWeights((current) => ({
+                        ...current,
+                        [dimension]: Number(event.target.value),
+                      }))
+                    }
+                  />
+                  <output>{value}</output>
+                </label>
+              ))}
+              <button
+                className="secondary-action"
+                disabled={reweighting}
+                type="button"
+                onClick={() => {
+                  const accessToken = readH5AccessToken();
+                  if (!accessToken) {
+                    setMessage("H5 会话已过期，请重新进入页面。");
+                    return;
+                  }
+                  setReweighting(true);
+                  void reweightDecisionReport(
+                    report.sessionId,
+                    report.version,
+                    weights,
+                    accessToken,
+                  )
+                    .then((result) =>
+                      loadDecisionReport(
+                        report.sessionId,
+                        result.version,
+                        accessToken,
+                      ),
+                    )
+                    .then((updated) => {
+                      setReport(updated);
+                      setMessage(`已生成报告 V${updated.version}`);
+                    })
+                    .catch((error: unknown) =>
+                      setMessage(
+                        error instanceof Error ? error.message : "调权失败",
+                      ),
+                    )
+                    .finally(() => setReweighting(false));
+                }}
+              >
+                {reweighting ? "正在重排…" : "按新权重重排"}
+              </button>
+            </section>
+          </section>
+        ) : null}
         <section aria-labelledby="quick-title" className="quick-section">
           <h2 id="quick-title">快捷场景</h2>
           <div className="quick-list">

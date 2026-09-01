@@ -3,18 +3,26 @@ import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
 
 const fixturePath = fileURLToPath(
-  new URL("../fixtures/curated/commerce-demo-2026.08.1.json", import.meta.url),
+  new URL("../fixtures/curated/commerce-demo-2026.09.1.json", import.meta.url),
 );
-const phoneSchemaPath = fileURLToPath(
-  new URL("../schemas/phone.schema.json", import.meta.url),
-);
+const schemaDirectory = new URL("../schemas/", import.meta.url);
 
 export async function loadCuratedDataset() {
   return JSON.parse(await readFile(fixturePath, "utf8"));
 }
 
 export async function loadPhoneSchema() {
-  return JSON.parse(await readFile(phoneSchemaPath, "utf8"));
+  return loadCategorySchema("PHONE");
+}
+
+export async function loadCategorySchema(categoryId) {
+  const fileName = `${categoryId.toLowerCase()}.schema.json`;
+  const schema = JSON.parse(
+    await readFile(new URL(fileName, schemaDirectory), "utf8"),
+  );
+  if (schema.categoryId !== categoryId)
+    fail("categoryId", `must match requested category ${categoryId}`);
+  return schema;
 }
 
 function stableHash(value) {
@@ -122,13 +130,17 @@ export function publishDataset(dataset) {
 }
 
 export function validatePhoneAttributes(attributes, schema) {
+  return validateCategoryAttributes(attributes, schema);
+}
+
+export function validateCategoryAttributes(attributes, schema) {
   const definitions = new Map(
     schema.attributes.map((attribute) => [attribute.key, attribute]),
   );
   for (const [key, value] of Object.entries(attributes)) {
     const path = `attributes.${key}`;
     const definition = definitions.get(key);
-    if (!definition) fail(path, "not defined by phone schema");
+    if (!definition) fail(path, `not defined by ${schema.categoryId} schema`);
     if (
       definition.type === "number" &&
       (typeof value !== "number" || !Number.isFinite(value))
@@ -143,7 +155,7 @@ export function validatePhoneAttributes(attributes, schema) {
 }
 
 export function mapCapabilityFacts(attributes, schema, skuId) {
-  validatePhoneAttributes(attributes, schema);
+  validateCategoryAttributes(attributes, schema);
   return schema.capabilities.map((capability) => ({
     capability: capability.key,
     formula_version: capability.formulaVersion,

@@ -24,9 +24,7 @@ def _merge_collection(
     return list(merged.values())
 
 
-def merge_intents(
-    previous: dict[str, Any] | None, current: dict[str, Any]
-) -> dict[str, Any]:
+def merge_intents(previous: dict[str, Any] | None, current: dict[str, Any]) -> dict[str, Any]:
     """用持久化旧 Intent 补齐本轮未表达字段，且不修改输入快照。"""
 
     if previous is None:
@@ -80,7 +78,9 @@ class ClarificationPlanner:
             )
 
         questions = [
-            item for item in [*hard_questions, *soft_questions] if item.question_value >= QUESTION_THRESHOLD
+            item
+            for item in [*hard_questions, *soft_questions]
+            if item.question_value >= QUESTION_THRESHOLD
         ][:2]
         return ClarificationPlan(
             questions=questions,
